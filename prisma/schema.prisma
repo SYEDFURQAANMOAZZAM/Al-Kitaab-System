@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum Access {
+  YES
+  NO
+}
+
+model User {
+  id         String     @id @default(cuid())
+  email      String     @unique
+  phone      String?
+  password   String
+  name       String?
+  role       Role
+  isaccess   Access
+
+  sessions   Session[]
+
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Student {
+  id         String   @id @default(cuid())
+  batchId    String
+  batch      Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  branchId   String
+  branch     Batch    @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Teacher {
+  id         String   @id @default(cuid())
+  batchId    String
+  batch      Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  branchId   String
+  branch     Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Batch {
+  id        String    @id @default(cuid())
+  batchname String
+}
+
+model Branch {
+  id          String    @id @default(cuid())
+  branchname  String
+}
+
+model Attendance {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiresAt  DateTime
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
