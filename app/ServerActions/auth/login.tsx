@@ -56,9 +56,10 @@ export async function logout() {
   const cookieStore =await cookies()
   const refreshToken = cookieStore.get('refresh_token')?.value
   if (refreshToken) {
-    await prisma.session.deleteMany({
+    const result=await prisma.session.deleteMany({
       where: { tokenHash: hashRefreshToken(refreshToken) },
     })
+    console.log(result)
   }
   cookieStore.set('access_token', '', { maxAge: 0, path: '/' })
   cookieStore.set('refresh_token', '', { maxAge: 0, path: '/' })
