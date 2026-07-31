@@ -18,7 +18,7 @@ export function AccessgrantStudent({studentId}:AccessGrantProps){
 export function AccessdenyStudent({studentId}:AccessGrantProps){
     return(
     <form action={()=>StudentDenyAccess(studentId)}>
-        <ButtonShadcn variant="outline" type='submit'>Grant Access</ButtonShadcn>
+        <ButtonShadcn variant="outline" type='submit'>Deny Access</ButtonShadcn>
     </form>
     )
 } 
