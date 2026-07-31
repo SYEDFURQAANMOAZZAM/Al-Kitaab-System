@@ -1,9 +1,12 @@
-import React from 'react'
 
-const page = () => {
+import { logout } from '@/app/ServerActions/auth/login'
+
+const student = () => {
   return (
-    <div>page</div>
+    <div>student
+      <button onClick={logout}>logout</button>
+    </div>
   )
 }
 
-export default page
+export default student

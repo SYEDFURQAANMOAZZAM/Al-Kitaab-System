@@ -2,48 +2,116 @@
 
 import { useActionState } from 'react'
 import { login } from '@/app/ServerActions/auth/login'
-import Link from "next/link"
-import { register } from 'module'
+import Link from 'next/link'
+import { BookOpen } from 'lucide-react'
+
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+
+import { PasswordInput } from '@/components/passwordInput'
 
 export default function Page() {
   const [state, action, pending] = useActionState(login, undefined)
 
   return (
-    <>
-    <div>
-      <form action={action}>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          placeholder="Email"
-          required
-        />
+    <div className="grid min-h-screen grid-cols-12 bg-slate-100 px-4 py-12">
 
-        <input
-          id="password"
-          name="password"
-          type="password"
-          placeholder="Password"
-          required
-        />
+      <div className="col-span-10 col-start-2 md:col-span-8 md:col-start-3 lg:col-span-6 lg:col-start-4">
 
-        <button type="submit" disabled={pending}>
-          {pending ? 'Logging in...' : 'Login'}
-        </button>
+        <Card className="rounded-3xl border border-slate-200 bg-white shadow-2xl">
+          <CardContent className="p-10">
 
-        {state?.error && (
-          <p style={{ color: 'red' }}>
-            {state.error}
-          </p>
-        )}
-      </form>
-     
+            {/* Header */}
+            <div className="mb-10 flex flex-col items-center">
+
+              <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-600 shadow-lg">
+                <BookOpen className="h-8 w-8 text-white" />
+              </div>
+
+              <h1 className="text-3xl font-bold text-slate-900">
+                AlKitaab Academy
+              </h1>
+
+              <p className="mt-2 text-slate-500">
+                Sign in to continue
+              </p>
+
+            </div>
+
+            {/* Form */}
+            <form action={action} className="space-y-6">
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="email"
+                  className="font-medium text-slate-700"
+                >
+                  Email Address
+                </Label>
+
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  required
+                  className="h-12 rounded-xl border-slate-300"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="password"
+                  className="font-medium text-slate-700"
+                >
+                  Password
+                </Label>
+
+                <PasswordInput
+                  id="password"
+                  name="password"
+                  placeholder="Enter your password"
+                  required
+                  className="border-slate-300"
+                 />
+
+              </div>
+
+              {state?.error && (
+                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {state.error}
+                </div>
+              )}
+              
+
+              <Button
+                type="submit"
+                disabled={pending}
+                className="h-12 w-full rounded-xl bg-emerald-600 text-base font-semibold hover:bg-emerald-700"
+              >
+                {pending ? 'Signing In...' : 'Sign In'}
+              </Button>
+
+            </form>
+
+            {/* Footer */}
+            <div className="mt-8 text-center text-sm text-slate-600">
+              Don&apos;t have an account?{" "}
+              <Link
+                href="/register"
+                className="font-semibold text-emerald-600 hover:text-emerald-700"
+              >
+                Create one
+              </Link>
+            </div>
+
+          </CardContent>
+        </Card>
+
+      </div>
+
     </div>
-    <Link href="/register">Register</Link>
-  </>
-    
   )
 }
-
-

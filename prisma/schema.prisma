@@ -23,15 +23,30 @@ enum Access {
   NO
 }
 
+enum Attend{
+  PRESENT
+  ABSENT
+}
+
+enum Studied{
+  YES
+  NO
+  
+}
+
 model User {
   id         String     @id @default(cuid())
   email      String     @unique
-  phone      String?
+  phone      String?    @unique
   password   String
   name       String?
   role       Role
-  isaccess   Access
+  student    Student?
+  teacher    Teacher?
 
+  isaccess   Access
+  attendance Attendance[]
+  progress   Progress[]
   sessions   Session[]
 
   createdAt  DateTime   @default(now())
@@ -43,8 +58,8 @@ model Student {
   batchId    String
   batch      Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
   branchId   String
-  branch     Batch    @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  userId     String
+  branch     Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  userId     String   @unique
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -54,27 +69,51 @@ model Teacher {
   batch      Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
   branchId   String
   branch     Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  userId     String
+  userId     String   @unique
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Batch {
-  id        String    @id @default(cuid())
-  batchname String
+  id          String    @id @default(cuid())
+  batchname   String    @unique
+  students    Student[]
+  teachers    Teacher[]
 }
 
 model Branch {
   id          String    @id @default(cuid())
-  branchname  String
+  branchname  String    @unique
+  students    Student[]
+  teachers    Teacher[]
 }
 
 model Attendance {
   id          String    @id @default(cuid())
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attended    Attend
+  remarks     String?   
+  date        DateTime
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  @@unique([userId, date])
 }
+
+
+model Progress {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studied     Studied 
+  remarks     String?
+  score       Int
+  date        DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  @@unique([userId, date])
+}
+
+
 
 model Session {
   id         String   @id @default(cuid())
