@@ -52,25 +52,25 @@ if (existingUser) {
       isaccess: validatedFields.data.isaccess,
     };
     
-   const batchId = await prisma.batch.findFirst({
+   const batch = await prisma.batch.findFirst({
      where: {
        batchname: validatedFields.data.batch,
        },
      });
 
-     if (!batchId) {
+     if (!batch) {
        return {
          message: "Batch not found",
        };
      }
 
-     const branchId = await prisma.branch.findFirst({
+     const branch = await prisma.branch.findFirst({
      where: {
        branchname: validatedFields.data.branch,
        },
      });
 
-     if (!branchId) {
+     if (!branch) {
        return {
          message: "Branch not found",
        };
@@ -79,15 +79,15 @@ if (existingUser) {
     if (validatedFields.data.role === Role.TEACHER) {
       data.teacher = {
         create: {
-          batchId: batchId.id,
-          branchId: branchId.id,
+          batchId: batch.id,
+          branchId: branch.id,
         },
       };
     } else if (validatedFields.data.role === Role.STUDENT) {
       data.student = {
         create: {
-          batchId: batchId.id,
-          branchId: branchId.id,
+          batchId: batch.id,
+          branchId: branch.id,
         },
       };
     }
