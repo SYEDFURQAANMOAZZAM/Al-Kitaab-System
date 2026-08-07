@@ -4,7 +4,7 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+
 import {sidebarItems} from "./sidebarContent";
 export default function AdminLayout({
   children,

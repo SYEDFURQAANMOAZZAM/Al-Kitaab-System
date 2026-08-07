@@ -30,19 +30,19 @@ export const sidebarItems: SidebarItem[] = [
     title: "Teacher",
     icon: UserCheck,
     children: [
-      { title: "Teacher Access", href: "/Admin/teachers/access" },
       { title: "Teacher Status", href: "/Admin/teachers/status" },
+      { title: "Add Teacher", href: "/Admin/teachers/add" },
     ],
   },
   {
     title: "Student",
     icon: Users,
     children: [
-      { title: "Student Access", href: "/Admin/students/access" },
-      { title: "Student Status", href: "/Admin/students/status" },
+      { title: "Student Stats", href: "/Admin/students/stats" },
+      { title: "Add Student", href: "/Admin/students/add" },
     ],
   },
-  { title: "Batch", href: "/Admin/batches", icon: Layers3 },
+ 
   { title: "Branch", href: "/Admin/branches", icon: Building2 },
   { title: "Materials", href: "/Admin/materials", icon: BookOpen },
   { title: "Settings", href: "/Admin/settings", icon: Settings },

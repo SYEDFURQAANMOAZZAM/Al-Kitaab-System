@@ -7,7 +7,7 @@ export default function Page() {
     const branches=prisma.branch.findMany({})
     return(
         <Suspense fallback={<div>Loading...</div>}>
-           <SignupForm batches={batches} branches={branches} />
+           <SignupForm/>
             
         </Suspense>
     )
