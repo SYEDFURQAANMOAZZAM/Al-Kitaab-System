@@ -12,7 +12,7 @@ export const getCurrentUser = cache(async () => {
     const { userId } = await verifyAccessToken(token)
     return prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, name: true, role: true ,isaccess:true}
+      select: { id: true, email: true, name: true, role: true }
     })
   } catch {
     return null

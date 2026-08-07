@@ -26,14 +26,26 @@ export async function login(prevState: { error?: string } | undefined,
   const accessToken = await signAccessToken(user.id, user.role)
   const refreshToken = await signRefreshToken(user.id, user.role)
   
-  // Store refresh token in DB for rotation tracking
-  await prisma.session.create({
+
+  await prisma.$transaction([
+  prisma.session.deleteMany({
+    where: {
+      userId: user.id,
+    },
+  }),
+
+  prisma.session.create({
     data: {
       tokenHash: hashRefreshToken(refreshToken),
       userId: user.id,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      expiresAt: new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000
+      ),
     },
-  })
+  }),
+]);
+  // Store refresh token in DB for rotation tracking
+  
   const cookieStore =await cookies()
   cookieStore.set('access_token', accessToken, {
     httpOnly: true,
@@ -49,7 +61,6 @@ export async function login(prevState: { error?: string } | undefined,
     maxAge: 7 * 24 * 60 * 60, // 7 days
     path: '/',
   })
-  if (user.isaccess !== 'YES') redirect('/NotAccess')
   redirect(user.role === 'ADMIN' ? '/Admin' : user.role === 'TEACHER' ? '/Teacher' : '/Student')
 }
 export async function logout() {

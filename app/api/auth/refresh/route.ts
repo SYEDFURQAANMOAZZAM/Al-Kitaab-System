@@ -30,14 +30,13 @@ export async function GET(request: NextRequest) {
         tokenHash: refreshTokenHash,
       },
       include: {
-        user: { select: { role: true, isaccess: true } },
+        user: { select: { role: true } },
       },
     });
 
     if (
       !session ||
       session.userId !== userId ||
-      session.user.isaccess !== "YES" ||
       session.expiresAt < new Date()
     ) {
       if (session) {

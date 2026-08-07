@@ -12,7 +12,7 @@ const createBranch = async (formData: FormData) => {
 
   await prisma.branch.create({
     data: {
-      branchname: branchname.trim(),
+      name: branchname.trim(),
     },
   })
   revalidatePath("/Admin/branches")

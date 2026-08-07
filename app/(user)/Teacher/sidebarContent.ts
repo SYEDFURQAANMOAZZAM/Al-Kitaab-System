@@ -25,25 +25,10 @@ type SidebarItem = SidebarLink | SidebarGroupItem;
 
 
 export const sidebarItems: SidebarItem[] = [
-  { title: "Dashboard", href: "/Admin/dashboard", icon: LayoutDashboard },
-  {
-    title: "Teacher",
-    icon: UserCheck,
-    children: [
-      { title: "Teacher Access", href: "/Admin/teachers/access" },
-      { title: "Teacher Status", href: "/Admin/teachers/status" },
-    ],
-  },
-  {
-    title: "Student",
-    icon: Users,
-    children: [
-      { title: "Student Access", href: "/Admin/students/access" },
-      { title: "Student Status", href: "/Admin/students/status" },
-    ],
-  },
-  { title: "Batch", href: "/Admin/batches", icon: Layers3 },
-  { title: "Branch", href: "/Admin/branches", icon: Building2 },
-  { title: "Materials", href: "/Admin/materials", icon: BookOpen },
-  { title: "Settings", href: "/Admin/settings", icon: Settings },
+  { title: "Dashboard", href: "/Teacher/dashboard", icon: LayoutDashboard },
+  { title: "Batch", href: "/Teacher/batches", icon: Layers3 },
+  { title: "Students", href: "/Teacher/students", icon: BookOpen },
+  { title: "Notice", href: "/Teacher/notice", icon: BookOpen },
+  { title: "Materials", href: "/Teacher/materials", icon: BookOpen },
+  { title: "Settings", href: "/Teacher/settings", icon: Settings },
 ]

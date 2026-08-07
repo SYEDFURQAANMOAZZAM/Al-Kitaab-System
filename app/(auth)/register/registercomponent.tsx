@@ -1,6 +1,5 @@
 'use client'
 
-import { use } from 'react'
 import { useActionState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -9,11 +8,7 @@ import { register as registerAction } from '@/app/ServerActions/auth/register'
 import { SignupFormSchema } from '@/app/ServerActions/auth/Validate'
 import { BookOpen } from "lucide-react";
 
-import { useEffect } from "react";
-
 import { PasswordInput } from '@/components/passwordInput'
-
-import { useWatch } from "react-hook-form";
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -33,22 +28,15 @@ type FormValues = {
   password: string
   confirmPassword:string
   role: 'ADMIN' | 'TEACHER' | 'STUDENT'
-  isaccess: 'YES' | 'NO'
-  batch: string
-  branch: string
+  // batch: string[]
+  // branch: string
 }
 
-export default function SignupForm({
-  batches,
-  branches,
-}: {
-  batches: Promise<{ id: string; batchname: string }[]>
-  branches: Promise<{ id: string; branchname: string }[]>
-}) {
-  const allBatches = use(batches)
-  const allBranches = use(branches)
-
-  const [state, action, pending] = useActionState(registerAction, undefined)
+export default function SignupForm() {
+  // const allBatches = use(batches)
+  // const allBranches = use(branches)
+  // const [selectedBatches, setSelectedBatches] = useState<string[]>([]);
+  const [, action, pending] = useActionState(registerAction, undefined)
   const {
   register,
   setValue,
@@ -212,115 +200,42 @@ export default function SignupForm({
       )}
     </div>
 
-    {/* Access */}
-    <div className="space-y-2">
-      <Label className="text-slate-700 font-medium">
-        Account Access
-      </Label>
+    {/* Batch
+<div className="space-y-2">
+  <Label className="text-slate-700 font-medium">
+    Batches
+  </Label>
 
-      <Select
-        onValueChange={(value) =>
-          setValue("isaccess", value as FormValues["isaccess"], {
-            shouldValidate: true,
-          })
-        }
-      >
-        <SelectTrigger className="h-12 rounded-xl border-slate-300">
-          <SelectValue placeholder="Select access" />
-        </SelectTrigger>
+  <MultiSelect
+  options={allBatches.map((batch) => ({
+    label: batch.name,
+    value: batch.name,
+  }))}
+  value={selectedBatches}
+  onChange={(values) => {
+    setSelectedBatches(values);
 
-        <SelectContent>
-          <SelectItem value="YES">Enabled</SelectItem>
-          <SelectItem value="NO">Disabled</SelectItem>
-        </SelectContent>
-      </Select>
-
-      <input type="hidden" {...register("isaccess")} />
-
-      {errors.isaccess && (
-        <p className="text-sm text-red-600">
-          {errors.isaccess.message}
-        </p>
-      )}
-    </div>
-
-    {/* Batch */}
-    <div className="space-y-2">
-      <Label className="text-slate-700 font-medium">
-        Batch
-      </Label>
-
-      <Select
-  onValueChange={(value) =>
-    setValue("batch", value as FormValues["batch"], {
+    setValue("batch", values, {
       shouldValidate: true,
-    })
-  }
->
-  <SelectTrigger
-    className="
-      h-14 w-full
-      rounded-xl
-      border border-slate-300
-      bg-white
-      px-4
-      text-base
-      font-medium
-      shadow-sm
-      transition-all
-      hover:border-emerald-500
-      focus:ring-2
-      focus:ring-emerald-500
-      data-[state=open]:border-emerald-500
-    "
-  >
-    <SelectValue placeholder="Select Batch" />
-  </SelectTrigger>
+    });
+  }}
+/>
 
-  <SelectContent
-    className="
-      rounded-xl
-      border border-slate-200
-      bg-white
-      p-2
-      shadow-xl
-    "
-  >
-    {allBatches.map((batch) => (
-      <SelectItem
-        key={batch.id}
-        value={batch.batchname}
-        className="
-          min-h-12
-          rounded-lg
-          px-4
-          py-3
-          text-base
-          leading-6
-          cursor-pointer
-          whitespace-normal
-          break-words
-          focus:bg-emerald-50
-          focus:text-emerald-700
-        "
-      >
-        {batch.batchname}
-      </SelectItem>
-    ))}
-  </SelectContent>
-</Select>
+  <input
+    type="hidden"
+    {...register("batch")}
+    value={JSON.stringify(selectedBatches)}
+  />
 
-      <input type="hidden" {...register("batch")} />
-
-      {errors.batch && (
-        <p className="text-sm text-red-600">
-          {errors.batch.message}
-        </p>
-      )}
-    </div>
+  {errors.batch && (
+    <p className="text-sm text-red-600">
+      {errors.batch.message}
+    </p>
+  )}
+</div>
 
     {/* Branch */}
-    <div className="space-y-2">
+    {/* <div className="space-y-2">
       <Label className="text-slate-700 font-medium">
         Branch
       </Label>
@@ -331,7 +246,7 @@ export default function SignupForm({
       shouldValidate: true,
     })
   }
->
+> 
   <SelectTrigger
     className="
       h-14 w-full
@@ -364,7 +279,7 @@ export default function SignupForm({
     {allBranches.map((branch) => (
       <SelectItem
         key={branch.id}
-        value={branch.branchname}
+        value={branch.name}
         className="
           min-h-12
           rounded-lg
@@ -379,7 +294,7 @@ export default function SignupForm({
           focus:text-emerald-700
         "
       >
-        {branch.branchname}
+        {branch.name}
       </SelectItem>
     ))}
   </SelectContent>
@@ -402,9 +317,10 @@ export default function SignupForm({
         <p key={key} className="text-sm text-red-700">
           {Array.isArray(value) ? value[0] : value}
         </p>
-      ))}
-    </div>
-  )}
+      ))} */}
+    {/* </div>
+  )} */}
+  </div>
  </div>
   <Button
     type="submit"
