@@ -66,7 +66,7 @@ const suggestedQuestions = [
 ];
 
 export default async function DashboardPage() {
-  const user=await AuthVerify();
+  await AuthVerify("ADMIN");
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-emerald-700">Dashboard</h1>

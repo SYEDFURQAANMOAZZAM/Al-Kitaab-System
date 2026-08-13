@@ -6,11 +6,14 @@ import {
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import {sidebarItems} from "./sidebarContent";
-export default function AdminLayout({
+import { requireRole } from "@/lib/auth/require-role";
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  await requireRole("ADMIN");
+
   return (
     <SidebarProvider>
       <AppSidebar sidebarItems={sidebarItems}/>

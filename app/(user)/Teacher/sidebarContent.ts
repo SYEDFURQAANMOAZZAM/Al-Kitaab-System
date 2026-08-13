@@ -1,12 +1,7 @@
 'use client'
 import {
   LayoutDashboard,
-  UserCheck,
-  Users,
   Layers3,
-  Building2,
-  BookOpen,
-  Settings,
 } from "lucide-react";
 
 type SidebarLink = {
@@ -25,10 +20,6 @@ type SidebarItem = SidebarLink | SidebarGroupItem;
 
 
 export const sidebarItems: SidebarItem[] = [
-  { title: "Dashboard", href: "/Teacher/dashboard", icon: LayoutDashboard },
+  { title: "Dashboard", href: "/Teacher", icon: LayoutDashboard },
   { title: "Batch", href: "/Teacher/batches", icon: Layers3 },
-  { title: "Students", href: "/Teacher/students", icon: BookOpen },
-  { title: "Notice", href: "/Teacher/notice", icon: BookOpen },
-  { title: "Materials", href: "/Teacher/materials", icon: BookOpen },
-  { title: "Settings", href: "/Teacher/settings", icon: Settings },
 ]

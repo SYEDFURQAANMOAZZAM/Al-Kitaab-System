@@ -1,6 +1,6 @@
 import AuthVerify from '@/app/ServerActions/auth/authVerify'
 const page = async() => {
-  const user=await AuthVerify();
+  await AuthVerify("ADMIN");
   return (
     <div>page</div>
   )

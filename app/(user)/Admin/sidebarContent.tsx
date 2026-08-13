@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   UserCheck,
   Users,
-  Layers3,
   Building2,
   BookOpen,
   Settings,
