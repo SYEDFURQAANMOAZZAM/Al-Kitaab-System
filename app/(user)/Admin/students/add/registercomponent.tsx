@@ -26,7 +26,7 @@ export default function AdminRegisterStudentForm({
       mode="create"
       role="STUDENT"
       action={registerStudent}
-      schema={SignupFormSchemaStudent}
+
       branches={branches}
     />
   );

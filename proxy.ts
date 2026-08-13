@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  verifyAccessToken,
+  verifyAuthToken,
 } from "@/lib/auth/tokens";
 import { authDebug } from "@/lib/auth/debug";
 
@@ -27,15 +27,23 @@ const ROUTE_ROLES = {
 
 type Role = (typeof ROUTE_ROLES)[keyof typeof ROUTE_ROLES];
 
-type AuthError =
-  | "unauthorized"
-  | "session-expired"
-  | "invalid-session";
-
 // ---------------------------------------------------------
 // PROXY
 // ---------------------------------------------------------
 
+/**
+ * Authentication middleware.
+ *
+ * Responsibilities:
+ * 1. Verify JWT from auth_token cookie
+ * 2. Basic role-based route screening
+ * 3. Guest-only route enforcement
+ *
+ * Does NOT:
+ * - Refresh tokens
+ * - Authorize sensitive operations (delegated to Server Actions)
+ * - Redirect Server Actions (they handle their own auth)
+ */
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -52,53 +60,30 @@ export async function proxy(request: NextRequest) {
   );
 
   // -------------------------------------------------------
-  // 2. Read authentication cookies
+  // 2. Read authentication cookie
   // -------------------------------------------------------
 
-  const accessToken =
-    request.cookies.get("access_token")?.value;
-
-  const refreshToken =
-    request.cookies.get("refresh_token")?.value;
+  const authToken =
+    request.cookies.get("auth_token")?.value;
 
   // -------------------------------------------------------
   // 3. Determine request type
   // -------------------------------------------------------
-  //
-  // A navigation can be a full browser document request or a Next.js
-  // React Server Component request made by <Link>. Both must be able
-  // to refresh an expired access token.
-  //
-  // API / server-action requests should receive 401 instead
-  // of being redirected to an HTML page.
-  //
-
-  const isDocumentRequest =
-    request.headers.get("sec-fetch-dest") === "document";
 
   const isServerActionRequest =
     request.method === "POST" &&
     request.headers.has("next-action");
 
+  // Server Actions handle their own authentication via requireRoleForAction()
   if (isServerActionRequest) {
     return NextResponse.next();
   }
 
-
-
-  const isRscNavigationRequest =
-    request.headers.has("rsc") &&
-    !isServerActionRequest;
-  const isPageNavigationRequest =
-    isDocumentRequest || isRscNavigationRequest;
-
   authDebug("proxy.request", {
     pathname,
-    protectedRoute: isProtectedRoute,
-    authRoute: isAuthRoute,
-    pageNavigation: isPageNavigationRequest,
-    hasAccessCookie: Boolean(accessToken),
-    hasRefreshCookie: Boolean(refreshToken),
+    isProtectedRoute,
+    isAuthRoute,
+    hasAuthToken: Boolean(authToken),
   });
 
   // -------------------------------------------------------
@@ -106,41 +91,19 @@ export async function proxy(request: NextRequest) {
   // -------------------------------------------------------
 
   if (isProtectedRoute) {
-    // -----------------------------------------------------
-    // No access token
-    // -----------------------------------------------------
-
-    if (!accessToken) {
-      // Access token missing but refresh token exists.
-      //
-      // Try to restore the session.
-      if (isPageNavigationRequest && refreshToken) {
-        authDebug("proxy.refresh-required", { pathname, reason: "missing-access" });
-        return redirectToRefresh(request);
-      }
-
-      // Browser navigation with no usable authentication.
-      if (isPageNavigationRequest) {
-        return redirectToLogin(
-          request,
-          "unauthorized"
-        );
-      }
-
-      // API/server action.
-      return unauthorizedResponse();
+    // No authentication token
+    if (!authToken) {
+      authDebug("proxy.unauthorized", { pathname, reason: "missing-auth-token" });
+      return redirectToLogin(request);
     }
 
-    // -----------------------------------------------------
-    // Verify access token
-    // -----------------------------------------------------
-
+    // Verify authentication token
     try {
       const { role } =
-        await verifyAccessToken(accessToken);
+        await verifyAuthToken(authToken);
 
       // ---------------------------------------------------
-      // Check role permission
+      // Basic role screening
       // ---------------------------------------------------
 
       const requiredRole =
@@ -151,7 +114,12 @@ export async function proxy(request: NextRequest) {
         role !== requiredRole
       ) {
         // User is authenticated but trying to access
-        // another role's section.
+        // another role's section. Redirect to their home.
+        authDebug("proxy.role-mismatch", {
+          pathname,
+          requiredRole,
+          userRole: role,
+        });
         return NextResponse.redirect(
           new URL(
             homeForRole(role),
@@ -161,49 +129,47 @@ export async function proxy(request: NextRequest) {
         );
       }
 
-      // Authentication + authorization successful.
+      // Authentication + basic authorization successful.
+      authDebug("proxy.allowed", { pathname, role });
       return NextResponse.next();
 
-    } catch {
+    } catch (error) {
       // ---------------------------------------------------
-      // Access token invalid / expired
+      // Token invalid or expired
       // ---------------------------------------------------
-      if (isPageNavigationRequest && refreshToken) {
-        authDebug("proxy.refresh-required", { pathname, reason: "invalid-access" });
-        return redirectToRefresh(request);
-      }
-      // Browser has no usable refresh session.
-      if (isPageNavigationRequest) {
-        return redirectToLogin(
-          request,
-          "session-expired"
-        );
-      }
-
-      // API/server action.
-      return unauthorizedResponse();
+      // There is NO refresh mechanism.
+      // Invalid/expired token means unauthenticated.
+      authDebug("proxy.token-invalid", {
+        pathname,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return redirectToLogin(request);
     }
   }
 
   // ---------------------------------------------------------
-  // AUTH ROUTES
+  // AUTH ROUTES (/login, /register)
   // ---------------------------------------------------------
   //
-  // /login
-  // /register
+  // These routes must remain guest-only.
+  // If authenticated, redirect to home.
   //
 
   if (isAuthRoute) {
     // -------------------------------------------------------
-    // Access token already valid
+    // Already authenticated
     // -------------------------------------------------------
 
-    if (accessToken) {
+    if (authToken) {
       try {
         const { role } =
-          await verifyAccessToken(accessToken);
+          await verifyAuthToken(authToken);
 
-        // Already logged in.
+        // Already logged in. Redirect to home.
+        authDebug("proxy.authenticated-user-on-auth-route", {
+          pathname,
+          role,
+        });
         return NextResponse.redirect(
           new URL(
             homeForRole(role),
@@ -213,17 +179,13 @@ export async function proxy(request: NextRequest) {
         );
 
       } catch {
-        // A refresh session can still prove this is an authenticated user.
+        // Token is invalid/expired. User is not authenticated.
+        // Allow access to auth route.
       }
     }
 
-    // Auth routes are guest-only. Recover the session before rendering them so
-    // an expired access token does not show an authenticated user a login form.
-    if (isPageNavigationRequest && refreshToken) {
-      authDebug("proxy.refresh-required", { pathname, reason: "guest-route" });
-      return redirectToRefresh(request);
-    }
-
+    // User is not authenticated. Allow access to auth route.
+    authDebug("proxy.guest-route-allowed", { pathname });
     return NextResponse.next();
   }
 
@@ -235,83 +197,14 @@ export async function proxy(request: NextRequest) {
 }
 
 // =========================================================
-// REFRESH REDIRECT
-// =========================================================
-
-function redirectToRefresh(
-  request: NextRequest,
-  redirectTo?: string
-) {
-  const refreshUrl = new URL(
-    "/api/auth/refresh",
-    request.url
-  );
-
-  const target =
-    redirectTo ??
-    `${request.nextUrl.pathname}${request.nextUrl.search}`;
-
-  // Only allow safe internal paths.
-  const safeTarget =
-    isSafeRelativePath(target)
-      ? target
-      : "/";
-
-  refreshUrl.searchParams.set(
-    "redirectTo",
-    safeTarget
-  );
-
-  /*
-   * IMPORTANT:
-   *
-   * 303 means the browser performs the next request
-   * as GET.
-   *
-   * Therefore:
-   *
-   * POST /api/auth/refresh → 405
-   *
-   * cannot happen because of this redirect.
-   */
-
-  return NextResponse.redirect(
-    refreshUrl,
-    303
-  );
-}
-
-// =========================================================
 // LOGIN REDIRECT
 // =========================================================
 
-function redirectToLogin(
-  request: NextRequest,
-  error: AuthError
-) {
-  const loginUrl = new URL(
-    "/login",
-    request.url
-  );
-
-  // Send only a safe error code.
-  //
-  // Never expose:
-  // JWT errors
-  // Prisma errors
-  // stack traces
-  // internal implementation details
-
-  loginUrl.searchParams.set(
-    "error",
-    error
-  );
+function redirectToLogin(request: NextRequest) {
+  const loginUrl = new URL("/login", request.url);
 
   const response =
-    NextResponse.redirect(
-      loginUrl,
-      303
-    );
+    NextResponse.redirect(loginUrl, 303);
 
   // Prevent caching of authentication redirects.
   response.headers.set(
@@ -365,40 +258,6 @@ function matchesRoute(
   return (
     pathname === route ||
     pathname.startsWith(`${route}/`)
-  );
-}
-
-// =========================================================
-// REDIRECT VALIDATION
-// =========================================================
-
-function isSafeRelativePath(
-  path: string | null
-): path is string {
-  return Boolean(
-    path &&
-      path.startsWith("/") &&
-      !path.startsWith("//") &&
-      !path.includes("\\") &&
-      !path.includes("://")
-  );
-}
-
-// =========================================================
-// API UNAUTHORIZED RESPONSE
-// =========================================================
-
-function unauthorizedResponse() {
-  return NextResponse.json(
-    {
-      error: "Unauthorized",
-    },
-    {
-      status: 401,
-      headers: {
-        "Cache-Control": "no-store",
-      },
-    }
   );
 }
 
