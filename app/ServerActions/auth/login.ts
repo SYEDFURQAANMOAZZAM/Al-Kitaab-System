@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 
 import { signAccessToken, signRefreshToken } from "@/lib/auth/tokens";
 import { hashRefreshToken } from "@/lib/auth/token-hash";
+import { normalizeEmail } from "@/lib/auth/email";
 import { prisma } from "@/lib/prisma";
 
 import { LoginFormSchema } from "./Validate";
@@ -30,7 +31,8 @@ export async function login(
     };
   }
 
-  const { email, password } = parsed.data;
+  const { password } = parsed.data;
+  const email = normalizeEmail(parsed.data.email);
 
   // -------------------------------------------------------
   // 2. Find user

@@ -6,6 +6,7 @@ import {
   InvalidRefreshSessionError,
   RefreshTokenAlreadyRotatedError,
 } from "@/lib/auth/refresh-session";
+import { authDebug } from "@/lib/auth/debug";
 
 export async function GET(request: NextRequest) {
   const refreshToken =
@@ -14,13 +15,12 @@ export async function GET(request: NextRequest) {
   const requestedRedirectTo =
     request.nextUrl.searchParams.get("redirectTo");
 
-  const redirectTo = isSafeRelativePath(
-    requestedRedirectTo
-  )
+  const redirectTo = isSafeRelativePath(requestedRedirectTo)
     ? requestedRedirectTo
-    : "/Admin";
+    : null;
 
   if (!refreshToken) {
+    authDebug("refresh.rejected", { reason: "missing-cookie" });
     return redirectToLogin(request);
   }
 
@@ -28,10 +28,21 @@ export async function GET(request: NextRequest) {
     const {
       accessToken,
       refreshToken: newRefreshToken,
+      role,
     } = await refreshSession(refreshToken);
 
+    const destination =
+      !redirectTo || isAuthRoute(redirectTo)
+        ? homeForRole(role)
+        : redirectTo;
+
+    authDebug("refresh.succeeded", {
+      destination,
+      fromAuthRoute: Boolean(redirectTo && isAuthRoute(redirectTo)),
+    });
+
     const response = NextResponse.redirect(
-      new URL(redirectTo, request.url),
+      new URL(destination, request.url),
       303
     );
 
@@ -52,6 +63,7 @@ export async function GET(request: NextRequest) {
       error instanceof
       RefreshTokenAlreadyRotatedError
     ) {
+      authDebug("refresh.concurrent-loser", { destination: redirectTo ?? "/" });
       /*
        * Another request already rotated this refresh
        * token. Do not attempt another rotation.
@@ -60,7 +72,7 @@ export async function GET(request: NextRequest) {
        * the replacement cookies.
        */
       const response = NextResponse.redirect(
-        new URL(redirectTo, request.url),
+        new URL(redirectTo ?? "/", request.url),
         303
       );
 
@@ -81,13 +93,36 @@ export async function GET(request: NextRequest) {
       error instanceof InvalidRefreshSessionError ||
       error instanceof ExpiredRefreshSessionError
     ) {
+      authDebug("refresh.rejected", { reason: "invalid-or-expired-session" });
       return redirectToLogin(request, true);
     }
 
     // A database or infrastructure failure is not proof that the browser's
-    // credentials are invalid. Do not turn a transient fault into logout.
+    // credentials are invalid. Do not clear cookies or redirect to login.
     console.error("Refresh failed unexpectedly", error);
-    return redirectToLogin(request, false);
+    authDebug("refresh.unavailable");
+    return NextResponse.json(
+      { error: "Authentication service temporarily unavailable" },
+      {
+        status: 503,
+        headers: { "Cache-Control": "no-store" },
+      }
+    );
+  }
+}
+
+function isAuthRoute(path: string) {
+  return path === "/login" || path === "/register";
+}
+
+function homeForRole(role: "ADMIN" | "TEACHER" | "STUDENT") {
+  switch (role) {
+    case "ADMIN":
+      return "/Admin";
+    case "TEACHER":
+      return "/Teacher";
+    case "STUDENT":
+      return "/Student";
   }
 }
 

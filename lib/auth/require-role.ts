@@ -6,6 +6,7 @@ import {
   refreshSession,
   RefreshTokenAlreadyRotatedError,
 } from "./refresh-session";
+import { verifyRefreshToken } from "./tokens";
 
 export type UserRole =
   | "ADMIN"
@@ -81,9 +82,11 @@ export async function requireRoleForAction(
       error instanceof
       RefreshTokenAlreadyRotatedError
     ) {
-      // The winning request owns the replacement cookie. Do not redirect this
-      // action to login or clear cookies; the client can retry after it lands.
-      throw error;
+      // A concurrent request won the single-use rotation. Do not expose an
+      // internal error or treat this as logout; send the browser to a route
+      // where the winning response's replacement cookies can be used.
+      const { role } = await verifyRefreshToken(refreshToken);
+      redirect(homeForRole(role));
     }
 
     redirect("/login");
