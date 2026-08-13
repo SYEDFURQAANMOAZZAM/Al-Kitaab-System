@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   verifyAccessToken,
 } from "@/lib/auth/tokens";
+import { authDebug } from "@/lib/auth/debug";
 
 // ---------------------------------------------------------
 // ROUTES
@@ -91,6 +92,15 @@ export async function proxy(request: NextRequest) {
   const isPageNavigationRequest =
     isDocumentRequest || isRscNavigationRequest;
 
+  authDebug("proxy.request", {
+    pathname,
+    protectedRoute: isProtectedRoute,
+    authRoute: isAuthRoute,
+    pageNavigation: isPageNavigationRequest,
+    hasAccessCookie: Boolean(accessToken),
+    hasRefreshCookie: Boolean(refreshToken),
+  });
+
   // -------------------------------------------------------
   // PROTECTED ROUTES
   // -------------------------------------------------------
@@ -105,6 +115,7 @@ export async function proxy(request: NextRequest) {
       //
       // Try to restore the session.
       if (isPageNavigationRequest && refreshToken) {
+        authDebug("proxy.refresh-required", { pathname, reason: "missing-access" });
         return redirectToRefresh(request);
       }
 
@@ -158,6 +169,7 @@ export async function proxy(request: NextRequest) {
       // Access token invalid / expired
       // ---------------------------------------------------
       if (isPageNavigationRequest && refreshToken) {
+        authDebug("proxy.refresh-required", { pathname, reason: "invalid-access" });
         return redirectToRefresh(request);
       }
       // Browser has no usable refresh session.
@@ -201,16 +213,16 @@ export async function proxy(request: NextRequest) {
         );
 
       } catch {
-        // An expired or invalid access token does not refresh from auth routes.
-        // Let /login and /register render without rotating a refresh token.
+        // A refresh session can still prove this is an authenticated user.
       }
     }
 
-    // -------------------------------------------------------
-    // Auth routes do not initiate refresh-token rotation.
-    //
-    // Let /login or /register render.
-    // -------------------------------------------------------
+    // Auth routes are guest-only. Recover the session before rendering them so
+    // an expired access token does not show an authenticated user a login form.
+    if (isPageNavigationRequest && refreshToken) {
+      authDebug("proxy.refresh-required", { pathname, reason: "guest-route" });
+      return redirectToRefresh(request);
+    }
 
     return NextResponse.next();
   }
@@ -243,7 +255,7 @@ function redirectToRefresh(
   const safeTarget =
     isSafeRelativePath(target)
       ? target
-      : "/Admin";
+      : "/";
 
   refreshUrl.searchParams.set(
     "redirectTo",

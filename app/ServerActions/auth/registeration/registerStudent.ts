@@ -6,6 +6,7 @@ import { Role } from "@/generated/prisma/enums";
 
 import { prisma } from "@/lib/prisma";
 import { requireRoleForAction } from "@/lib/auth/require-role";
+import { normalizeEmail } from "@/lib/auth/email";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -163,7 +164,7 @@ export async function registerStudent(
         await tx.user.create({
           data: {
             name: data.name,
-            email: data.email,
+            email: normalizeEmail(data.email),
             phone: data.phone,
             password: hashedPassword,
 
