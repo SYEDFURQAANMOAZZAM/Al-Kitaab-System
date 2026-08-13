@@ -1,70 +1,67 @@
 import { SignJWT, jwtVerify } from "jose";
-import { randomUUID } from "crypto";
 
 type UserRole = "ADMIN" | "TEACHER" | "STUDENT";
 
 const ISSUER = "alkitaab";
-const ACCESS_AUDIENCE = "alkitaab-access";
-const REFRESH_AUDIENCE = "alkitaab-refresh";
+const AUDIENCE = "alkitaab-app";
 
-function signingSecret(name: "JWT_ACCESS_SECRET" | "JWT_REFRESH_SECRET") {
-  const value = process.env[name];
+function signingSecret() {
+  const value = process.env.JWT_SECRET;
 
   if (!value) {
-    throw new Error(`${name} must be configured`);
+    throw new Error("JWT_SECRET must be configured");
   }
 
   return new TextEncoder().encode(value);
 }
 
-
-export async function signAccessToken(userId: string, role: UserRole) {
-  return new SignJWT({ userId, role, type: "access" })
+/**
+ * Sign a single authentication token.
+ *
+ * This token authenticates the user and contains their role for efficient
+ * route-level screening. However, the database remains the source of truth
+ * for authorization in Server Actions and sensitive operations.
+ *
+ * Expires in 30 minutes.
+ */
+export async function signAuthToken(userId: string, role: UserRole) {
+  return new SignJWT({ userId, role, type: "auth" })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuer(ISSUER)
-    .setAudience(ACCESS_AUDIENCE)
-    .setExpirationTime("15m")
+    .setAudience(AUDIENCE)
+    .setExpirationTime("24h")
     .setIssuedAt()
-    .sign(signingSecret("JWT_ACCESS_SECRET"));
+    .sign(signingSecret());
 }
 
-export async function signRefreshToken(userId: string, role: UserRole) {
-  return new SignJWT({ userId, role, type: "refresh" })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuer(ISSUER)
-    .setAudience(REFRESH_AUDIENCE)
-    .setExpirationTime("7d")
-    .setIssuedAt()
-    .setJti(randomUUID())
-    .sign(signingSecret("JWT_REFRESH_SECRET"));
-}
-
-export async function verifyAccessToken(token: string) {
-  const { payload } = await jwtVerify(token, signingSecret("JWT_ACCESS_SECRET"), {
+/**
+ * Verify an authentication token.
+ *
+ * Validates:
+ * - Signature with JWT_SECRET
+ * - Expected algorithm (HS256)
+ * - Issuer
+ * - Audience
+ * - Token type
+ * - Expiration
+ * - Base claims (userId, role, iat, exp)
+ *
+ * Returns the verified userId and role.
+ *
+ * Throws if token is invalid, expired, or tampered with.
+ */
+export async function verifyAuthToken(token: string) {
+  const { payload } = await jwtVerify(token, signingSecret(), {
     algorithms: ["HS256"],
     issuer: ISSUER,
-    audience: ACCESS_AUDIENCE,
+    audience: AUDIENCE,
   });
 
-  if (!hasBaseClaims(payload) || payload.type !== "access") {
-    throw new Error("Invalid access token");
+  if (!hasBaseClaims(payload) || payload.type !== "auth") {
+    throw new Error("Invalid authentication token");
   }
 
   return { userId: payload.userId, role: payload.role };
-}
-
-export async function verifyRefreshToken(token: string) {
-  const { payload } = await jwtVerify(token, signingSecret("JWT_REFRESH_SECRET"), {
-    algorithms: ["HS256"],
-    issuer: ISSUER,
-    audience: REFRESH_AUDIENCE,
-  });
-
-  if (!hasBaseClaims(payload) || payload.type !== "refresh" || typeof payload.jti !== "string") {
-    throw new Error("Invalid refresh token");
-  }
-
-  return { userId: payload.userId, role: payload.role, jti: payload.jti };
 }
 
 function isUserRole(value: unknown): value is UserRole {

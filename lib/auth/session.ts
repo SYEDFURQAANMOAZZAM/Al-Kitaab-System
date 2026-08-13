@@ -2,23 +2,33 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 
 import { prisma } from "../prisma";
-import { verifyAccessToken } from "./tokens";
+import { verifyAuthToken } from "./tokens";
 
-// Read-only authentication lookup.
-// This function does NOT refresh tokens or mutate cookies.
+/**
+ * Read-only authentication lookup.
+ *
+ * This function:
+ * - Does NOT refresh tokens
+ * - Does NOT mutate cookies
+ * - Does NOT redirect
+ * - Returns the current authenticated user or null
+ *
+ * Safe to call from Server Components, Server Actions,
+ * and other read-only contexts.
+ */
 export const getCurrentUser = cache(async () => {
   const cookieStore = await cookies();
 
-  const accessToken =
-    cookieStore.get("access_token")?.value;
+  const authToken =
+    cookieStore.get("auth_token")?.value;
 
-  if (!accessToken) {
+  if (!authToken) {
     return null;
   }
 
   try {
     const { userId } =
-      await verifyAccessToken(accessToken);
+      await verifyAuthToken(authToken);
 
     return await prisma.user.findUnique({
       where: {
