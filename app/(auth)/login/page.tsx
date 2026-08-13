@@ -2,7 +2,6 @@
 
 import { useActionState } from 'react'
 import { login } from '@/app/ServerActions/auth/login'
-import Link from 'next/link'
 import { BookOpen } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -13,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { PasswordInput } from '@/components/passwordInput'
 
 export default function Page() {
+ 
   const [state, action, pending] = useActionState(login, undefined)
 
   return (
@@ -98,13 +98,7 @@ export default function Page() {
 
             {/* Footer */}
             <div className="mt-8 text-center text-sm text-slate-600">
-              Don&apos;t have an account?{" "}
-              <Link
-                href="/register"
-                className="font-semibold text-emerald-600 hover:text-emerald-700"
-              >
-                Create one
-              </Link>
+              Need an account? Contact your administrator.
             </div>
 
           </CardContent>

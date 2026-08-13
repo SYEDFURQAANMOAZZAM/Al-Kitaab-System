@@ -1,20 +1,37 @@
-import { cookies } from 'next/headers'
-import { verifyAccessToken } from './tokens'
-import { cache } from 'react'
-import { prisma } from '../prisma'
+import { cache } from "react";
+import { cookies } from "next/headers";
 
-// `cache` deduplicates calls within one request
+import { prisma } from "../prisma";
+import { verifyAccessToken } from "./tokens";
+
+// Read-only authentication lookup.
+// This function does NOT refresh tokens or mutate cookies.
 export const getCurrentUser = cache(async () => {
-  const cookieStore=await cookies();
-  const token =cookieStore.get('access_token')?.value
-  if (!token) return null
-  try {
-    const { userId } = await verifyAccessToken(token)
-    return prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, email: true, name: true, role: true }
-    })
-  } catch {
-    return null
+  const cookieStore = await cookies();
+
+  const accessToken =
+    cookieStore.get("access_token")?.value;
+
+  if (!accessToken) {
+    return null;
   }
-})
+
+  try {
+    const { userId } =
+      await verifyAccessToken(accessToken);
+
+    return await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+      },
+    });
+  } catch {
+    return null;
+  }
+});

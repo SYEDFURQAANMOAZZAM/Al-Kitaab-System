@@ -92,6 +92,7 @@ model StudentEnrollment {
   batch      Batch      @relation(fields: [batchId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, batchId])
+  @@index([batchId])
 }
 
 model TeacherAssignment {
@@ -104,6 +105,7 @@ model TeacherAssignment {
   batch      Batch         @relation(fields: [batchId], references: [id], onDelete: Cascade)
 
   @@unique([teacherId, batchId])
+  @@index([batchId])
 }
 
 model Attendance {
@@ -119,6 +121,7 @@ model Attendance {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   @@unique([userId, date ,batchId])
+  @@index([batchId])
 }
 
 
@@ -135,6 +138,7 @@ model Progress {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   @@unique([studentId, date ,batchId])
+  @@index([batchId])
 }
 
 
@@ -146,6 +150,9 @@ model Session {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   expiresAt  DateTime
+  // Retain a hash-only tombstone after consumption so concurrent refreshes can
+  // be distinguished from unknown tokens until this JWT's original expiry.
+  rotatedAt  DateTime?
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

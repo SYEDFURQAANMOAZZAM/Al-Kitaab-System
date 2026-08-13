@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "db:init": "node node_modules/.pnpm/jiti@2.7.0/node_modules/jiti/lib/jiti-cli.mjs prisma/init-db.ts",
+    "db:attendance": "node node_modules/.pnpm/jiti@2.7.0/node_modules/jiti/lib/jiti-cli.mjs prisma/attendance.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

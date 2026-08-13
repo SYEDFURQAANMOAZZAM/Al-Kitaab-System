@@ -4,7 +4,7 @@ import SignupForm from "./registercomponent"
 import { Suspense } from 'react'
 
 export default async function Page() {
-  await AuthVerify()
+  await AuthVerify("ADMIN")
     const branches=await prisma.branch.findMany({
       include:{
         batches:true
@@ -17,3 +17,5 @@ export default async function Page() {
         </Suspense>
     )
 }
+
+

@@ -1,56 +1,47 @@
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
 import { Progress } from "@/components/ui/progress";
+import type { Prisma } from "@/generated/prisma/client";
 
 import {
   Building2,
-  Eye,
-  MoreVertical,
-  Pencil,
-  Trash2,
   Users,
 } from "lucide-react";
+import StudentActions from "./StudentActions";
+
+type StudentWithDetails = Prisma.StudentGetPayload<{
+  select: {
+    id: true;
+
+    user: {
+      select: {
+        name: true;
+        email: true;
+      };
+    };
+
+    enrollments: {
+      select: {
+        batch: {
+          select: {
+            id: true;
+            branch: {
+              select: {
+                name: true;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}>;
 
 type StudentTableProps = {
-  students: any[];
+  students: StudentWithDetails[];
   currentPage: number;
   pageSize: number;
 };
 
-function StudentActions() {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger className="rounded-md p-2 transition hover:bg-muted">
-        <MoreVertical className="h-5 w-5" />
-      </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem>
-          <Eye className="mr-2 h-4 w-4" />
-          View Profile
-        </DropdownMenuItem>
-
-        <DropdownMenuItem>
-          <Pencil className="mr-2 h-4 w-4" />
-          Edit Student
-        </DropdownMenuItem>
-
-        <DropdownMenuSeparator />
-
-        <DropdownMenuItem variant="destructive">
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete Student
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
 
 export default function StudentTable({
   students,
@@ -81,7 +72,7 @@ export default function StudentTable({
                 </th>
 
                 <th className="px-6 py-4 text-left font-semibold">
-                  Batch
+                  Batches
                 </th>
 
                 <th className="w-64 px-6 py-4 text-left font-semibold">
@@ -103,14 +94,23 @@ export default function StudentTable({
                 const enrollment =
                   student.enrollments?.[0];
 
+                const batchCount =
+                  student.enrollments.length;
+
                 return (
                   <tr
                     key={student.id}
                     className="border-b transition hover:bg-muted/30"
                   >
+                    {/* Number */}
+
                     <td className="px-6 py-5">
-                      {(currentPage - 1) * pageSize + index + 1}
+                      {(currentPage - 1) * pageSize +
+                        index +
+                        1}
                     </td>
+
+                    {/* Student */}
 
                     <td className="px-6 py-5">
                       <div>
@@ -124,6 +124,8 @@ export default function StudentTable({
                       </div>
                     </td>
 
+                    {/* Branch */}
+
                     <td className="px-6 py-5">
                       <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
                         <Building2 className="h-3.5 w-3.5" />
@@ -133,13 +135,17 @@ export default function StudentTable({
                       </div>
                     </td>
 
+                    {/* Number of Batches */}
+
                     <td className="px-6 py-5">
                       <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
                         <Users className="h-3.5 w-3.5" />
 
-                        {enrollment?.batch.name ?? "-"}
+                        {batchCount}
                       </div>
                     </td>
+
+                    {/* Attendance */}
 
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
@@ -154,6 +160,8 @@ export default function StudentTable({
                       </div>
                     </td>
 
+                    {/* Progress */}
+
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
                         <Progress
@@ -167,8 +175,10 @@ export default function StudentTable({
                       </div>
                     </td>
 
+                    {/* Actions */}
+
                     <td className="px-6 py-5 text-center">
-                      <StudentActions />
+                      <StudentActions studentId={student.id} />
                     </td>
                   </tr>
                 );
@@ -177,13 +187,18 @@ export default function StudentTable({
           </table>
         </div>
       </div>
-            {/* ===========================
+
+      {/* ===========================
           Mobile
       ============================ */}
 
       <div className="grid gap-4 md:hidden">
-        {students.map((student) => {
-          const enrollment = student.enrollments?.[0];
+        {students.map((student, index) => {
+          const enrollment =
+            student.enrollments?.[0];
+
+          const batchCount =
+            student.enrollments.length;
 
           return (
             <div
@@ -191,6 +206,7 @@ export default function StudentTable({
               className="rounded-xl border bg-white p-4 shadow-sm transition hover:shadow-md"
             >
               {/* Header */}
+
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
                   <h2 className="truncate text-base font-semibold">
@@ -202,11 +218,14 @@ export default function StudentTable({
                   </p>
                 </div>
 
-                <StudentActions />
+                <StudentActions studentId={student.id} />
               </div>
 
-              {/* Branch & Batch */}
+              {/* Branch & Batches */}
+
               <div className="mt-4 grid grid-cols-2 gap-3">
+                {/* Branch */}
+
                 <div className="rounded-lg border bg-slate-50 p-3">
                   <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                     <Building2 className="h-3.5 w-3.5" />
@@ -214,23 +233,27 @@ export default function StudentTable({
                   </div>
 
                   <p className="truncate text-sm font-semibold">
-                    {enrollment?.batch.branch.name ?? "-"}
+                    {enrollment?.batch.branch.name ??
+                      "-"}
                   </p>
                 </div>
+
+                {/* Number of Batches */}
 
                 <div className="rounded-lg border bg-emerald-50 p-3">
                   <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                     <Users className="h-3.5 w-3.5" />
-                    Batch
+                    Batches
                   </div>
 
-                  <p className="truncate text-sm font-semibold">
-                    {enrollment?.batch.name ?? "-"}
+                  <p className="text-sm font-semibold">
+                    {batchCount}
                   </p>
                 </div>
               </div>
 
               {/* Attendance */}
+
               <div className="mt-5">
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-sm font-medium">
@@ -249,6 +272,7 @@ export default function StudentTable({
               </div>
 
               {/* Progress */}
+
               <div className="mt-5">
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-sm font-medium">
@@ -265,6 +289,15 @@ export default function StudentTable({
                   className="h-2"
                 />
               </div>
+
+              {/* Number */}
+
+              <p className="mt-4 text-xs text-muted-foreground">
+                #
+                {(currentPage - 1) * pageSize +
+                  index +
+                  1}
+              </p>
             </div>
           );
         })}
