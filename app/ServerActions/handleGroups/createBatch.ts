@@ -11,7 +11,7 @@ const createBatch = async (
   _state: GroupActionState,
   formData: FormData
 ): Promise<GroupActionState> => {
-  await requireRoleForAction("ADMIN");
+  await requireRoleForAction(["ADMIN"]);
 
   const batchname = formData.get("batchname");
 

@@ -1,8 +1,7 @@
-
 import AuthVerify from "@/app/ServerActions/auth/authVerify";
 import { prisma } from "@/lib/prisma";
 
-import { updateStudent } from "@/app/ServerActions/updation/updateStudent";
+import { updateTeacher } from "@/app/ServerActions/updation/updateTeacher";
 
 
 import UserForm from "@/components/registerComponent";
@@ -21,8 +20,8 @@ const page = async ({ params }: PageProps) => {
 
   const { id } = await params;
 
-  const [student, branches] = await Promise.all([
-    prisma.student.findUnique({
+  const [teacher, branches] = await Promise.all([
+    prisma.teacher.findUnique({
       where: {
         id,
       },
@@ -39,7 +38,7 @@ const page = async ({ params }: PageProps) => {
           },
         },
 
-        enrollments: {
+        assignments: {
           select: {
             batch: {
               select: {
@@ -71,24 +70,24 @@ const page = async ({ params }: PageProps) => {
     }),
   ]);
 
-  if (!student) {
+  if (!teacher) {
     notFound();
   }
 
   /*
-   * Student's current branch.
+   * teacher's current branch.
    *
    * Assuming all selected batches belong to the same branch.
    */
   const branchId =
-    student.enrollments[0]?.batch.branchId ?? "";
+    teacher.assignments[0]?.batch.branchId ?? "";
 
   /*
    * Only send batch IDs to UserForm.
    */
   const batchIds =
-    student.enrollments.map(
-      (enrollment) => enrollment.batch.id
+    teacher.assignments.map(
+      (assignment) => assignment.batch.id
     );
 
   /*
@@ -96,24 +95,24 @@ const page = async ({ params }: PageProps) => {
    * what the form needs.
    */
   const user = {
-    id: student.id,
+    id: teacher.id,
 
-    name: student.user.name ?? "",
-    email: student.user.email ?? "",
-    phone: student.user.phone ?? "",
+    name: teacher.user.name ?? "",
+    email: teacher.user.email ?? "",
+    phone: teacher.user.phone ?? "",
 
     branchId,
 
     batch: batchIds,
 
-    role: "STUDENT" as const,
+    role: "TEACHER" as const,
   };
 
   return (
     <UserForm
       mode="edit"
-      role="STUDENT"
-      action={updateStudent.bind(null, user.id)}
+      role="TEACHER"
+      action={updateTeacher.bind(null, user.id)}
       branches={branches}
       user={user}
     />

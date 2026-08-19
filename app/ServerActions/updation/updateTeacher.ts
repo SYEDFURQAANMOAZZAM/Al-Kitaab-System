@@ -1,7 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { Prisma, Role } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { requireRoleForAction } from "@/lib/auth/require-role";
@@ -11,22 +11,19 @@ import { revalidatePath } from "next/cache";
 
 import {
   FormStateRegister,
-  CreateSchemaStudent,
-} from "../Validate";
+  EditSchemaTeacher,
+} from "../auth/Validate";
 
-export async function registerStudent(
+export async function updateTeacher(
+  teacherId: string,
   _state: FormStateRegister,
   formData: FormData
 ) {
-  /* =======================================================
-     AUTHORIZATION
-
-     ADMIN  -> can create students
-     TEACHER -> can create students
-  ======================================================= */
-
-  await requireRoleForAction(["ADMIN",
-    "TEACHER"]);
+  await requireRoleForAction([
+    "ADMIN",
+    "TEACHER"
+  ]);
+ 
 
   /* =======================================================
      PARSE BATCHES
@@ -35,8 +32,7 @@ export async function registerStudent(
   let batch: unknown;
 
   try {
-    const rawBatches =
-      formData.get("batch");
+    const rawBatches = formData.get("batch");
 
     batch = JSON.parse(
       typeof rawBatches === "string"
@@ -45,22 +41,18 @@ export async function registerStudent(
     );
   } catch {
     return {
-      message:
-        "Select at least one valid batch.",
+      message: "Select at least one valid batch.",
     };
   }
 
   /* =======================================================
      VALIDATE
-
-     IMPORTANT:
-     Role is NOT taken from formData.
   ======================================================= */
 
   const validatedFields =
-    CreateSchemaStudent.safeParse({
+    EditSchemaTeacher.safeParse({
       name: formData.get("name"),
-      email: formData.get("email"),
+      email: normalizeEmail(String(formData.get("email") ?? "")),
       phone: formData.get("phone"),
 
       password:
@@ -69,6 +61,7 @@ export async function registerStudent(
       confirmPassword:
         formData.get("confirmPassword"),
 
+     
 
       branchId:
         formData.get("branchId"),
@@ -96,10 +89,6 @@ export async function registerStudent(
 
   /* =======================================================
      VERIFY BRANCH + BATCHES
-
-     Prevents:
-
-     branch A + batch belonging to branch B
   ======================================================= */
 
   const [branch, batches] =
@@ -108,7 +97,6 @@ export async function registerStudent(
         where: {
           id: data.branchId,
         },
-
         select: {
           id: true,
         },
@@ -119,10 +107,8 @@ export async function registerStudent(
           id: {
             in: batchIds,
           },
-
           branchId: data.branchId,
         },
-
         select: {
           id: true,
         },
@@ -140,49 +126,75 @@ export async function registerStudent(
   }
 
   /* =======================================================
-     HASH PASSWORD
-  ======================================================= */
-
-  const hashedPassword =
-    await bcrypt.hash(
-      data.password,
-      10
-    );
-
-  /* =======================================================
-     CREATE STUDENT
+     UPDATE
   ======================================================= */
 
   try {
-    await prisma.$transaction(
-      async (tx) => {
-        await tx.user.create({
-          data: {
-            name: data.name,
-            email: normalizeEmail(data.email),
-            phone: data.phone,
-            password: hashedPassword,
-
-            /*
-             * SERVER-CONTROLLED ROLE
-             */
-            role: Role.STUDENT,
-
-            student: {
-              create: {
-                enrollments: {
-                  create: batchIds.map(
-                    (batchId) => ({
-                      batchId,
-                    })
-                  ),
-                },
-              },
-            },
+    await prisma.$transaction(async (tx) => {
+      const teacher =
+        await tx.teacher.findUnique({
+          where: {
+            id: teacherId,
+          },
+          select: {
+            userId: true,
           },
         });
+
+      if (!teacher) {
+        throw new Error(
+          "TEACHER_NOT_FOUND"
+        );
       }
-    );
+
+      /* -----------------------------------------------
+         Update User
+      ----------------------------------------------- */
+
+      const userData: Prisma.UserUpdateInput = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+      };
+
+      /*
+       * Only change password if a new password
+       * was actually supplied.
+       */
+      if (data.password) {
+        userData.password =
+          await bcrypt.hash(
+            data.password,
+            10
+          );
+      }
+
+      await tx.user.update({
+        where: {
+          id: teacher.userId,
+        },
+        data: userData,
+      });
+
+      /* -----------------------------------------------
+         Replace enrollments
+      ----------------------------------------------- */
+
+      await tx.teacherAssignment.deleteMany({
+        where: {
+          teacherId,
+        },
+      });
+
+      await tx.teacherAssignment.createMany({
+        data: batchIds.map(
+          (batchId) => ({
+            teacherId,
+            batchId,
+          })
+        ),
+      });
+    });
   } catch (error) {
     if (
       error instanceof
@@ -195,14 +207,24 @@ export async function registerStudent(
       };
     }
 
+    if (
+      error instanceof Error &&
+      error.message ===
+        "TEACHER_NOT_FOUND"
+    ) {
+      return {
+        message: "Teacher not found.",
+      };
+    }
+
     console.error(
-      "Unable to create student:",
+      "Unable to update Teacher:",
       error
     );
 
     return {
       message:
-        "Unable to create the student. Please try again.",
+        "Unable to update the teacher. Please try again.",
     };
   }
 
@@ -211,11 +233,15 @@ export async function registerStudent(
   ======================================================= */
 
   revalidatePath(
-    "/Admin/students/stats"
+    "/Admin/teachers/status"
   );
 
   revalidatePath(
     "/Admin/branches"
+  );
+
+  revalidatePath(
+    `/Admin/teachers/status/${teacherId}/edit`
   );
 
   /* =======================================================

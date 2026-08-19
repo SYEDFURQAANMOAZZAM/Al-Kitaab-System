@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useRouter } from "next/navigation";
 import {
   useActionState,
   useEffect,
@@ -19,12 +21,10 @@ import {
   Mail,
   Phone,
   GraduationCap,
-  ChevronDown,
   Check,
-  Search,
 } from "lucide-react";
-import {SignupFormSchemaStudent} from "@/app/ServerActions/auth/Validate";
-import type { z } from "zod";
+import {CreateSchemaStudent,CreateSchemaTeacher,EditSchemaTeacher, EditSchemaStudent} from "@/app/ServerActions/auth/Validate";
+
 
 import { PasswordInput } from "@/components/passwordInput";
 import MultiSelect from "@/components/MultiSelect";
@@ -49,10 +49,10 @@ import {
    TYPES
 ========================================================= */
 
-export type UserRole =
-  | "STUDENT"
-  | "TEACHER"
-  | "ADMIN";
+// export type UserRole =
+//   | "STUDENT"
+//   | "TEACHER"
+//   | "ADMIN";
 
 export type FormMode =
   | "create"
@@ -78,13 +78,14 @@ export type UserFormValues = {
   password: string;
   confirmPassword: string;
 
-  role: UserRole;
+  // role: UserRole;
 
   branchId: string;
   batch: string[];
 };
 
 export type UserFormState = {
+  success?: boolean;
   message?: string;
 
   errors?: Record<
@@ -94,9 +95,9 @@ export type UserFormState = {
 };
 
 type UserFormAction = (
-  prevState: UserFormState | undefined,
+  prevState: UserFormState,
   formData: FormData
-) => Promise<UserFormState | undefined>;
+) => Promise<UserFormState>;
 
 type UserFormUser = {
   id: string;
@@ -105,12 +106,12 @@ type UserFormUser = {
   phone: string;
   branchId: string;
   batch: string[];
-  role: "STUDENT";
+  role: "STUDENT" | "TEACHER";
 };
 
 type UserFormProps = {
   mode: "create" | "edit";
-  role: UserRole;
+  role: "TEACHER" | "STUDENT";
   action: UserFormAction;
   branches: Branch[];
   user?: UserFormUser;
@@ -129,13 +130,37 @@ export default function UserForm({
 }: UserFormProps) {
   const isEdit = mode === "edit";
 
+
+
   /* =======================================================
      SERVER ACTION
   ======================================================= */
 
-  const [state, formAction, pending] =
-    useActionState(action, undefined);
+  // const [state, formAction, pending] =
+  //   useActionState(action, undefined);
+const router = useRouter();
 
+const [state, formAction, pending] = useActionState(
+  action,
+  {}
+);
+
+useEffect(() => {
+  if (state?.success) {
+    router.replace("/Admin/students/stats");
+  }
+}, [state?.success, router]);
+
+
+const schema =
+  role === "STUDENT"
+    ? isEdit
+      ? EditSchemaStudent
+      : CreateSchemaStudent
+    : isEdit
+      ? EditSchemaTeacher
+      : CreateSchemaTeacher;
+    
   /* =======================================================
      FORM
   ======================================================= */
@@ -151,7 +176,7 @@ export default function UserForm({
       isValid,
     },
   } = useForm<UserFormValues>({
-    resolver: zodResolver(SignupFormSchemaStudent),
+    resolver: zodResolver(schema),
 
     mode: "onChange",
 
@@ -198,7 +223,7 @@ export default function UserForm({
 
       confirmPassword: "",
 
-      role,
+      // role,
 
       branchId:
         user.branchId ?? "",
@@ -293,9 +318,7 @@ export default function UserForm({
   const roleLabel =
     role === "STUDENT"
       ? "Student"
-      : role === "TEACHER"
-        ? "Teacher"
-        : "Admin";
+      : "Teacher";
 
   /* =======================================================
      TEXT
@@ -593,7 +616,7 @@ export default function UserForm({
               onValueChange={(value) => {
                 setValue(
                   "branchId",
-                  value,
+                  value as string,
                   {
                     shouldValidate: true,
                     shouldDirty: true,

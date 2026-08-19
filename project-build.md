@@ -14,7 +14,7 @@ The current, working feature set is centred on login/session management, role-ba
 | `app/(auth)/`                            | Public login route; `/register` safely redirects to login because self-registration is not enabled. |
 | `app/(user)/Admin`, `Teacher`, `Student` | Role-specific application areas. The route-group directory itself does not appear in URLs.          |
 | `app/ServerActions/auth/`                | Login, logout, registration, and simple session-user validation.                                    |
-| `app/ServerActions/creategroups/`        | Server actions to create branches and batches.                                                      |
+| `app/ServerActions/handleGroups/`        | Server actions to create branches and batches.                                                      |
 | `lib/auth/`                              | JWT signing/verification, refresh-token hashing, and current-user lookup.                           |
 | `proxy.ts`                               | Application-wide route protection and role routing.                                                 |
 | `prisma/schema.prisma`                   | PostgreSQL data model.                                                                              |
@@ -229,5 +229,5 @@ Available scripts are `dev`, `build`, `start`, `lint`, and `db:init`.
 - Refresh-token rotation endpoint: `app/api/auth/refresh/route.ts`
 - Server-side role guard: `lib/auth/require-role.ts`
 - Registration and validated student/enrollment transaction: `app/ServerActions/auth/register.tsx`, `app/ServerActions/auth/Validate.tsx`
-- Protected branch/batch actions: `app/ServerActions/creategroups/`
+- Protected branch/batch actions: `app/ServerActions/handleGroups/`
 - Database model and initialization: `prisma/schema.prisma`, `prisma/init-db.ts`

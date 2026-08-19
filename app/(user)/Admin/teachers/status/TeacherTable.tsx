@@ -1,19 +1,9 @@
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import TeacherActions from "./TeacherAction";
 
 import type { Prisma } from "@/generated/prisma/client";
 
 import {
   Building2,
-  Eye,
-  MoreVertical,
-  Pencil,
-  Trash2,
   Users,
 } from "lucide-react";
 
@@ -58,34 +48,7 @@ type TeacherTableProps = {
   pageSize: number;
 };
 
-function TeacherActions() {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger className="rounded-lg p-2 hover:bg-muted">
-        <MoreVertical className="h-4 w-4" />
-      </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem>
-          <Eye className="mr-2 h-4 w-4" />
-          View Profile
-        </DropdownMenuItem>
-
-        <DropdownMenuItem>
-          <Pencil className="mr-2 h-4 w-4" />
-          Edit Teacher
-        </DropdownMenuItem>
-
-        <DropdownMenuSeparator />
-
-        <DropdownMenuItem variant="destructive">
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete Teacher
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
 
 export default function TeacherTable({
   teachers,
@@ -226,7 +189,7 @@ export default function TeacherTable({
                     {/* Actions */}
 
                     <td className="px-6 py-5 text-center">
-                      <TeacherActions />
+                      <TeacherActions teacherId={teacher.id} teacherName={teacher.user.name}/>
                     </td>
                   </tr>
                 );
@@ -286,7 +249,7 @@ export default function TeacherTable({
                   </p>
                 </div>
 
-                <TeacherActions />
+                <TeacherActions teacherId={teacher.id} teacherName={teacher.user.name}/>
               </div>
 
               {/* Branches & Batches */}

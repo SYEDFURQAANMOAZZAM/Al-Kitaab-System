@@ -57,19 +57,19 @@ export async function requireRole(
  *   }
  */
 export async function requireRoleForAction(
-  ...allowedRoles: UserRole[]
+  allowedRoles: UserRole[],
 ) {
-  const user = await getCurrentUser();
+  const session = await getCurrentUser();
 
-  if (!user) {
-    redirect("/login");
+  if (!session) {
+    throw new Error("Unauthorized");
   }
 
-  if (!allowedRoles.includes(user.role)) {
-    redirect(homeForRole(user.role));
+  if (!allowedRoles.includes(session.role)) {
+    throw new Error("Forbidden");
   }
 
-  return user;
+  return session;
 }
 
 // ---------------------------------------------------------

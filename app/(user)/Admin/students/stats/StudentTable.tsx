@@ -178,7 +178,7 @@ export default function StudentTable({
                     {/* Actions */}
 
                     <td className="px-6 py-5 text-center">
-                      <StudentActions studentId={student.id} />
+                      <StudentActions studentId={student.id} studentName={student.user.name ?? "Unknown Student"}/>
                     </td>
                   </tr>
                 );
@@ -218,7 +218,7 @@ export default function StudentTable({
                   </p>
                 </div>
 
-                <StudentActions studentId={student.id} />
+                <StudentActions studentId={student.id} studentName={student.user.name ?? "Unknown Student"}/>
               </div>
 
               {/* Branch & Batches */}

@@ -34,13 +34,12 @@ model User {
   email      String        @unique
   phone      String?       @unique
   password   String
-  name       String?
+  name       String
   role       Role
   student    Student?
   teacher    Teacher?
 
   attendance Attendance[]
-  sessions   Session[]
 
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
@@ -49,7 +48,7 @@ model User {
 model Student {
   id          String               @id @default(cuid())
   userId      String               @unique
-  user        User                 @relation(fields: [userId], references: [id])
+  user        User                 @relation(fields: [userId], references: [id] ,onDelete:Cascade)
   progress    Progress[]
   enrollments StudentEnrollment[]
 }
@@ -57,7 +56,7 @@ model Student {
 model Teacher {
   id          String               @id @default(cuid())
   userId      String               @unique
-  user        User                 @relation(fields: [userId], references: [id])
+  user        User                 @relation(fields: [userId], references: [id],onDelete:Cascade)
 
   assignments TeacherAssignment[]
 }
@@ -74,9 +73,8 @@ model Batch {
   name        String 
 
   branchId    String
-  branch      Branch               @relation(fields: [branchId], references: [id])
-  attendances Attendance[]
-  progresses  Progress[]
+  branch      Branch               @relation(fields: [branchId], references: [id],onDelete:Cascade)
+  
   students    StudentEnrollment[]
   teachers    TeacherAssignment[]
   @@unique([branchId,name])
@@ -114,8 +112,8 @@ model Attendance {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   attended    Attend
   remarks     String? 
-  batchId     String    
-  batch       Batch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  batchId     String?   
+  batchname   String
 
   date        DateTime
   createdAt   DateTime  @default(now())
@@ -132,8 +130,8 @@ model Progress {
   studied     Studied 
   remarks     String?
   score       Int
-  batchId     String
-  batch       Batch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  batchId     String?
+  batchname   String
   date        DateTime
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -143,17 +141,4 @@ model Progress {
 
 
 
-model Session {
-  id         String   @id @default(cuid())
-  tokenHash  String   @unique
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  expiresAt  DateTime
-  // Retain a hash-only tombstone after consumption so concurrent refreshes can
-  // be distinguished from unknown tokens until this JWT's original expiry.
-  rotatedAt  DateTime?
-
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}

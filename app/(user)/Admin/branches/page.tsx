@@ -13,6 +13,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+import BranchAction from "./BranchAction";
+
+import BatchAction from "./BatchAction"
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +28,6 @@ import {
 import {
   Building2,
   MoreVertical,
-  Plus,
 } from "lucide-react";
 
 import BatchDetails from "./BatchDetails";
@@ -211,39 +214,7 @@ const Page = async () => {
                       BRANCH ACTIONS
                   ================================================= */}
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      className="
-                        absolute
-                        right-3
-                        top-1/2
-                        z-10
-                        -translate-y-1/2
-                        rounded-lg
-                        p-2
-                        text-muted-foreground
-                        transition
-                        hover:bg-slate-100
-                        hover:text-slate-900
-                        sm:right-4
-                      "
-                      aria-label={`Actions for ${branch.name}`}
-                    >
-                      <MoreVertical className="h-5 w-5" />
-                    </DropdownMenuTrigger>
-
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        Rename Branch
-                      </DropdownMenuItem>
-
-                      <DropdownMenuSeparator />
-
-                      <DropdownMenuItem variant="destructive">
-                        Delete Branch
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <BranchAction branchName={branch.name} branchId={branch.id} branchBatches={branch.batches.length} />
                 </div>
 
                 {/* =================================================
@@ -392,39 +363,7 @@ const Page = async () => {
                                   BATCH ACTIONS
                               ================================================= */}
 
-                              <DropdownMenu>
-                                <DropdownMenuTrigger
-                                  className="
-                                    absolute
-                                    right-3
-                                    top-1/2
-                                    z-20
-                                    -translate-y-1/2
-                                    rounded-lg
-                                    p-2
-                                    text-muted-foreground
-                                    transition
-                                    hover:bg-slate-100
-                                    hover:text-slate-900
-                                    sm:right-4
-                                  "
-                                  aria-label={`Actions for ${batch.name}`}
-                                >
-                                  <MoreVertical className="h-5 w-5" />
-                                </DropdownMenuTrigger>
-
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem>
-                                    Rename Batch
-                                  </DropdownMenuItem>
-
-                                  <DropdownMenuSeparator />
-
-                                  <DropdownMenuItem variant="destructive">
-                                    Delete Batch
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                              <BatchAction batchId={batch.id} batchName={batch.name} batchStudents={batch._count.students} batchTeachers={batch._count.teachers}/>
                             </div>
 
                             {/* =================================================

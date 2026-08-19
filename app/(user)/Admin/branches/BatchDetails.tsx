@@ -3,21 +3,23 @@
 import { useState, useTransition } from "react";
 import { getBatchMembers } from "@/app/ServerActions/getGroups/getBatchMembers";
 
+
+
 import {
   ChevronDown,
-  MoreVertical,
-  Plus,
 } from "lucide-react";
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+// import {
+//   DropdownMenu,
+//   DropdownMenuContent,
+//   DropdownMenuItem,
+//   DropdownMenuSeparator,
+//   DropdownMenuTrigger,
+// } from "@/components/ui/dropdown-menu";
 
 import { Progress } from "@/components/ui/progress";
+import AddMemberButton from "./batchMembersActions.tsx/AddMemberButton";
+import MemberActions from "./batchMembersActions.tsx/MemberActions";
 
 type StudentMember = {
   id: string;
@@ -43,66 +45,29 @@ type BatchDetailsProps = {
   teacherCount: number;
 };
 
-function MemberActions({
-  member,
-}: {
-  member: {
-    id: string;
-    name: string | null;
-  };
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        className="shrink-0 rounded-lg p-2 text-muted-foreground hover:bg-slate-100 hover:text-slate-900"
-        aria-label={`Actions for ${
-          member.name ?? "member"
-        }`}
-      >
-        <MoreVertical className="h-4 w-4" />
-      </DropdownMenuTrigger>
-
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem>
-          View Profile
-        </DropdownMenuItem>
-
-        <DropdownMenuItem>
-          Performance
-        </DropdownMenuItem>
-
-        <DropdownMenuSeparator />
-
-        <DropdownMenuItem variant="destructive">
-          Remove from Batch
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
 
 /* =========================================================
    Attendance
 ========================================================= */
 
-function AttendanceBar({
-  value,
-}: {
-  value: number;
-}) {
-  return (
-    <div className="flex min-w-0 items-center gap-2">
-      <Progress
-        value={value}
-        className="h-2 flex-1"
-      />
+// function AttendanceBar({
+//   value,
+// }: {
+//   value: number;
+// }) {
+//   return (
+//     <div className="flex min-w-0 items-center gap-2">
+//       <Progress
+//         value={value}
+//         className="h-2 flex-1"
+//       />
 
-      <span className="w-10 shrink-0 text-right text-xs font-semibold text-slate-700">
-        {value}%
-      </span>
-    </div>
-  );
-}
+//       <span className="w-10 shrink-0 text-right text-xs font-semibold text-slate-700">
+//         {value}%
+//       </span>
+//     </div>
+//   );
+// }
 
 /* =========================================================
    Student List
@@ -110,8 +75,12 @@ function AttendanceBar({
 
 function StudentList({
   students,
+  batchId,
+  onChanged,
 }: {
   students: StudentMember[];
+  batchId: string;
+  onChanged: () => void;
 }) {
   if (students.length === 0) {
     return (
@@ -134,21 +103,20 @@ function StudentList({
             sm:px-4 sm:py-3
           "
         >
-          {/* Student header */}
-
           <div className="flex items-center justify-between gap-3">
             <p className="min-w-0 truncate text-sm font-medium text-slate-800">
               {student.name ?? "Unnamed"}
             </p>
 
-            <MemberActions member={student} />
+            <MemberActions
+              member={student}
+              batchId={batchId}
+              role="STUDENT"
+              onChanged={onChanged}
+            />
           </div>
 
-          {/* Metrics */}
-
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {/* Attendance */}
-
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground">
@@ -165,8 +133,6 @@ function StudentList({
                 className="h-2"
               />
             </div>
-
-            {/* Progress */}
 
             <div>
               <div className="mb-1.5 flex items-center justify-between">
@@ -197,8 +163,12 @@ function StudentList({
 
 function TeacherList({
   teachers,
+  batchId,
+  onChanged,
 }: {
   teachers: TeacherMember[];
+  batchId: string;
+  onChanged: () => void;
 }) {
   if (teachers.length === 0) {
     return (
@@ -221,17 +191,18 @@ function TeacherList({
             sm:px-4 sm:py-3
           "
         >
-          {/* Header */}
-
           <div className="flex items-center justify-between gap-3">
             <p className="min-w-0 truncate text-sm font-medium text-slate-800">
               {teacher.name ?? "Unnamed"}
             </p>
 
-            <MemberActions member={teacher} />
+            <MemberActions
+              member={teacher}
+              batchId={batchId}
+              role="TEACHER"
+              onChanged={onChanged}
+            />
           </div>
-
-          {/* Attendance */}
 
           <div className="mt-3">
             <div className="mb-1.5 flex items-center justify-between">
@@ -267,14 +238,20 @@ function MemberSection({
   children,
   pending,
   loaded,
+  batchId,
+  role,
+  onMemberAdded,
 }: {
   title: string;
   count: number;
   open: boolean;
   onToggle: () => void;
   children: React.ReactNode;
+  role: "STUDENT" | "TEACHER";
+  batchId: string;
   pending: boolean;
   loaded: boolean;
+  onMemberAdded: () => void;
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -310,22 +287,7 @@ function MemberSection({
 
         {/* Add */}
 
-        <button
-          type="button"
-          className="
-            mr-3 flex shrink-0
-            items-center gap-1.5
-            rounded-lg border
-            px-3 py-1.5
-            text-xs font-medium
-            text-slate-700
-            hover:bg-slate-50
-            sm:text-sm
-          "
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Add
-        </button>
+        <AddMemberButton batchId={batchId} role={role} onAdded={onMemberAdded}/>
       </div>
 
       {open && (
@@ -365,7 +327,7 @@ export default function BatchDetails({
     useTransition();
 
   const loadMembers = () => {
-    if (members || pending) {
+    if (pending) {
       return;
     }
 
@@ -398,11 +360,16 @@ export default function BatchDetails({
         count={teacherCount}
         open={teachersOpen}
         onToggle={toggleTeachers}
+        batchId={batchId}
+        role="TEACHER"
         pending={pending}
         loaded={!!members}
+        onMemberAdded={loadMembers}
       >
         <TeacherList
           teachers={members?.teachers ?? []}
+          batchId={batchId}
+          onChanged={loadMembers}
         />
       </MemberSection>
 
@@ -415,11 +382,17 @@ export default function BatchDetails({
         count={studentCount}
         open={studentsOpen}
         onToggle={toggleStudents}
+        role="STUDENT"
+        batchId={batchId}
         pending={pending}
         loaded={!!members}
+        onMemberAdded={loadMembers}
       >
         <StudentList
           students={members?.students ?? []}
+          batchId={batchId}
+          onChanged={loadMembers}
+
         />
       </MemberSection>
     </div>

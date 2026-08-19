@@ -13,7 +13,7 @@ import { redirect } from "next/navigation";
 
 import {
   FormStateRegister,
-  SignupFormSchemaTeacher,
+  CreateSchemaTeacher,
 } from "../Validate";
 
 export async function registerTeacher(
@@ -21,7 +21,7 @@ export async function registerTeacher(
   formData: FormData
 ) {
   // Only ADMIN can create teachers
-  await requireRoleForAction("ADMIN");
+  await requireRoleForAction(["ADMIN"]);
 
   /* ---------------------------------------------
      Parse batches
@@ -48,7 +48,7 @@ export async function registerTeacher(
   --------------------------------------------- */
 
   const validatedFields =
-    SignupFormSchemaTeacher.safeParse({
+    CreateSchemaTeacher.safeParse({
       name: formData.get("name"),
       email: formData.get("email"),
       phone: formData.get("phone"),
@@ -58,7 +58,7 @@ export async function registerTeacher(
         formData.get("confirmPassword"),
 
       // Server-controlled
-      role: Role.TEACHER,
+    
 
       branchId: formData.get("branchId"),
       batch,
