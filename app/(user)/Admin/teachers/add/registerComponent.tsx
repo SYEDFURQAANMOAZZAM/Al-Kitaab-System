@@ -3,7 +3,6 @@
 import UserForm from "@/components/registerComponent";
 
 import { registerTeacher } from "@/app/ServerActions/auth/registeration/registerTeacher";
-import { SignupFormSchemaTeacher } from "@/app/ServerActions/auth/Validate";
 
 type Branch = {
   id: string;

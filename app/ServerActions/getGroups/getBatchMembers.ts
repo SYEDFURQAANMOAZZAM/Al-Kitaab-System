@@ -14,7 +14,7 @@ type StudentMember = Member & {
 };
 
 export async function getBatchMembers(batchId: string) {
-  await requireRoleForAction("ADMIN", "TEACHER");
+  await requireRoleForAction(["ADMIN", "TEACHER"]);
 
   /*
    * Get students and teachers belonging to this batch.

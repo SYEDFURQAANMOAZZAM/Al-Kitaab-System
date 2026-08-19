@@ -29,7 +29,7 @@ export async function signAuthToken(userId: string, role: UserRole) {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuer(ISSUER)
     .setAudience(AUDIENCE)
-    .setExpirationTime("24h")
+    .setExpirationTime("9h")
     .setIssuedAt()
     .sign(signingSecret());
 }

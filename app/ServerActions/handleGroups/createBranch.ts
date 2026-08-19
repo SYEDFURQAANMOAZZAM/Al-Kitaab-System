@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 export type GroupActionState = { error?: string; success?: string } | undefined;
 
 const createBranch = async (_state: GroupActionState, formData: FormData): Promise<GroupActionState> => {
-  await requireRoleForAction("ADMIN");
+  await requireRoleForAction(["ADMIN"]);
   const branchname = formData.get("branchname");
 
   if (typeof branchname !== "string" || !branchname.trim()) {

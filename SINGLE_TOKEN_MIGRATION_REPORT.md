@@ -95,7 +95,7 @@ Single-token model:
   httpOnly: true,        // JavaScript cannot access
   secure: production,    // HTTPS-only in production
   sameSite: "strict",    // Prevents CSRF
-  maxAge: 30 * 60,       // 30 minutes in seconds
+  maxAge: 9 * 60 * 60,       // 9 hrs in seconds
   path: "/"              // Application-wide
 }
 ```

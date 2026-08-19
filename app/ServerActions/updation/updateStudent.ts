@@ -2,29 +2,27 @@
 
 import bcrypt from "bcryptjs";
 import { Prisma } from "@/generated/prisma/client";
-import { Role } from "@/generated/prisma/enums";
 
 import { prisma } from "@/lib/prisma";
 import { requireRoleForAction } from "@/lib/auth/require-role";
 import { normalizeEmail } from "@/lib/auth/email";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 import {
   FormStateRegister,
-  SignupFormSchemaStudent,
-} from "../Validate";
+  EditSchemaStudent,
+} from "../auth/Validate";
 
 export async function updateStudent(
   studentId: string,
   _state: FormStateRegister,
   formData: FormData
 ) {
-  await requireRoleForAction(
+  await requireRoleForAction([
     "ADMIN",
     "TEACHER"
-  );
+  ]);
  
 
   /* =======================================================
@@ -52,7 +50,7 @@ export async function updateStudent(
   ======================================================= */
 
   const validatedFields =
-    SignupFormSchemaStudent.safeParse({
+    EditSchemaStudent.safeParse({
       name: formData.get("name"),
       email: formData.get("email"),
       phone: formData.get("phone"),
@@ -63,7 +61,7 @@ export async function updateStudent(
       confirmPassword:
         formData.get("confirmPassword"),
 
-      role: Role.STUDENT,
+
 
       branchId:
         formData.get("branchId"),
@@ -243,14 +241,12 @@ export async function updateStudent(
   );
 
   revalidatePath(
-    `/Admin/students/${studentId}/edit`
+    `/Admin/students/stats/${studentId}/edit`
   );
 
   /* =======================================================
      REDIRECT
   ======================================================= */
 
-  redirect(
-    "/Admin/students/stats"
-  );
+  return { success: true };
 }

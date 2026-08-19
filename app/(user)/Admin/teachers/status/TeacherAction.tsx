@@ -15,41 +15,41 @@ import {
   ChartNoAxesColumnIncreasing,
 } from "lucide-react";
 
-import { deleteStudent } from "@/app/ServerActions/deletion/deleteStudent";
+import { deleteTeacher } from "@/app/ServerActions/deletion/deleteTeacher";
 
-export default function StudentActions({
-  studentId,
-  studentName,
+export default function TeacherActions({
+  teacherId,
+  teacherName,
 }: {
-  studentId: string;
-  studentName: string;
+  teacherId: string;
+  teacherName: string;
 }) {
   const router = useRouter();
 
   const [deletePending, startDeleteTransition] = useTransition();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const handleDeleteStudent = () => {
+  const handleDeleteTeacher = () => {
     startDeleteTransition(async () => {
-      const result = await deleteStudent(studentId);
+      const result = await deleteTeacher(teacherId);
 
       if (!result.success) {
         window.alert(
-          result.error ?? "Failed to delete student."
+          result.error ?? "Failed to delete teacher."
         );
         return;
       }
 
       setDeleteDialogOpen(false);
 
-      router.push("/Admin/students/stats");
+      router.push("/Admin/teachers/status");
       router.refresh();
     });
   };
 
   return (
     <>
-      {/* Student actions menu */}
+      {/* Teacher actions menu */}
       <Menu.Root>
         <Menu.Trigger className="rounded-lg p-2 hover:bg-muted">
           <MoreVertical className="h-4 w-4" />
@@ -62,7 +62,7 @@ export default function StudentActions({
               <Menu.LinkItem
                 render={
                   <Link
-                    href={`/Admin/students/stats/${studentId}/profile`}
+                    href={`/Admin/teachers/status/${teacherId}/profile`}
                   />
                 }
                 className="flex cursor-pointer items-center rounded-sm px-2 py-2 text-sm hover:bg-muted"
@@ -74,7 +74,7 @@ export default function StudentActions({
               <Menu.LinkItem
                 render={
                   <Link
-                    href={`/Admin/students/stats/${studentId}/performance`}
+                    href={`/Admin/teachers/status/${teacherId}/performance`}
                   />
                 }
                 className="flex cursor-pointer items-center rounded-sm px-2 py-2 text-sm hover:bg-muted"
@@ -87,12 +87,12 @@ export default function StudentActions({
                 className="flex cursor-pointer items-center whitespace-nowrap rounded-sm px-2 py-2 text-sm hover:bg-muted"
                 onClick={() =>
                   router.push(
-                    `/Admin/students/stats/${studentId}/edit`
+                    `/Admin/teachers/status/${teacherId}/edit`
                   )
                 }
               >
                 <Pencil className="mr-2 h-4 w-4" />
-                Edit Student
+                Edit Teacher
               </Menu.Item>
 
               <Menu.Separator className="my-1 h-px bg-border" />
@@ -102,7 +102,7 @@ export default function StudentActions({
                 onClick={() => setDeleteDialogOpen(true)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete Student
+                Delete Teacher
               </Menu.Item>
 
             </Menu.Popup>
@@ -122,11 +122,11 @@ export default function StudentActions({
             <AlertDialog.Popup className="w-full max-w-md rounded-xl border bg-background p-6 shadow-xl">
 
               <AlertDialog.Title className="text-lg font-semibold">
-                Delete Student?
+                Delete Teacher?
               </AlertDialog.Title>
 
               <AlertDialog.Description className="mt-2 text-sm text-muted-foreground">
-                Are you sure you want to delete {studentName} from Maktab?
+                Are you sure you want to delete {teacherName} from Maktab?
                 This action cannot be undone.
               </AlertDialog.Description>
 
@@ -138,7 +138,7 @@ export default function StudentActions({
 
                 <p className="mt-1 text-sm text-muted-foreground">
                   Make sure you understand what will happen to
-                  this student&apos;s attendance, progress,
+                  this teacher&apos;s attendance, progress,
                   performance, and other records.
                 </p>
               </div>
@@ -154,12 +154,12 @@ export default function StudentActions({
                 <button
                   type="button"
                   disabled={deletePending}
-                  onClick={handleDeleteStudent}
+                  onClick={handleDeleteTeacher}
                   className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-white hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {deletePending
                     ? "Deleting..."
-                    : "Delete Student"}
+                    : "Delete Teacher"}
                 </button>
               </div>
 

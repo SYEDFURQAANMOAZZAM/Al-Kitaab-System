@@ -7,11 +7,16 @@ import {
   useRouter,
   useSearchParams,
 } from "next/navigation";
+import { useState } from "react";
 
 export default function StudentSearch() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+
+  const [search, setSearch] = useState(
+    params.get("search") ?? ""
+  );
 
   const handleSearch = useDebouncedCallback(
     (value: string) => {
@@ -25,7 +30,6 @@ export default function StudentSearch() {
         searchParams.delete("search");
       }
 
-      // Search always starts from page 1
       searchParams.delete("page");
 
       const queryString = searchParams.toString();
@@ -47,10 +51,13 @@ export default function StudentSearch() {
       />
 
       <input
-        defaultValue={params.get("search") ?? ""}
-        onChange={(e) =>
-          handleSearch(e.target.value)
-        }
+        value={search}
+        onChange={(e) => {
+          const value = e.target.value;
+
+          setSearch(value);
+          handleSearch(value);
+        }}
         placeholder="Search by name or email..."
         className="w-full rounded-lg border bg-background
         py-2 pl-10 pr-4 outline-none
