@@ -35,7 +35,7 @@ export default function StudentActions({
 
       if (!result.success) {
         window.alert(
-          result.error ?? "Failed to delete student."
+          result.error ?? "Failed to delete student..."
         );
         return;
       }
