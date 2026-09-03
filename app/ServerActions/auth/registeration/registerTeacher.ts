@@ -9,43 +9,120 @@ import { requireRoleForAction } from "@/lib/auth/require-role";
 import { normalizeEmail } from "@/lib/auth/email";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 import {
-  FormStateRegister,
+  FormStateTeacher,
   CreateSchemaTeacher,
 } from "../Validate";
 
-export async function registerTeacher(
-  _state: FormStateRegister,
-  formData: FormData
-) {
-  // Only ADMIN can create teachers
-  await requireRoleForAction(["ADMIN"]);
+/* =========================================================
+   PARSE JSON ARRAY
+========================================================= */
 
-  /* ---------------------------------------------
-     Parse batches
-  --------------------------------------------- */
+function parseJsonArray(
+  formData: FormData,
+  fieldName: string
+): string[] | null {
+  const raw = formData.get(fieldName);
 
-  let batch: unknown;
+  if (typeof raw !== "string") {
+    return null;
+  }
 
   try {
-    const rawBatches = formData.get("batch");
+    const parsed: unknown = JSON.parse(raw);
 
-    batch = JSON.parse(
-      typeof rawBatches === "string"
-        ? rawBatches
-        : "[]"
-    );
+    if (!Array.isArray(parsed)) {
+      return null;
+    }
+
+    if (
+      !parsed.every(
+        (value): value is string =>
+          typeof value === "string" &&
+          value.trim().length > 0
+      )
+    ) {
+      return null;
+    }
+
+    return [...new Set(parsed)];
   } catch {
+    return null;
+  }
+}
+
+/* =========================================================
+   REGISTER TEACHER
+========================================================= */
+
+export async function registerTeacher(
+  _state: FormStateTeacher,
+  formData: FormData
+): Promise<FormStateTeacher> {
+  await requireRoleForAction(["ADMIN"]);
+
+  /* =======================================================
+     PARSE BRANCHES
+  ======================================================= */
+
+  const branchIds = parseJsonArray(
+    formData,
+    "branchIds"
+  );
+
+  if (branchIds === null) {
     return {
-      message: "Select at least one valid batch.",
+      errors: {
+        branchIds: [
+          "Invalid branch selection.",
+        ],
+      },
     };
   }
 
-  /* ---------------------------------------------
-     Validate
-  --------------------------------------------- */
+  if (branchIds.length === 0) {
+    return {
+      errors: {
+        branchIds: [
+          "Select at least one branch.",
+        ],
+      },
+    };
+  }
+
+  /* =======================================================
+     PARSE BATCHES
+  ======================================================= */
+
+  const batchIds = parseJsonArray(
+    formData,
+    "batchIds"
+  );
+
+  if (batchIds === null) {
+    return {
+      errors: {
+        batchIds: [
+          "Invalid batch selection.",
+        ],
+      },
+    };
+  }
+
+  if (batchIds.length === 0) {
+    return {
+      errors: {
+        batchIds: [
+          "Select at least one batch.",
+        ],
+      },
+    };
+  }
+
+  /* =======================================================
+     VALIDATE
+  ======================================================= */
 
   const validatedFields =
     CreateSchemaTeacher.safeParse({
@@ -57,72 +134,119 @@ export async function registerTeacher(
       confirmPassword:
         formData.get("confirmPassword"),
 
-      // Server-controlled
-    
-
-      branchId: formData.get("branchId"),
-      batch,
+      branchIds,
+      batchIds,
     });
 
   if (!validatedFields.success) {
+    const fieldErrors =
+      validatedFields.error.flatten()
+        .fieldErrors;
+
     return {
-      errors:
-        validatedFields.error.flatten()
-          .fieldErrors,
+      errors: {
+        name: fieldErrors.name,
+
+        email:
+          fieldErrors.email?.[0],
+
+        phone:
+          fieldErrors.phone?.[0],
+
+        password:
+          fieldErrors.password,
+
+        confirmPassword:
+          fieldErrors.confirmPassword,
+
+        branchIds:
+          fieldErrors.branchIds,
+
+        batchIds:
+          fieldErrors.batchIds,
+      },
     };
   }
 
   const data = validatedFields.data;
 
-  /* ---------------------------------------------
-     Remove duplicate batch IDs
-  --------------------------------------------- */
+  /* =======================================================
+     REMOVE DUPLICATES
+  ======================================================= */
 
-  const batchIds = [
-    ...new Set(data.batch),
+  const uniqueBranchIds = [
+    ...new Set(data.branchIds),
   ];
 
-  /* ---------------------------------------------
-     Verify branch + batches
-  --------------------------------------------- */
+  const uniqueBatchIds = [
+    ...new Set(data.batchIds),
+  ];
 
-  const [branch, batches] =
-    await Promise.all([
-      prisma.branch.findUnique({
-        where: {
-          id: data.branchId,
-        },
-        select: {
-          id: true,
-        },
-      }),
+  /* =======================================================
+     VERIFY BRANCHES
+  ======================================================= */
 
-      prisma.batch.findMany({
-        where: {
-          id: {
-            in: batchIds,
-          },
-          branchId: data.branchId,
+  const branches =
+    await prisma.branch.findMany({
+      where: {
+        id: {
+          in: uniqueBranchIds,
         },
-        select: {
-          id: true,
-        },
-      }),
-    ]);
+      },
+      select: {
+        id: true,
+      },
+    });
 
   if (
-    !branch ||
-    batches.length !== batchIds.length
+    branches.length !==
+    uniqueBranchIds.length
   ) {
     return {
-      message:
-        "Every selected batch must belong to the selected branch.",
+      errors: {
+        branchIds: [
+          "One or more selected branches are invalid.",
+        ],
+      },
     };
   }
 
-  /* ---------------------------------------------
-     Hash password
-  --------------------------------------------- */
+  /* =======================================================
+     VERIFY BATCHES
+  ======================================================= */
+
+  const batches =
+    await prisma.batch.findMany({
+      where: {
+        id: {
+          in: uniqueBatchIds,
+        },
+        branchId: {
+          in: uniqueBranchIds,
+        },
+      },
+      select: {
+        id: true,
+        branchId: true,
+      },
+    });
+
+  if (
+    batches.length !==
+    uniqueBatchIds.length
+  ) {
+    return {
+      errors: {
+        batchIds: [
+          "One or more selected batches do not belong to the selected branches.",
+        ],
+      },
+    };
+  }
+
+  /* =======================================================
+     HASH PASSWORD
+  ======================================================= */
 
   const hashedPassword =
     await bcrypt.hash(
@@ -130,39 +254,45 @@ export async function registerTeacher(
       10
     );
 
-  /* ---------------------------------------------
-     Create teacher + assignments
-  --------------------------------------------- */
+  /* =======================================================
+     CREATE
+  ======================================================= */
 
   try {
     await prisma.$transaction(
       async (tx) => {
-        await tx.user.create({
-          data: {
-            name: data.name,
-            email: normalizeEmail(data.email),
-            phone: data.phone,
-            password: hashedPassword,
+        const user =
+          await tx.user.create({
+            data: {
+              name: data.name,
 
-            // Never trust role from client
-            role: Role.TEACHER,
-
-            teacher: {
-              create: {
-                assignments: {
-                  create: batchIds.map(
-                    (batchId) => ({
-                      batch: {
-                        connect: {
-                          id: batchId,
-                        },
-                      },
-                    })
+              email: normalizeEmail(
+                    data.email
                   ),
-                },
-              },
+
+              phone: data.phone,
+
+              password:
+                hashedPassword,
+
+              role: Role.TEACHER,
             },
-          },
+          });
+
+        const teacher =
+          await tx.teacher.create({
+            data: {
+              userId: user.id,
+            },
+          });
+
+        await tx.teacherAssignment.createMany({
+          data: uniqueBatchIds.map(
+            (batchId) => ({
+              teacherId: teacher.id,
+              batchId,
+            })
+          ),
         });
       }
     );
@@ -172,9 +302,34 @@ export async function registerTeacher(
         Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
+      const target =
+        Array.isArray(error.meta?.target)
+          ? error.meta.target.join(", ")
+          : String(
+              error.meta?.target ?? ""
+            );
+
+      if (target.includes("email")) {
+        return {
+          errors: {
+            email:
+              "This email address is already in use.",
+          },
+        };
+      }
+
+      if (target.includes("phone")) {
+        return {
+          errors: {
+            phone:
+              "This phone number is already in use.",
+          },
+        };
+      }
+
       return {
         message:
-          "Email or phone number already exists.",
+          "A teacher with the same information already exists.",
       };
     }
 
@@ -189,16 +344,15 @@ export async function registerTeacher(
     };
   }
 
-  /* ---------------------------------------------
-     Revalidate
-  --------------------------------------------- */
+  revalidatePath(
+    "/Admin/teachers/status"
+  );
 
-  revalidatePath("/Admin/teachers/status");
-  revalidatePath("/Admin/branches");
+  revalidatePath(
+    "/Admin/branches"
+  );
 
-  /* ---------------------------------------------
-     Redirect
-  --------------------------------------------- */
-
-  redirect("/Admin/teachers/status");
+  return {
+    success: true,
+  };
 }

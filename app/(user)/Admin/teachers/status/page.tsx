@@ -5,16 +5,14 @@ import TeacherSearch from "./TeacherSearch";
 import TeacherTable from "./TeacherTable";
 import TeacherPagination from "./TeacherPagination";
 
-import { Plus } from "lucide-react";
-import Link from "next/link";
-import { ButtonShadcn } from "@/components/button";
-
 interface Props {
   searchParams: Promise<{
     search?: string;
     page?: string;
   }>;
 }
+
+const PAGE_SIZE = 15;
 
 export default async function Page({
   searchParams,
@@ -31,36 +29,13 @@ export default async function Page({
     1
   );
 
-  const pageSize = 15;
+  const query = search.trim().toLowerCase();
 
-  const where = {
-    user: {
-      OR: [
-        {
-          name: {
-            contains: search,
-            mode: "insensitive" as const,
-          },
-        },
-        {
-          email: {
-            contains: search,
-            mode: "insensitive" as const,
-          },
-        },
-      ],
-    },
-  };
+  // =========================================================
+  // 1. GET ALL TEACHERS
+  // =========================================================
 
-  // Total teachers matching search
-  const totalTeachers = await prisma.teacher.count({
-    where,
-  });
-
-  // Only fetch teachers required for current page
   const teachers = await prisma.teacher.findMany({
-    where,
-
     select: {
       id: true,
 
@@ -94,67 +69,144 @@ export default async function Page({
         },
       },
     },
-
-    orderBy: {
-      user: {
-        name: "asc",
-      },
-    },
-
-    skip: (currentPage - 1) * pageSize,
-    take: pageSize,
   });
 
+  // =========================================================
+  // 2. CALCULATE ATTENDANCE FOR EVERY TEACHER
+  // =========================================================
+
+  const rankedTeachers = teachers
+    .map((teacher) => {
+      const attendance =
+        teacher.user.attendance;
+
+      const totalAttendance =
+        attendance.length;
+
+      const presentCount =
+        attendance.filter(
+          (record) =>
+            record.attended === "PRESENT"
+        ).length;
+
+      const attendancePercentage =
+        totalAttendance > 0
+          ? Math.round(
+              (presentCount /
+                totalAttendance) *
+                100
+            )
+          : 0;
+
+      return {
+        ...teacher,
+
+        attendancePercentage,
+      };
+    })
+
+    // =======================================================
+    // 3. GLOBAL RANKING
+    // =======================================================
+
+    .sort((a, b) => {
+      // Higher attendance = better rank
+      if (
+        b.attendancePercentage !==
+        a.attendancePercentage
+      ) {
+        return (
+          b.attendancePercentage -
+          a.attendancePercentage
+        );
+      }
+
+      // Tie breaker: teacher name
+      return (
+        (a.user.name ?? "").localeCompare(
+          b.user.name ?? ""
+        )
+      );
+    })
+
+    // =======================================================
+    // 4. ASSIGN GLOBAL RANK
+    // =======================================================
+
+    .map((teacher, index) => ({
+      ...teacher,
+      rank: index + 1,
+    }));
+
+  // =========================================================
+  // 5. SEARCH AFTER RANKING
+  // =========================================================
+
+  const filteredTeachers = query
+    ? rankedTeachers.filter((teacher) => {
+        const name =
+          teacher.user.name?.toLowerCase() ?? "";
+
+        const email =
+          teacher.user.email?.toLowerCase() ?? "";
+
+        return (
+          name.includes(query) ||
+          email.includes(query)
+        );
+      })
+    : rankedTeachers;
+
+  // =========================================================
+  // 6. PAGINATION AFTER SEARCH
+  // =========================================================
+
+  const totalTeachers =
+    filteredTeachers.length;
+
   const totalPages = Math.ceil(
-    totalTeachers / pageSize
+    totalTeachers / PAGE_SIZE
   );
+
+  const safePage =
+    totalPages > 0
+      ? Math.min(currentPage, totalPages)
+      : 1;
+
+  const startIndex =
+    (safePage - 1) * PAGE_SIZE;
+
+  const paginatedTeachers =
+    filteredTeachers.slice(
+      startIndex,
+      startIndex + PAGE_SIZE
+    );
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">
+          Teachers
+        </h1>
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-emerald-900">
-            Teachers
-          </h1>
-
-          <p className="text-muted-foreground">
-            Manage teachers and their assignments
-          </p>
-        </div>
-
-        <Link href="/Admin/teachers/add">
-          <ButtonShadcn className="bg-emerald-800 p-5 hover:bg-emerald-900">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Teacher
-          </ButtonShadcn>
-        </Link>
+        <p className="text-muted-foreground">
+          Manage teachers
+        </p>
       </div>
 
-      {/* Table Card */}
-
-      <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-        {/* Search */}
-
+      <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
         <div className="border-b p-5">
           <TeacherSearch />
         </div>
 
-        {/* Table */}
-
         <TeacherTable
-          teachers={teachers}
-          currentPage={currentPage}
-          pageSize={pageSize}
+          teachers={paginatedTeachers}
         />
-
-        {/* Pagination */}
 
         {totalPages > 1 && (
           <div className="border-t px-5 py-4">
             <TeacherPagination
-              currentPage={currentPage}
+              currentPage={safePage}
               totalPages={totalPages}
             />
           </div>

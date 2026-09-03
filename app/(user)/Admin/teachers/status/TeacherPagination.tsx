@@ -20,8 +20,9 @@ export default function TeacherPagination({
 
   function goToPage(page: number) {
     if (page < 1 || page > totalPages) return;
+    if (page === currentPage) return;
 
-    const search = new URLSearchParams(params);
+    const search = new URLSearchParams(params.toString());
 
     search.set("page", page.toString());
 
@@ -29,62 +30,59 @@ export default function TeacherPagination({
   }
 
   function getPages(): (number | "...")[] {
-  if (totalPages <= 7) {
-    return Array.from(
-      { length: totalPages },
-      (_, i) => i + 1
-    );
-  }
+    if (totalPages <= 7) {
+      return Array.from(
+        { length: totalPages },
+        (_, i) => i + 1
+      );
+    }
 
-  if (currentPage <= 4) {
+    if (currentPage <= 4) {
+      return [
+        1,
+        2,
+        3,
+        4,
+        5,
+        "...",
+        totalPages,
+      ];
+    }
+
+    if (currentPage >= totalPages - 3) {
+      return [
+        1,
+        "...",
+        totalPages - 4,
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
+      ];
+    }
+
     return [
       1,
-      2,
-      3,
-      4,
-      5,
+      "...",
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
       "...",
       totalPages,
     ];
   }
 
-  if (currentPage >= totalPages - 3) {
-    return [
-      1,
-      "...",
-      totalPages - 4,
-      totalPages - 3,
-      totalPages - 2,
-      totalPages - 1,
-      totalPages,
-    ];
-  }
-
-  return [
-    1,
-    "...",
-    currentPage - 1,
-    currentPage,
-    currentPage + 1,
-    "...",
-    totalPages,
-  ];
-}
   return (
     <div className="flex flex-wrap items-center justify-center gap-2">
-      {/* Previous */}
-
       <button
+        type="button"
         disabled={currentPage === 1}
-        onClick={() =>
-          goToPage(currentPage - 1)
-        }
+        onClick={() => goToPage(currentPage - 1)}
         className="rounded-md border p-2 disabled:cursor-not-allowed disabled:opacity-50"
+        aria-label="Previous page"
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
-
-      {/* Pages */}
 
       {getPages().map((page, index) =>
         page === "..." ? (
@@ -96,11 +94,17 @@ export default function TeacherPagination({
           </span>
         ) : (
           <button
+            type="button"
             key={page}
             onClick={() => goToPage(page)}
+            aria-current={
+              page === currentPage
+                ? "page"
+                : undefined
+            }
             className={`min-w-10 rounded-md border px-3 py-2 text-sm ${
               page === currentPage
-                ? "bg-emerald-600 text-white"
+                ? "bg-primary text-primary-foreground"
                 : "hover:bg-muted"
             }`}
           >
@@ -109,14 +113,12 @@ export default function TeacherPagination({
         )
       )}
 
-      {/* Next */}
-
       <button
+        type="button"
         disabled={currentPage === totalPages}
-        onClick={() =>
-          goToPage(currentPage + 1)
-        }
+        onClick={() => goToPage(currentPage + 1)}
         className="rounded-md border p-2 disabled:cursor-not-allowed disabled:opacity-50"
+        aria-label="Next page"
       >
         <ChevronRight className="h-4 w-4" />
       </button>

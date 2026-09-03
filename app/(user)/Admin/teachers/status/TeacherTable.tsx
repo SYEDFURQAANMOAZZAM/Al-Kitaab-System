@@ -15,12 +15,6 @@ type TeacherWithDetails = Prisma.TeacherGetPayload<{
       select: {
         name: true;
         email: true;
-
-        attendance: {
-          select: {
-            attended: true;
-          };
-        };
       };
     };
 
@@ -29,6 +23,7 @@ type TeacherWithDetails = Prisma.TeacherGetPayload<{
         batch: {
           select: {
             id: true;
+
             branch: {
               select: {
                 id: true;
@@ -42,26 +37,32 @@ type TeacherWithDetails = Prisma.TeacherGetPayload<{
   };
 }>;
 
-type TeacherTableProps = {
-  teachers: TeacherWithDetails[];
-  currentPage: number;
-  pageSize: number;
+type RankedTeacher = TeacherWithDetails & {
+  attendancePercentage: number;
+  rank: number;
 };
 
+interface TeacherTableProps {
+  teachers: RankedTeacher[];
+}
 
+function getAttendanceColor(percentage: number) {
+  if (percentage >= 90) return "bg-emerald-600";
+  if (percentage >= 75) return "bg-yellow-500";
+  if (percentage >= 50) return "bg-orange-500";
+  return "bg-red-500";
+}
 
 export default function TeacherTable({
   teachers,
-  currentPage,
-  pageSize,
 }: TeacherTableProps) {
   return (
     <>
-      {/* ===========================
+      {/* =====================================================
           Desktop & Tablet
-      ============================ */}
+      ===================================================== */}
 
-      <div className="hidden overflow-hidden rounded-xl border bg-white shadow-sm md:block">
+      <div className="hidden overflow-hidden rounded-xl border bg-card shadow-sm md:block">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-muted/50">
@@ -93,23 +94,7 @@ export default function TeacherTable({
             </thead>
 
             <tbody>
-              {teachers.map((teacher, index) => {
-                const attendance = teacher.user.attendance;
-
-                const totalAttendance = attendance.length;
-
-                const presentCount = attendance.filter(
-                  (record) =>
-                    record.attended === "PRESENT"
-                ).length;
-
-                const attendancePercentage =
-                  totalAttendance > 0
-                    ? Math.round(
-                        (presentCount / totalAttendance) * 100
-                      )
-                    : 0;
-
+              {teachers.map((teacher) => {
                 const batchCount =
                   teacher.assignments.length;
 
@@ -120,17 +105,20 @@ export default function TeacherTable({
                   )
                 ).size;
 
+                const attendanceColor =
+                  getAttendanceColor(
+                    teacher.attendancePercentage
+                  );
+
                 return (
                   <tr
                     key={teacher.id}
                     className="border-b transition hover:bg-muted/30"
                   >
-                    {/* Number */}
+                    {/* Rank */}
 
-                    <td className="px-6 py-5">
-                      {(currentPage - 1) * pageSize +
-                        index +
-                        1}
+                    <td className="px-6 py-5 font-semibold">
+                      {teacher.rank}
                     </td>
 
                     {/* Teacher */}
@@ -153,15 +141,15 @@ export default function TeacherTable({
                       <div className="flex items-center gap-3">
                         <div className="h-2 w-28 overflow-hidden rounded-full bg-muted">
                           <div
-                            className="h-full rounded-full bg-emerald-600"
+                            className={`h-full rounded-full ${attendanceColor}`}
                             style={{
-                              width: `${attendancePercentage}%`,
+                              width: `${teacher.attendancePercentage}%`,
                             }}
                           />
                         </div>
 
                         <span className="w-10 text-sm font-medium">
-                          {attendancePercentage}%
+                          {teacher.attendancePercentage}%
                         </span>
                       </div>
                     </td>
@@ -169,7 +157,7 @@ export default function TeacherTable({
                     {/* Branches */}
 
                     <td className="px-6 py-5">
-                      <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                      <div className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
                         <Building2 className="h-3.5 w-3.5" />
 
                         {branchCount}
@@ -189,7 +177,10 @@ export default function TeacherTable({
                     {/* Actions */}
 
                     <td className="px-6 py-5 text-center">
-                      <TeacherActions teacherId={teacher.id} teacherName={teacher.user.name}/>
+                      <TeacherActions
+                        teacherId={teacher.id}
+                        teacherName={teacher.user.name}
+                      />
                     </td>
                   </tr>
                 );
@@ -199,28 +190,12 @@ export default function TeacherTable({
         </div>
       </div>
 
-      {/* ===========================
+      {/* =====================================================
           Mobile
-      ============================ */}
+      ===================================================== */}
 
       <div className="grid gap-4 md:hidden">
-        {teachers.map((teacher, index) => {
-          const attendance = teacher.user.attendance;
-
-          const totalAttendance = attendance.length;
-
-          const presentCount = attendance.filter(
-            (record) =>
-              record.attended === "PRESENT"
-          ).length;
-
-          const attendancePercentage =
-            totalAttendance > 0
-              ? Math.round(
-                  (presentCount / totalAttendance) * 100
-                )
-              : 0;
-
+        {teachers.map((teacher) => {
           const batchCount =
             teacher.assignments.length;
 
@@ -231,34 +206,47 @@ export default function TeacherTable({
             )
           ).size;
 
+          const attendanceColor =
+            getAttendanceColor(
+              teacher.attendancePercentage
+            );
+
           return (
             <div
               key={teacher.id}
-              className="rounded-xl border bg-white p-4 shadow-sm transition hover:shadow-md"
+              className="rounded-xl border bg-card p-4 shadow-sm transition hover:shadow-md"
             >
               {/* Header */}
 
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
-                  <h2 className="truncate text-base font-semibold">
-                    {teacher.user.name ?? "-"}
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      #{teacher.rank}
+                    </span>
+
+                    <h2 className="truncate text-base font-semibold">
+                      {teacher.user.name ?? "-"}
+                    </h2>
+                  </div>
 
                   <p className="mt-1 break-all text-xs text-muted-foreground">
                     {teacher.user.email}
                   </p>
                 </div>
 
-                <TeacherActions teacherId={teacher.id} teacherName={teacher.user.name}/>
+                <TeacherActions
+                  teacherId={teacher.id}
+                  teacherName={teacher.user.name}
+                />
               </div>
 
               {/* Branches & Batches */}
 
               <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="rounded-lg border bg-slate-50 p-3">
+                <div className="rounded-lg border bg-muted p-3">
                   <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                     <Building2 className="h-3.5 w-3.5" />
-
                     Branches
                   </div>
 
@@ -267,10 +255,9 @@ export default function TeacherTable({
                   </p>
                 </div>
 
-                <div className="rounded-lg border bg-emerald-50 p-3">
+                <div className="rounded-lg border bg-accent p-3">
                   <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                     <Users className="h-3.5 w-3.5" />
-
                     Batches
                   </div>
 
@@ -289,25 +276,19 @@ export default function TeacherTable({
                   </span>
 
                   <span className="text-sm font-semibold">
-                    {attendancePercentage}%
+                    {teacher.attendancePercentage}%
                   </span>
                 </div>
 
                 <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-emerald-600"
+                    className={`h-full rounded-full ${attendanceColor}`}
                     style={{
-                      width: `${attendancePercentage}%`,
+                      width: `${teacher.attendancePercentage}%`,
                     }}
                   />
                 </div>
               </div>
-
-              {/* Number */}
-
-              <p className="mt-4 text-xs text-muted-foreground">
-                #{(currentPage - 1) * pageSize + index + 1}
-              </p>
             </div>
           );
         })}
@@ -316,7 +297,7 @@ export default function TeacherTable({
       {/* Empty State */}
 
       {teachers.length === 0 && (
-        <div className="rounded-xl border bg-white py-20 text-center shadow-sm">
+        <div className="rounded-xl border bg-card py-20 text-center shadow-sm">
           <p className="text-lg font-semibold">
             No teachers found
           </p>

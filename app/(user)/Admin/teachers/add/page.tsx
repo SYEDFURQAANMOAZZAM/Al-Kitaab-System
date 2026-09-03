@@ -1,6 +1,6 @@
 import AuthVerify from '@/app/ServerActions/auth/authVerify'
 import { prisma } from "@/lib/prisma"
-import SignupForm from "./registerComponent"
+import SignupForm from "./registerTeacher"
 import { Suspense } from 'react'
 
 export default async function Page() {

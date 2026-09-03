@@ -1,5 +1,3 @@
-
-
 import AuthVerify from '@/app/ServerActions/auth/authVerify'
 
 
@@ -69,7 +67,7 @@ export default async function DashboardPage() {
   await AuthVerify("ADMIN");
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-emerald-700">Dashboard</h1>
+      <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
 
       {/* Stat cards grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -116,7 +114,7 @@ export default async function DashboardPage() {
         <Card className="flex flex-col p-0 shadow-none">
           <div className="flex items-center gap-2.5 border-b px-5 py-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-              <Sparkles className="h-4 w-4 text-emerald-600" strokeWidth={1.75} />
+              <Sparkles className="h-4 w-4 text-primary" strokeWidth={1.75} />
             </div>
             <div>
               <p className="font-semibold leading-tight">Madrasa AI Assistant</p>
@@ -126,7 +124,7 @@ export default async function DashboardPage() {
 
           <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-              <Sparkles className="h-6 w-6 text-emerald-600" strokeWidth={1.75} />
+              <Sparkles className="h-6 w-6 text-primary" strokeWidth={1.75} />
             </div>
             <p className="font-semibold">Ask me anything about your madrasa</p>
             <p className="max-w-xs text-sm text-muted-foreground">

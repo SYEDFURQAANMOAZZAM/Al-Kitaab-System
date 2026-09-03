@@ -90,14 +90,14 @@ export default function MultiSelect({
         className="
           flex min-h-14 w-full cursor-pointer
           flex-wrap items-center gap-2
-          rounded-xl border border-slate-300
-          bg-white px-4 py-2
+          rounded-xl border border-input
+          bg-background px-4 py-2
           text-left shadow-sm
           transition
-          hover:border-emerald-500
+          hover:border-ring
           focus:outline-none
           focus:ring-2
-          focus:ring-emerald-500
+          focus:ring-ring
         "
       >
         {/* =================================================
@@ -105,7 +105,7 @@ export default function MultiSelect({
         ================================================= */}
 
         {value.length === 0 ? (
-          <span className="text-slate-400">
+          <span className="text-muted-foreground">
             {placeholder}
           </span>
         ) : (
@@ -120,10 +120,10 @@ export default function MultiSelect({
                 className="
                   flex items-center gap-1
                   rounded-full
-                  bg-emerald-100
+                  bg-primary/15
                   px-3 py-1
                   text-sm font-medium
-                  text-emerald-700
+                  text-primary
                 "
               >
                 {option?.label ?? item}
@@ -140,7 +140,7 @@ export default function MultiSelect({
                   className="
                     rounded-full
                     p-0.5
-                    hover:bg-emerald-200
+                    hover:bg-primary/25
                   "
                 >
                   <X size={14} />
@@ -158,7 +158,7 @@ export default function MultiSelect({
           size={18}
           className={`
             ml-auto shrink-0
-            text-slate-500
+            text-muted-foreground
             transition-transform
             duration-200
             ${open ? "rotate-180" : ""}
@@ -179,8 +179,8 @@ export default function MultiSelect({
           origin-top
           overflow-hidden
           rounded-b-xl
-          border border-slate-300
-          bg-white
+          border border-input
+          bg-popover
           shadow-xl
           transition-all duration-200
           ${
@@ -194,7 +194,7 @@ export default function MultiSelect({
             SEARCH
         ================================================= */}
 
-        <div className="sticky top-0 z-10 border-b border-slate-100 bg-white p-2">
+        <div className="sticky top-0 z-10 border-b border-border bg-popover p-2">
           <input
             type="text"
             placeholder="Search..."
@@ -207,12 +207,12 @@ export default function MultiSelect({
             }
             className="
               w-full rounded-lg
-              border border-slate-200
+              border border-input
               px-3 py-2
               text-sm
               outline-none
               focus:ring-2
-              focus:ring-emerald-500
+              focus:ring-ring
             "
           />
         </div>
@@ -232,7 +232,7 @@ export default function MultiSelect({
           "
         >
           {filtered.length === 0 ? (
-            <p className="px-4 py-6 text-center text-sm text-slate-500">
+            <p className="px-4 py-6 text-center text-sm text-muted-foreground">
               No batches found.
             </p>
           ) : (
@@ -256,10 +256,10 @@ export default function MultiSelect({
                     px-4 py-3
                     text-left
                     transition
-                    hover:bg-emerald-50
+                    hover:bg-accent
                     ${
                       selected
-                        ? "bg-emerald-50 text-emerald-700"
+                        ? "bg-accent text-accent-foreground"
                         : ""
                     }
                   `}
@@ -269,7 +269,7 @@ export default function MultiSelect({
                   {selected && (
                     <Check
                       size={18}
-                      className="text-emerald-600"
+                      className="text-primary"
                     />
                   )}
                 </button>
