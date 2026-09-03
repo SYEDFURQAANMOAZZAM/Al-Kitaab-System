@@ -155,7 +155,7 @@ export default function TeacherActions({
                   type="button"
                   disabled={deletePending}
                   onClick={handleDeleteTeacher}
-                  className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-white hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-foreground hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {deletePending
                     ? "Deleting..."

@@ -1,17 +1,10 @@
 "use client";
 
-import UserForm from "@/components/registerComponent";
+import UserForm, {
+  type Branch,
+} from "./registerComponentStudent";
 
-import { registerStudent } from "@/app/ServerActions/auth/registeration/registerStudent";
-
-type Branch = {
-  id: string;
-  name: string;
-  batches: {
-    id: string;
-    name: string;
-  }[];
-};
+import { createStudent } from "@/app/ServerActions/auth/registeration/registerStudent";
 
 type AdminRegisterStudentFormProps = {
   branches: Branch[];
@@ -24,8 +17,7 @@ export default function AdminRegisterStudentForm({
     <UserForm
       mode="create"
       role="STUDENT"
-      action={registerStudent}
-
+      action={createStudent}
       branches={branches}
     />
   );

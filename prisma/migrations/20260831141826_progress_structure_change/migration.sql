@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Progress" ALTER COLUMN "studied" DROP NOT NULL,
+ALTER COLUMN "score" DROP NOT NULL;

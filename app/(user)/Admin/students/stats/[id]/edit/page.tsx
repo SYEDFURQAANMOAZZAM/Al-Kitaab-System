@@ -1,13 +1,10 @@
+import { notFound } from "next/navigation";
 
-import AuthVerify from "@/app/ServerActions/auth/authVerify";
 import { prisma } from "@/lib/prisma";
-
+import { getBranchesWithBatches } from "@/app/ServerActions/getGroups/getBranchesAndBatchesforRegister";
 import { updateStudent } from "@/app/ServerActions/updation/updateStudent";
 
-
-import UserForm from "@/components/registerComponent";
-
-import { notFound } from "next/navigation";
+import UserForm from "./registerComponentStudent";
 
 type PageProps = {
   params: Promise<{
@@ -15,10 +12,9 @@ type PageProps = {
   }>;
 };
 
-const page = async ({ params }: PageProps) => {
-  await AuthVerify("ADMIN");
-  
-
+export default async function Page({
+  params,
+}: PageProps) {
   const { id } = await params;
 
   const [student, branches] = await Promise.all([
@@ -26,98 +22,63 @@ const page = async ({ params }: PageProps) => {
       where: {
         id,
       },
-
-      select: {
-        id: true,
-
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-          },
-        },
+      include: {
+        user: true,
 
         enrollments: {
           select: {
-            batch: {
-              select: {
-                id: true,
-                branchId: true,
-              },
-            },
+            batchId: true,
           },
         },
-      },
-    }),
 
-    prisma.branch.findMany({
-      select: {
-        id: true,
-        name: true,
-
-        batches: {
+        studentPatterns: {
           select: {
-            id: true,
-            name: true,
+            patternId: true,
           },
         },
       },
-
-      orderBy: {
-        name: "asc",
-      },
     }),
+
+    getBranchesWithBatches(),
   ]);
 
-  if (!student) {
+  if (!student || student.user.role !== "STUDENT") {
+    console.log("Student not found:", id);
     notFound();
   }
 
-  /*
-   * Student's current branch.
-   *
-   * Assuming all selected batches belong to the same branch.
-   */
-  const branchId =
-    student.enrollments[0]?.batch.branchId ?? "";
-
-  /*
-   * Only send batch IDs to UserForm.
-   */
-  const batchIds =
-    student.enrollments.map(
-      (enrollment) => enrollment.batch.id
-    );
-
-  /*
-   * Shape the object exactly according to
-   * what the form needs.
-   */
-  const user = {
-    id: student.id,
-
-    name: student.user.name ?? "",
-    email: student.user.email ?? "",
-    phone: student.user.phone ?? "",
-
-    branchId,
-
-    batch: batchIds,
-
-    role: "STUDENT" as const,
-  };
-
   return (
-    <UserForm
-      mode="edit"
-      role="STUDENT"
-      action={updateStudent.bind(null, user.id)}
-      branches={branches}
-      user={user}
-    />
-  );
-};
+    <div className="mx-auto w-full max-w-6xl px-4 py-10">
+      <UserForm
+        mode="edit"
+        role="STUDENT"
+        action={updateStudent.bind(
+          null,
+          student.user.id
+        )}
+        branches={branches}
+        user={{
+          id: student.user.id,
 
-export default page;
+          name: student.user.name,
+          email: student.user.email,
+          phone: student.user.phone,
+          phone2: student.user.phone2,
+
+          fatherName: student.fatherName,
+          address: student.Adress,
+
+          batchIds: student.enrollments.map(
+            (enrollment) => enrollment.batchId
+          ),
+
+          patternIds: student.studentPatterns.map(
+            (pattern) => pattern.patternId
+          ),
+
+          role: "STUDENT",
+        }}
+      />
+    </div>
+  );
+}

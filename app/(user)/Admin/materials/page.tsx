@@ -3,9 +3,9 @@ import {
   Download,
   FileText,
   MoreVertical,
-  Plus,
   Search,
 } from "lucide-react";
+import MaterialUploadDialog from "./UploadBtn";
 
 const materials = [
   {
@@ -54,7 +54,7 @@ const page = async () => {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-emerald-900">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Materials
           </h1>
 
@@ -63,17 +63,11 @@ const page = async () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          className="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
-        >
-          <Plus className="size-4" />
-          Upload New
-        </button>
+        <MaterialUploadDialog />
       </div>
 
       {/* Materials container */}
-      <section className="mt-7 overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
+      <section className="mt-7 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         {/* Search */}
         <div className="border-b border-border p-5">
           <div className="relative w-full max-w-[320px]">
@@ -82,7 +76,7 @@ const page = async () => {
             <input
               type="search"
               placeholder="Search materials..."
-              className="h-11 w-full rounded-lg border border-border bg-white pl-10 pr-4 text-sm outline-none transition placeholder:text-muted-foreground focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10"
+              className="h-11 w-full rounded-lg border border-input bg-background pl-10 pr-4 text-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/10"
             />
           </div>
         </div>
@@ -149,8 +143,8 @@ const page = async () => {
                   {/* Material */}
                   <td className="px-5 py-5">
                     <div className="flex items-center gap-3">
-                      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-100">
-                        <FileText className="size-[18px] text-slate-600" />
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                        <FileText className="size-[18px] text-muted-foreground" />
                       </div>
 
                       <div className="min-w-0">
@@ -167,7 +161,7 @@ const page = async () => {
 
                   {/* Type */}
                   <td className="px-5 py-5">
-                    <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                    <span className="inline-flex rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
                       {material.type}
                     </span>
                   </td>
@@ -195,7 +189,7 @@ const page = async () => {
                       <button
                         type="button"
                         aria-label={`Download ${material.name}`}
-                        className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-emerald-50 hover:text-emerald-700"
+                        className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
                       >
                         <Download className="size-[17px]" />
                       </button>
@@ -218,8 +212,8 @@ const page = async () => {
         {/* Empty state */}
         {materials.length === 0 && (
           <div className="flex min-h-[300px] flex-col items-center justify-center px-5 text-center">
-            <div className="flex size-12 items-center justify-center rounded-full bg-slate-100">
-              <FileText className="size-5 text-slate-500" />
+            <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+              <FileText className="size-5 text-muted-foreground" />
             </div>
 
             <h3 className="mt-4 text-sm font-semibold">

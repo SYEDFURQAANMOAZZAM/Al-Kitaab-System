@@ -14,5 +14,5 @@ export function authDebug(
     return;
   }
 
-  console.info("AUTH_DEBUG", { event, ...details });
+ 
 }

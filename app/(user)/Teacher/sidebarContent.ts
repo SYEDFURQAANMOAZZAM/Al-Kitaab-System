@@ -1,25 +1,56 @@
-'use client'
-import {
-  LayoutDashboard,
-  Layers3,
-} from "lucide-react";
+import type {
+  SidebarItem,
+} from "@/components/sidebar-types";
 
-type SidebarLink = {
-  title: string;
-  href: string;
-  icon: React.ElementType;
+type Batch = {
+  id: string;
+  name: string;
 };
 
-type SidebarGroupItem = {
-  title: string;
-  icon: React.ElementType;
-  children: { title: string; href: string }[];
-};
+export function getSidebarItems(
+  batches: Batch[]
+): SidebarItem[] {
+  return [
+    {
+      title: "Dashboard",
+      href: "/Teacher",
+      icon: "dashboard",
+    },
 
-type SidebarItem = SidebarLink | SidebarGroupItem;
+    {
+      title: "Branches",
+      href: "/Teacher/branches",
+      icon: "branch",
+    },
 
+    {
+      title: "My Batches",
+      icon: "batch",
 
-export const sidebarItems: SidebarItem[] = [
-  { title: "Dashboard", href: "/Teacher", icon: LayoutDashboard },
-  { title: "Batch", href: "/Teacher/batches", icon: Layers3 },
-]
+      children: batches.map((batch) => ({
+        title: batch.name,
+        icon: "batch",
+
+        children: [
+          {
+            title: "Mark Attendance / Progress",
+            href: `/Teacher/batches/${batch.id}/attendance`,
+            icon: "attendance",
+          },
+
+          {
+            title: "Performance",
+            href: `/Teacher/batches/${batch.id}/performance`,
+            icon: "performance",
+          },
+        ],
+      })),
+      
+    },
+    {
+    title: "Materials",
+    href: "/Teacher/materials",
+    icon: "materials",
+  },
+  ];
+}

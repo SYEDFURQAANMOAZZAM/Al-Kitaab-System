@@ -1,60 +1,115 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { Prisma, Role } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { requireRoleForAction } from "@/lib/auth/require-role";
 import { normalizeEmail } from "@/lib/auth/email";
-
-import { revalidatePath } from "next/cache";
 
 import {
   FormStateRegister,
   CreateSchemaStudent,
 } from "../Validate";
 
-export async function registerStudent(
-  _state: FormStateRegister,
-  formData: FormData
-) {
-  /* =======================================================
-     AUTHORIZATION
+/* =========================================================
+   PARSE JSON ARRAY
+========================================================= */
 
-     ADMIN  -> can create students
-     TEACHER -> can create students
-  ======================================================= */
+function parseJsonArray(
+  formData: FormData,
+  fieldName: string
+): string[] | null {
+  const raw = formData.get(fieldName);
 
-  await requireRoleForAction(["ADMIN",
-    "TEACHER"]);
-
-  /* =======================================================
-     PARSE BATCHES
-  ======================================================= */
-
-  let batch: unknown;
+  if (typeof raw !== "string") {
+    return null;
+  }
 
   try {
-    const rawBatches =
-      formData.get("batch");
+    const parsed: unknown =
+      JSON.parse(raw);
 
-    batch = JSON.parse(
-      typeof rawBatches === "string"
-        ? rawBatches
-        : "[]"
-    );
+    if (!Array.isArray(parsed)) {
+      return null;
+    }
+
+    if (
+      !parsed.every(
+        (value): value is string =>
+          typeof value === "string"
+      )
+    ) {
+      return null;
+    }
+
+    return [...new Set(parsed)];
   } catch {
+    return null;
+  }
+}
+
+/* =========================================================
+   CREATE STUDENT
+========================================================= */
+
+export async function createStudent(
+  _state: FormStateRegister,
+  formData: FormData
+): Promise<FormStateRegister> {
+  /* =======================================================
+     AUTHORIZATION
+  ======================================================= */
+
+  await requireRoleForAction([
+    "ADMIN",
+    "TEACHER",
+  ]);
+
+  /* =======================================================
+     PARSE BATCH IDS
+  ======================================================= */
+
+  const batchIds = parseJsonArray(
+    formData,
+    "batchIds"
+  );
+
+  if (batchIds === null) {
     return {
       message:
-        "Select at least one valid batch.",
+        "Invalid batch selection.",
+    };
+  }
+
+  if (batchIds.length === 0) {
+    return {
+      errors: {
+        batchIds: [
+          "Select at least one batch.",
+        ],
+      },
     };
   }
 
   /* =======================================================
-     VALIDATE
+     PARSE PATTERN IDS
+  ======================================================= */
 
-     IMPORTANT:
-     Role is NOT taken from formData.
+  const patternIds = parseJsonArray(
+    formData,
+    "patternIds"
+  );
+
+  if (patternIds === null) {
+    return {
+      message:
+        "Invalid pattern selection.",
+    };
+  }
+
+  /* =======================================================
+     VALIDATE FORM
   ======================================================= */
 
   const validatedFields =
@@ -62,6 +117,7 @@ export async function registerStudent(
       name: formData.get("name"),
       email: formData.get("email"),
       phone: formData.get("phone"),
+      phone2: formData.get("phone2"),
 
       password:
         formData.get("password"),
@@ -69,73 +125,151 @@ export async function registerStudent(
       confirmPassword:
         formData.get("confirmPassword"),
 
+      fatherName:
+        formData.get("fatherName"),
 
-      branchId:
-        formData.get("branchId"),
+      address:
+        formData.get("address"),
 
-      batch,
+      batchIds,
+      patternIds,
     });
 
   if (!validatedFields.success) {
+    const fieldErrors =
+      validatedFields.error.flatten()
+        .fieldErrors;
+
     return {
-      errors:
-        validatedFields.error.flatten()
-          .fieldErrors,
+      errors: {
+        name: fieldErrors.name,
+
+        email:
+          fieldErrors.email?.[0],
+
+        phone:
+          fieldErrors.phone?.[0],
+
+        phone2:
+          fieldErrors.phone2?.[0],
+
+        fatherName:
+          fieldErrors.fatherName,
+
+        address:
+          fieldErrors.address,
+
+        password:
+          fieldErrors.password,
+
+        confirmPassword:
+          fieldErrors.confirmPassword,
+
+        batchIds:
+          fieldErrors.batchIds,
+
+        patternIds:
+          fieldErrors.patternIds,
+      },
     };
   }
 
   const data = validatedFields.data;
 
   /* =======================================================
-     REMOVE DUPLICATE BATCH IDS
+     NORMALIZE IDS
   ======================================================= */
 
-  const batchIds = [
-    ...new Set(data.batch),
+  const uniqueBatchIds = [
+    ...new Set(data.batchIds),
   ];
 
+  const uniquePatternIds = [
+    ...new Set(data.patternIds),
+  ];
+
+  if (uniqueBatchIds.length === 0) {
+    return {
+      errors: {
+        batchIds: [
+          "Select at least one batch.",
+        ],
+      },
+    };
+  }
+
   /* =======================================================
-     VERIFY BRANCH + BATCHES
-
-     Prevents:
-
-     branch A + batch belonging to branch B
+     VERIFY BATCHES
   ======================================================= */
 
-  const [branch, batches] =
-    await Promise.all([
-      prisma.branch.findUnique({
-        where: {
-          id: data.branchId,
+  const selectedBatches =
+    await prisma.batch.findMany({
+      where: {
+        id: {
+          in: uniqueBatchIds,
         },
+      },
 
-        select: {
-          id: true,
-        },
-      }),
+      select: {
+        id: true,
 
-      prisma.batch.findMany({
-        where: {
-          id: {
-            in: batchIds,
+        patterns: {
+          select: {
+            patternId: true,
           },
-
-          branchId: data.branchId,
         },
-
-        select: {
-          id: true,
-        },
-      }),
-    ]);
+      },
+    });
 
   if (
-    !branch ||
-    batches.length !== batchIds.length
+    selectedBatches.length !==
+    uniqueBatchIds.length
   ) {
     return {
-      message:
-        "Every selected batch must belong to the selected branch.",
+      errors: {
+        batchIds: [
+          "One or more selected batches are invalid.",
+        ],
+      },
+    };
+  }
+
+  /* =======================================================
+     GET AVAILABLE PATTERNS
+  ======================================================= */
+
+  const availablePatternIds =
+    new Set<string>();
+
+  for (const batch of selectedBatches) {
+    for (const batchPattern of batch.patterns) {
+      availablePatternIds.add(
+        batchPattern.patternId
+      );
+    }
+  }
+
+  /* =======================================================
+     VERIFY PATTERNS
+  ======================================================= */
+
+  const invalidPatternIds =
+    uniquePatternIds.filter(
+      (patternId) =>
+        !availablePatternIds.has(
+          patternId
+        )
+    );
+
+  if (
+    invalidPatternIds.length > 0
+  ) {
+    return {
+      errors: {
+        patternIds: [
+          "One or more selected patterns are not available for the selected batches.",
+        ],
+      },
     };
   }
 
@@ -143,56 +277,144 @@ export async function registerStudent(
      HASH PASSWORD
   ======================================================= */
 
-  const hashedPassword =
+  const passwordHash =
     await bcrypt.hash(
       data.password,
       10
     );
 
   /* =======================================================
-     CREATE STUDENT
+     DATABASE TRANSACTION
   ======================================================= */
 
   try {
     await prisma.$transaction(
       async (tx) => {
-        await tx.user.create({
-          data: {
-            name: data.name,
-            email: normalizeEmail(data.email),
-            phone: data.phone,
-            password: hashedPassword,
+        /* -------------------------------------------------
+           USER
+        ------------------------------------------------- */
 
-            /*
-             * SERVER-CONTROLLED ROLE
-             */
-            role: Role.STUDENT,
+        const user =
+          await tx.user.create({
+            data: {
+              name: data.name,
 
-            student: {
-              create: {
-                enrollments: {
-                  create: batchIds.map(
-                    (batchId) => ({
-                      batchId,
-                    })
+              email:normalizeEmail(
+                    data.email
                   ),
-                },
-              },
+               
+
+              phone:
+                data.phone || null,
+
+              phone2:
+                data.phone2 || null,
+
+              password:
+                passwordHash,
+
+              role: "STUDENT",
             },
-          },
-        });
+          });
+
+        /* -------------------------------------------------
+           STUDENT
+        ------------------------------------------------- */
+
+        const student =
+          await tx.student.create({
+            data: {
+              userId: user.id,
+
+              fatherName:
+                data.fatherName,
+
+              Adress:
+                data.address,
+            },
+          });
+
+        /* -------------------------------------------------
+           ENROLLMENTS
+        ------------------------------------------------- */
+
+        await tx.studentEnrollment.createMany(
+          {
+            data: uniqueBatchIds.map(
+              (batchId) => ({
+                studentId: student.id,
+                batchId,
+              })
+            ),
+          }
+        );
+
+        /* -------------------------------------------------
+           PATTERNS
+        ------------------------------------------------- */
+
+        if (
+          uniquePatternIds.length > 0
+        ) {
+          await tx.studentPattern.createMany(
+            {
+              data: uniquePatternIds.map(
+                (patternId) => ({
+                  studentId: student.id,
+                  patternId,
+                })
+              ),
+            }
+          );
+        }
       }
     );
   } catch (error) {
+    /* =====================================================
+       UNIQUE CONSTRAINT
+    ===================================================== */
+
     if (
       error instanceof
-        Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
+      Prisma.PrismaClientKnownRequestError
     ) {
-      return {
-        message:
-          "Email or phone number already exists.",
-      };
+      if (error.code === "P2002") {
+        const target =
+          Array.isArray(
+            error.meta?.target
+          )
+            ? error.meta.target.join(", ")
+            : String(
+                error.meta?.target ?? ""
+              );
+
+        if (
+          target.includes("email")
+        ) {
+          return {
+            errors: {
+              email:
+                "This email address is already in use.",
+            },
+          };
+        }
+
+        if (
+          target.includes("phone")
+        ) {
+          return {
+            errors: {
+              phone:
+                "This phone number is already in use.",
+            },
+          };
+        }
+
+        return {
+          message:
+            "A record with the same information already exists.",
+        };
+      }
     }
 
     console.error(
@@ -207,20 +429,10 @@ export async function registerStudent(
   }
 
   /* =======================================================
-     CACHE
+     SUCCESS
   ======================================================= */
 
-  revalidatePath(
-    "/Admin/students/stats"
-  );
-
-  revalidatePath(
-    "/Admin/branches"
-  );
-
-  /* =======================================================
-     REDIRECT
-  ======================================================= */
-
-  return { success: true };
+  return {
+    success: true,
+  };
 }

@@ -1,15 +1,17 @@
 "use client";
 
-import UserForm from "@/components/registerComponent";
+import UserForm from "./registerTeacherComponent";
 
 import { registerTeacher } from "@/app/ServerActions/auth/registeration/registerTeacher";
 
 type Branch = {
   id: string;
   name: string;
+
   batches: {
     id: string;
     name: string;
+    branchId: string;
   }[];
 };
 
@@ -25,7 +27,6 @@ export default function AdminRegisterTeacherForm({
       mode="create"
       role="TEACHER"
       action={registerTeacher}
-      // schema={SignupFormSchemaTeacher}
       branches={branches}
     />
   );

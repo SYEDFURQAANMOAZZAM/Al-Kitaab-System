@@ -192,7 +192,7 @@ export async function getBatchMembers(batchId: string) {
       };
 
     current.total++;
-    current.score += record.score;
+    current.score += (record.score ?? 0);
 
     progressMap.set(
       record.studentId,

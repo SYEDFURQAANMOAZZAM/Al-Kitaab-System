@@ -10,38 +10,116 @@ import { normalizeEmail } from "@/lib/auth/email";
 import { revalidatePath } from "next/cache";
 
 import {
-  FormStateRegister,
+  FormStateTeacher,
   EditSchemaTeacher,
 } from "../auth/Validate";
 
+/* =========================================================
+   PARSE JSON ARRAY
+========================================================= */
+
+function parseJsonArray(
+  formData: FormData,
+  fieldName: string
+): string[] | null {
+  const raw = formData.get(fieldName);
+
+  if (typeof raw !== "string") {
+    return null;
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(raw);
+
+    if (!Array.isArray(parsed)) {
+      return null;
+    }
+
+    if (
+      !parsed.every(
+        (value): value is string =>
+          typeof value === "string" &&
+          value.trim().length > 0
+      )
+    ) {
+      return null;
+    }
+
+    return [...new Set(parsed)];
+  } catch {
+    return null;
+  }
+}
+
+/* =========================================================
+   UPDATE TEACHER
+========================================================= */
+
 export async function updateTeacher(
   teacherId: string,
-  _state: FormStateRegister,
+  _state: FormStateTeacher,
   formData: FormData
-) {
+): Promise<FormStateTeacher> {
   await requireRoleForAction([
     "ADMIN",
-    "TEACHER"
+    "TEACHER",
   ]);
- 
+
+  /* =======================================================
+     PARSE BRANCHES
+  ======================================================= */
+
+  const branchIds = parseJsonArray(
+    formData,
+    "branchIds"
+  );
+
+  if (branchIds === null) {
+    return {
+      errors: {
+        branchIds: [
+          "Invalid branch selection.",
+        ],
+      },
+    };
+  }
+
+  if (branchIds.length === 0) {
+    return {
+      errors: {
+        branchIds: [
+          "Select at least one branch.",
+        ],
+      },
+    };
+  }
 
   /* =======================================================
      PARSE BATCHES
   ======================================================= */
 
-  let batch: unknown;
+  const batchIds = parseJsonArray(
+    formData,
+    "batchIds"
+  );
 
-  try {
-    const rawBatches = formData.get("batch");
-
-    batch = JSON.parse(
-      typeof rawBatches === "string"
-        ? rawBatches
-        : "[]"
-    );
-  } catch {
+  if (batchIds === null) {
     return {
-      message: "Select at least one valid batch.",
+      errors: {
+        batchIds: [
+          "Invalid batch selection.",
+        ],
+      },
+    };
+  }
+
+  if (batchIds.length === 0) {
+    return {
+      errors: {
+        batchIds: [
+          "Select at least one batch.",
+        ],
+      },
     };
   }
 
@@ -52,7 +130,7 @@ export async function updateTeacher(
   const validatedFields =
     EditSchemaTeacher.safeParse({
       name: formData.get("name"),
-      email: normalizeEmail(String(formData.get("email") ?? "")),
+      email: formData.get("email"),
       phone: formData.get("phone"),
 
       password:
@@ -61,67 +139,134 @@ export async function updateTeacher(
       confirmPassword:
         formData.get("confirmPassword"),
 
-     
-
-      branchId:
-        formData.get("branchId"),
-
-      batch,
+      branchIds,
+      batchIds,
     });
 
   if (!validatedFields.success) {
+    const fieldErrors =
+      validatedFields.error.flatten()
+        .fieldErrors;
+
     return {
-      errors:
-        validatedFields.error.flatten()
-          .fieldErrors,
+      errors: {
+        name: fieldErrors.name,
+
+        email:
+          fieldErrors.email?.[0],
+
+        phone:
+          fieldErrors.phone?.[0],
+
+        password:
+          fieldErrors.password,
+
+        confirmPassword:
+          fieldErrors.confirmPassword,
+
+        branchIds:
+          fieldErrors.branchIds,
+
+        batchIds:
+          fieldErrors.batchIds,
+      },
     };
   }
 
   const data = validatedFields.data;
 
   /* =======================================================
-     REMOVE DUPLICATE BATCH IDS
+     NORMALIZE
   ======================================================= */
 
-  const batchIds = [
-    ...new Set(data.batch),
+  const uniqueBranchIds = [
+    ...new Set(data.branchIds),
+  ];
+
+  const uniqueBatchIds = [
+    ...new Set(data.batchIds),
   ];
 
   /* =======================================================
-     VERIFY BRANCH + BATCHES
+     VERIFY TEACHER
   ======================================================= */
 
-  const [branch, batches] =
-    await Promise.all([
-      prisma.branch.findUnique({
-        where: {
-          id: data.branchId,
-        },
-        select: {
-          id: true,
-        },
-      }),
+  const teacher =
+    await prisma.teacher.findUnique({
+      where: {
+        id: teacherId,
+      },
+      select: {
+        id: true,
+        userId: true,
+      },
+    });
 
-      prisma.batch.findMany({
-        where: {
-          id: {
-            in: batchIds,
-          },
-          branchId: data.branchId,
+  if (!teacher) {
+    return {
+      message: "Teacher not found.",
+    };
+  }
+
+  /* =======================================================
+     VERIFY BRANCHES
+  ======================================================= */
+
+  const branches =
+    await prisma.branch.findMany({
+      where: {
+        id: {
+          in: uniqueBranchIds,
         },
-        select: {
-          id: true,
-        },
-      }),
-    ]);
+      },
+      select: {
+        id: true,
+      },
+    });
 
   if (
-    !branch ||
-    batches.length !== batchIds.length
+    branches.length !==
+    uniqueBranchIds.length
   ) {
     return {
-      message:
-        "Every selected batch must belong to the selected branch.",
+      errors: {
+        branchIds: [
+          "One or more selected branches are invalid.",
+        ],
+      },
+    };
+  }
+
+  /* =======================================================
+     VERIFY BATCHES
+  ======================================================= */
+
+  const batches =
+    await prisma.batch.findMany({
+      where: {
+        id: {
+          in: uniqueBatchIds,
+        },
+        branchId: {
+          in: uniqueBranchIds,
+        },
+      },
+      select: {
+        id: true,
+        branchId: true,
+      },
+    });
+
+  if (
+    batches.length !==
+    uniqueBatchIds.length
+  ) {
+    return {
+      errors: {
+        batchIds: [
+          "One or more selected batches do not belong to the selected branches.",
+        ],
+      },
     };
   }
 
@@ -130,95 +275,102 @@ export async function updateTeacher(
   ======================================================= */
 
   try {
-    await prisma.$transaction(async (tx) => {
-      const teacher =
-        await tx.teacher.findUnique({
+    await prisma.$transaction(
+      async (tx) => {
+        /* -----------------------------------------------
+           USER
+        ------------------------------------------------ */
+
+        const userData: Prisma.UserUpdateInput = {
+          name: data.name,
+
+          email:  normalizeEmail(data.email),
+
+          phone: data.phone,
+        };
+
+        if (data.password) {
+          userData.password =
+            await bcrypt.hash(
+              data.password,
+              10
+            );
+        }
+
+        await tx.user.update({
           where: {
-            id: teacherId,
+            id: teacher.userId,
           },
-          select: {
-            userId: true,
+          data: userData,
+        });
+
+        /* -----------------------------------------------
+           REPLACE ASSIGNMENTS
+        ------------------------------------------------ */
+
+        await tx.teacherAssignment.deleteMany({
+          where: {
+            teacherId: teacher.id,
           },
         });
 
-      if (!teacher) {
-        throw new Error(
-          "TEACHER_NOT_FOUND"
-        );
+        await tx.teacherAssignment.createMany({
+          data: uniqueBatchIds.map(
+            (batchId) => ({
+              teacherId: teacher.id,
+              batchId,
+            })
+          ),
+        });
       }
-
-      /* -----------------------------------------------
-         Update User
-      ----------------------------------------------- */
-
-      const userData: Prisma.UserUpdateInput = {
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-      };
-
-      /*
-       * Only change password if a new password
-       * was actually supplied.
-       */
-      if (data.password) {
-        userData.password =
-          await bcrypt.hash(
-            data.password,
-            10
-          );
-      }
-
-      await tx.user.update({
-        where: {
-          id: teacher.userId,
-        },
-        data: userData,
-      });
-
-      /* -----------------------------------------------
-         Replace enrollments
-      ----------------------------------------------- */
-
-      await tx.teacherAssignment.deleteMany({
-        where: {
-          teacherId,
-        },
-      });
-
-      await tx.teacherAssignment.createMany({
-        data: batchIds.map(
-          (batchId) => ({
-            teacherId,
-            batchId,
-          })
-        ),
-      });
-    });
+    );
   } catch (error) {
     if (
       error instanceof
-        Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
+        Prisma.PrismaClientKnownRequestError
     ) {
-      return {
-        message:
-          "Email or phone number already exists.",
-      };
-    }
+      if (error.code === "P2002") {
+        const target =
+          Array.isArray(error.meta?.target)
+            ? error.meta.target.join(", ")
+            : String(
+                error.meta?.target ?? ""
+              );
 
-    if (
-      error instanceof Error &&
-      error.message ===
-        "TEACHER_NOT_FOUND"
-    ) {
-      return {
-        message: "Teacher not found.",
-      };
+        if (target.includes("email")) {
+          return {
+            errors: {
+              email:
+                "This email address is already in use.",
+            },
+          };
+        }
+
+        if (target.includes("phone")) {
+          return {
+            errors: {
+              phone:
+                "This phone number is already in use.",
+            },
+          };
+        }
+
+        return {
+          message:
+            "A teacher with the same information already exists.",
+        };
+      }
+
+      if (error.code === "P2025") {
+        return {
+          message:
+            "Teacher or related record was not found.",
+        };
+      }
     }
 
     console.error(
-      "Unable to update Teacher:",
+      "Unable to update teacher:",
       error
     );
 
@@ -244,9 +396,7 @@ export async function updateTeacher(
     `/Admin/teachers/status/${teacherId}/edit`
   );
 
-  /* =======================================================
-     REDIRECT
-  ======================================================= */
-
-  return { success: true };
+  return {
+    success: true,
+  };
 }
