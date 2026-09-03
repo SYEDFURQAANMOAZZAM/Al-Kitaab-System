@@ -1,11 +1,11 @@
 "use client";
 
-import { useState,useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@base-ui/react/button";
 import { Checkbox } from "@base-ui/react/checkbox";
 import { Dialog } from "@base-ui/react/dialog";
 import { Copy } from "lucide-react";
-import { saveAttendance } from "./actions";
+import { saveAttendance } from "@/app/ServerActions/attendance/createAttendance";
 import { useRouter } from "next/navigation";
 
 type Student = {
