@@ -1,8 +1,8 @@
 "use client";
 import { Collapsible } from "@base-ui/react/collapsible";
-import { submitProgress } from "./actions/progress";
+import { submitProgress } from "@/app/ServerActions/progress/progress";
 import { useEffect, useState } from "react";
-import { saveGlobalLearnings } from "./actions/saveGlobalLearnings";
+import { saveGlobalLearnings } from "@/app/ServerActions/progress/saveGlobalLearnings";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -35,9 +35,9 @@ import {
 
 import { Separator } from "@/components/ui/separator";
 
-import { getCommonPatterns } from "./actions/getCommonPatterns";
-import { getBatchPatterns } from "./actions/getBatchPatterns";
-import { getTodayProgress } from "./actions/getProgress";
+import { getCommonPatterns } from "@/app/ServerActions/progress/getCommonPatterns";
+import { getBatchPatterns } from "@/app/ServerActions/progress/getBatchPatterns";
+import { getTodayProgress } from "@/app/ServerActions/progress/getProgress";
 
 type Student = {
   id: string;
