@@ -5,7 +5,8 @@ import { Button } from "@base-ui/react/button";
 import { Checkbox } from "@base-ui/react/checkbox";
 import { Dialog } from "@base-ui/react/dialog";
 import { Copy } from "lucide-react";
-import { saveAttendance } from "./actions";
+import { saveAttendance } from "@/app/ServerActions/attendance/createAttendance";
+
 
 type Student = {
   id: string;
@@ -37,7 +38,8 @@ export function AttendanceForm({
   const [attendanceTaken, setAttendanceTaken] = useState(
     initialAttendanceTaken
   );
-
+  const [attendanceAlreadySubmitted, setAttendanceAlreadySubmitted] =
+  useState(false);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
 
   const getStatus = (userId: string): AttendanceStatus => {
@@ -81,46 +83,47 @@ export function AttendanceForm({
   ).length;
 
   const handleSubmit = async () => {
-    if (submitting || attendanceTaken) return;
+  if (submitting || attendanceTaken) return;
 
-    setSubmitting(true);
+  setSubmitting(true);
 
-    try {
-      const attendanceData = students.map((student) => ({
-        userId: student.userId,
-        attended: getStatus(student.userId),
-      }));
+  try {
+    const attendanceData = students.map((student) => ({
+      userId: student.userId,
+      attended: getStatus(student.userId),
+    }));
 
-      const result = await saveAttendance(batchId, attendanceData);
+    const result = await saveAttendance(batchId, attendanceData);
 
-      if (result.alreadyTaken) {
-        setAttendanceTaken(true);
-        setConfirmationOpen(false);
-        return;
-      }
-
-      if (!result.success) {
-        throw new Error(result.message);
-      }
-
-      setAttendanceTaken(true);
+    if (result.alreadyTaken) {
+      setAttendanceAlreadySubmitted(true);
       setConfirmationOpen(false);
-    } catch (error) {
-      console.error("Failed to save attendance:", error);
-
-      alert(
-        error instanceof Error
-          ? error.message
-          : "Failed to save attendance."
-      );
-    } finally {
-      setSubmitting(false);
+      return;
     }
-  };
+
+    if (!result.success) {
+      throw new Error(result.message);
+    }
+
+    setAttendanceTaken(true);
+    setConfirmationOpen(false);
+  } catch (error) {
+    console.error("Failed to save attendance:", error);
+
+    alert(
+      error instanceof Error
+        ? error.message
+        : "Failed to save attendance."
+    );
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const formDisabled = submitting || attendanceTaken;
 
   return (
+    <>
     <div className="w-full overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
       {/* Header */}
       <div className="border-b bg-muted/20 p-4 sm:p-6">
@@ -504,6 +507,70 @@ export function AttendanceForm({
         </div>
       </div>
     </div>
+<Dialog.Root
+  open={attendanceAlreadySubmitted}
+  onOpenChange={setAttendanceAlreadySubmitted}
+>
+  <Dialog.Portal>
+    <Dialog.Backdrop
+      className="
+        fixed inset-0 z-50
+        bg-background/80
+        backdrop-blur-sm
+      "
+    />
+
+    <Dialog.Viewport
+      className="
+        fixed inset-0 z-50
+        flex items-center justify-center
+        p-4
+      "
+    >
+      <Dialog.Popup
+        className="
+          w-full max-w-md
+          rounded-xl border
+          bg-card text-card-foreground
+          p-5 shadow-2xl
+          outline-none
+          sm:p-6
+        "
+      >
+        <Dialog.Title className="text-lg font-semibold tracking-tight">
+          Attendance Already Submitted
+        </Dialog.Title>
+
+        <Dialog.Description
+          className="
+            mt-2 text-sm leading-6
+            text-muted-foreground
+          "
+        >
+          Attendance for this batch has already been submitted for today.
+          You cannot submit attendance again.
+        </Dialog.Description>
+
+        <div className="mt-6 flex justify-end">
+          <button
+            type="button"
+            onClick={() => setAttendanceAlreadySubmitted(false)}
+            className="
+              min-h-11 rounded-lg
+              bg-primary px-4 py-2
+              text-sm font-medium
+              text-primary-foreground
+              hover:bg-primary/90
+            "
+          >
+            OK
+          </button>
+        </div>
+      </Dialog.Popup>
+    </Dialog.Viewport>
+  </Dialog.Portal>
+</Dialog.Root>
+    </>
   );
 }
 
@@ -635,5 +702,6 @@ function StatusOption({
 
       <span>{label}</span>
     </label>
+    
   );
 }

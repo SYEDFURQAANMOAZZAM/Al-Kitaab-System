@@ -132,7 +132,7 @@ export default function BatchAction({
 
         <DropdownMenuContent align="end">
 
-          <DropdownMenuItem onClick={() => router.push(`/Admin/branches/${batchId}/attendance`)}>
+          <DropdownMenuItem onClick={() => router.push(`/Teacher/branches/${batchId}/attendance`)}>
             Mark Attendance
           </DropdownMenuItem>
 
