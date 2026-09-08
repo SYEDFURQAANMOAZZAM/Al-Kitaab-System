@@ -65,18 +65,18 @@ interface Props {
 
 function Color(percentage: number) {
   if (percentage >= 90) {
-    return "bg-emerald-600";
+    return "bg-primary";
   }
 
   if (percentage >= 70) {
-    return "bg-yellow-500";
+    return "bg-chart-2";
   }
 
   if (percentage >= 50) {
-    return "bg-orange-500";
+    return "bg-chart-4";
   }
 
-  return "bg-red-500";
+  return "bg-destructive";
 }
 
 /* =========================================================

@@ -60,6 +60,7 @@ model Student {
   Adress           String?
   studentPatterns  StudentPattern[]
   progress         Progress[]
+  overallProgress  StudentOverallProgress[]
   enrollments      StudentEnrollment[]
 }
 
@@ -70,6 +71,7 @@ model StudentPattern {
 
   student   Student @relation(fields: [studentId], references: [id])
   pattern   Pattern @relation(fields: [patternId], references: [id])
+  overallProgress StudentOverallProgress[]
 
   @@unique([studentId, patternId])
 }
@@ -189,6 +191,9 @@ model Pattern {
   patternArr      PatternArr[]
   batches         BatchPattern[]
   studentPatterns StudentPattern[]
+  tocItems        PatternTocItem[]
+  overallProgress StudentOverallProgress[]
+  trackingStatus  Status @default(SABAQ)
 }
 
 model PatternArr{
@@ -197,6 +202,7 @@ model PatternArr{
   position     Int
   patternId   String
   pattern     Pattern   @relation(fields: [patternId], references: [id], onDelete: Cascade)
+  tocItems    PatternTocItem[]
   @@unique([patternId, position])   
 }
 
@@ -212,4 +218,44 @@ model BatchPattern {
   pattern   Pattern @relation(fields: [patternId], references: [id], onDelete: Cascade)
 
   @@unique([batchId, patternId])
+}
+
+/// A selectable node in a pattern's table of contents.  Nodes are nested,
+/// for example Para 1 -> Ruku 2 -> Ayah 7.
+model PatternTocItem {
+  id           String   @id @default(cuid())
+  patternId    String
+  patternArrId String
+  parentId     String?
+  name         String
+  position     Int
+
+  pattern      Pattern    @relation(fields: [patternId], references: [id], onDelete: Cascade)
+  patternArr   PatternArr @relation(fields: [patternArrId], references: [id], onDelete: Cascade)
+  parent       PatternTocItem?  @relation("TocTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children     PatternTocItem[] @relation("TocTree")
+
+  @@unique([parentId, position])
+  @@index([patternId, patternArrId, parentId])
+}
+
+/// The latest completed position used for long-term student tracking.
+/// It exists only while the student has the corresponding StudentPattern.
+model StudentOverallProgress {
+  id               String   @id @default(cuid())
+  studentId        String
+  patternId        String
+  studentPatternId String   @unique
+  trackingStatus   Status
+  currentValues    Json
+  currentPrimaryTocItemId String?
+  updatedAt        DateTime @updatedAt
+  createdAt        DateTime @default(now())
+
+  student        Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  pattern        Pattern        @relation(fields: [patternId], references: [id], onDelete: Cascade)
+  studentPattern StudentPattern @relation(fields: [studentPatternId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, patternId])
+  @@index([patternId, trackingStatus])
 }

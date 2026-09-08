@@ -205,14 +205,11 @@ const batchAnchor = useComboboxAnchor();
                   className="
                     gap-1.5
                     rounded-full
-                    border-emerald-200
-                    bg-emerald-50
+                    border-primary/30
+                    bg-primary/10
                     pl-3
                     pr-1.5
-                    text-emerald-800
-                    dark:border-emerald-800/50
-                    dark:bg-emerald-950
-                    dark:text-emerald-300
+                    text-primary
                   "
                 >
                   {branch.name}
@@ -294,17 +291,14 @@ const batchAnchor = useComboboxAnchor();
                   className="
                     gap-1.5
                     rounded-full
-                    border-emerald-200
-                    bg-emerald-50
+                    border-primary/30
+                    bg-primary/10
                     pl-3
                     pr-1.5
-                    text-emerald-800
-                    dark:border-emerald-800/50
-                    dark:bg-emerald-950
-                    dark:text-emerald-300
+                    text-primary
                   "
                 >
-                  <span className="text-xs text-emerald-600 dark:text-emerald-400">
+                  <span className="text-xs text-primary">
                     {batch.branchName} →
                   </span>
 

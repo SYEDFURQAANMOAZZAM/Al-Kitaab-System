@@ -24,7 +24,7 @@ const UpdatePatternSchema = z.object({
 });
 
 export async function updatePattern(input: unknown) {
-  await requireRoleForAction(["ADMIN"]);
+  await requireRoleForAction(["ADMIN","TEACHER"]);
 
   const parsed = UpdatePatternSchema.safeParse(input);
 

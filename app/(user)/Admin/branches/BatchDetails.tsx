@@ -46,28 +46,7 @@ type BatchDetailsProps = {
 };
 
 
-/* =========================================================
-   Attendance
-========================================================= */
 
-// function AttendanceBar({
-//   value,
-// }: {
-//   value: number;
-// }) {
-//   return (
-//     <div className="flex min-w-0 items-center gap-2">
-//       <Progress
-//         value={value}
-//         className="h-2 flex-1"
-//       />
-
-//       <span className="w-10 shrink-0 text-right text-xs font-semibold text-slate-700">
-//         {value}%
-//       </span>
-//     </div>
-//   );
-// }
 
 /* =========================================================
    Student List

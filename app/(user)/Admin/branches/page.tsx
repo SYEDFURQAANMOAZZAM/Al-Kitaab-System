@@ -4,7 +4,7 @@ import AuthVerify from "@/app/ServerActions/auth/authVerify";
 import {
   CreateBatch,
   CreateBranch,
-} from "@/ServiceHandlers/CreateGroups/CreateBatch&Branch";
+} from "./CreateBatch&Branch";
 
 import {
   Accordion,
@@ -17,16 +17,16 @@ import BranchAction from "./BranchAction";
 
 import BatchAction from "./BatchAction"
 
-
+import Link from "next/link";
 
 import {
   Building2,
+  
 } from "lucide-react";
 
-import BatchDetails from "./BatchDetails";
+
 
 const Page = async () => {
-  const timerId = crypto.randomUUID();
 
  
 
@@ -364,16 +364,28 @@ const Page = async () => {
                             ================================================= */}
 
                             <AccordionContent className="border-t border-border bg-muted/50">
-                              <div className="p-3 sm:p-4">
-                                <BatchDetails
-                                  batchId={batch.id}
-                                  studentCount={
-                                    batch._count.students
-                                  }
-                                  teacherCount={
-                                    batch._count.teachers
-                                  }
-                                />
+                              <div className="flex flex-col divide-y divide-border">
+                                <div className="flex items-center justify-between px-4 py-3">
+                                  <span className="text-sm font-medium">Performance</span>
+
+                                  <Link
+                                    href={`/Admin/branches/${batch.id}/performance`}
+                                    className="inline-flex items-center justify-center rounded-md border border-primary/50 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary !no-underline transition-colors hover:bg-primary/20"
+                                  >
+                                    View
+                                  </Link>
+                                </div>
+
+                                <div className="flex items-center justify-between px-4 py-3">
+                                  <span className="text-sm font-medium">Mark Attendance</span>
+
+                                    <Link
+                                      href={`/Admin/branches/${batch.id}/attendance`}
+                                      className="inline-flex items-center justify-center rounded-md border border-primary/50 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary !no-underline transition-colors hover:bg-primary/20"
+                                    >
+                                      Mark
+                                    </Link>
+                                </div>
                               </div>
                             </AccordionContent>
                           </AccordionItem>

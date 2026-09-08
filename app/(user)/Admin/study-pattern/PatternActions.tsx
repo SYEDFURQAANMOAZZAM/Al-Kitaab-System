@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 
-import { deletePattern } from "./deleteAction";
+import { deletePattern } from "@/app/ServerActions/patternOperations/deletePattern";
 
 type PatternActionsProps = {
   patternId: string;

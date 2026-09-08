@@ -19,8 +19,8 @@ export function CreateBatch({ branchId }: CreateBatchProps) {
       <ButtonShadcn variant="outline" type="submit" disabled={pending}>
         {pending ? "Adding..." : "Add"}
       </ButtonShadcn>
-      {state?.error && <p className="text-sm text-red-600" role="alert">{state.error}</p>}
-      {state?.success && <p className="text-sm text-emerald-700" role="status">{state.success}</p>}
+      {state?.error && <p className="text-sm text-destructive" role="alert">{state.error}</p>}
+      {state?.success && <p className="text-sm text-primary" role="status">{state.success}</p>}
     </form>
   );
 }
@@ -35,8 +35,8 @@ export function CreateBranch() {
       <ButtonShadcn variant="outline" type="submit" disabled={pending}>
         {pending ? "Adding..." : "Add"}
       </ButtonShadcn>
-      {state?.error && <p className="text-sm text-red-600" role="alert">{state.error}</p>}
-      {state?.success && <p className="text-sm text-emerald-700" role="status">{state.success}</p>}
+      {state?.error && <p className="text-sm text-destructive" role="alert">{state.error}</p>}
+      {state?.success && <p className="text-sm text-primary" role="status">{state.success}</p>}
     </form>
   );
 }

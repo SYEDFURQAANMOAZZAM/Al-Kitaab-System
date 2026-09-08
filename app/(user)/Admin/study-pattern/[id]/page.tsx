@@ -28,6 +28,7 @@ export default async function PatternViewPage({
     select: {
       id: true,
       name: true,
+      trackingStatus: true,
 
       patternArr: {
         select: {
@@ -86,7 +87,7 @@ export default async function PatternViewPage({
   );
 
   return (
-    <main className="w-full space-y-7 p-4 sm:p-6 lg:p-8">
+    <main className="w-full space-y-7 p-2 sm:p-2 lg:p-2">
       {/* =====================================================
           HEADER
       ===================================================== */}
@@ -118,13 +119,12 @@ export default async function PatternViewPage({
           </div>
         </div>
 
-        <Link
-          href={`/Admin/study-pattern/${pattern.id}/edit`}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border bg-card px-4 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
-        >
-          <Pencil className="h-4 w-4" />
-          Edit Pattern
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/Admin/study-pattern/${pattern.id}/toc`} className="inline-flex h-10 items-center justify-center rounded-lg border bg-card px-4 text-sm font-medium">Add TOC</Link>
+          <Link href={`/Admin/study-pattern/${pattern.id}/tracking`} className="inline-flex h-10 items-center justify-center rounded-lg border bg-card px-4 text-sm font-medium">Tracking: {pattern.trackingStatus.toLowerCase()}</Link>
+          <Link href={`/Admin/study-pattern/${pattern.id}/bulktoc`} className="inline-flex h-10 items-center justify-center rounded-lg border bg-card px-4 text-sm font-medium">Bulk TOC</Link>
+          <Link href={`/Admin/study-pattern/${pattern.id}/edit`} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border bg-card px-4 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"><Pencil className="h-4 w-4" />Edit Pattern</Link>
+        </div>
       </div>
 
       {/* =====================================================
@@ -166,7 +166,7 @@ export default async function PatternViewPage({
       ===================================================== */}
 
       <section className="overflow-hidden rounded-xl border bg-card shadow-sm">
-        <div className="border-b px-5 py-5 sm:px-6">
+        <div className="border-b px-2 py-2 sm:px-6">
           <h2 className="font-semibold text-foreground">
             Pattern Structure
           </h2>

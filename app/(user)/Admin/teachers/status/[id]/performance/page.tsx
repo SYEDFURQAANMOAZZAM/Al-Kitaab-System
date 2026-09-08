@@ -169,7 +169,7 @@ export default async function TeacherPerformancePage({
               {absentCount}
             </p>
 
-            <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+            <span className="rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive">
               Absent
             </span>
           </div>
@@ -293,11 +293,11 @@ export default async function TeacherPerformancePage({
                     <div>
                       {record.attended ===
                       "PRESENT" ? (
-                        <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                        <span className="inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
                           Present
                         </span>
                       ) : (
-                        <span className="inline-flex rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+                        <span className="inline-flex rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive">
                           Absent
                         </span>
                       )}
