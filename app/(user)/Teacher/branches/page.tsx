@@ -4,7 +4,7 @@ import AuthVerify from "@/app/ServerActions/auth/authVerify";
 import {
   CreateBatch,
   CreateBranch,
-} from "@/ServiceHandlers/CreateGroups/CreateBatch&Branch";
+} from "./CreateBatch&Branch";
 
 import {
   Accordion,

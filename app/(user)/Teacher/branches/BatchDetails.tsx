@@ -62,7 +62,7 @@ type BatchDetailsProps = {
 //         className="h-2 flex-1"
 //       />
 
-//       <span className="w-10 shrink-0 text-right text-xs font-semibold text-slate-700">
+//       <span className="w-10 shrink-0 text-right text-xs font-semibold text-foreground">
 //         {value}%
 //       </span>
 //     </div>

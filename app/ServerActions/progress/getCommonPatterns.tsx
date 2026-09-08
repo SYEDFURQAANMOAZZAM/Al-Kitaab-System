@@ -19,7 +19,7 @@ export async function getCommonPatterns(
           select: {
             id: true,
             name: true,
-            patternArr: {
+          patternArr: {
               orderBy: {
                 position: "asc",
               },
@@ -28,6 +28,10 @@ export async function getCommonPatterns(
                 name: true,
                 position: true,
               },
+            },
+            tocItems: {
+              orderBy: { position: "asc" },
+              select: { id: true, name: true, parentId: true, patternArrId: true, position: true },
             },
           },
         },
@@ -49,7 +53,17 @@ export async function getCommonPatterns(
       (pattern) => pattern.patternId
     )
   );
-
+   console.log(
+  "TOC ITEMS:",
+  JSON.stringify(
+    studentPatterns.map((item) => ({
+      pattern: item.pattern.name,
+      tocItems: item.pattern.tocItems,
+    })),
+    null,
+    2
+  )
+);
   return studentPatterns
     .filter((item) =>
       batchPatternIds.has(item.pattern.id)

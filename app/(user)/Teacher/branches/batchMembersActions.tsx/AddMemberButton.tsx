@@ -290,7 +290,7 @@ export default function AddMemberButton({
             )}
 
             {error && (
-              <p className="mt-3 text-sm text-red-600">
+              <p className="mt-3 text-sm text-destructive">
                 {error}
               </p>
             )}

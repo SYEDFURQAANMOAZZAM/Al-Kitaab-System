@@ -3,6 +3,11 @@
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/require-role";
 
+type StoredLearning = {
+  pattern?: { id?: string; [key: string]: unknown };
+  [key: string]: unknown;
+};
+
 export async function getTodayProgress(batchId: string) {
   await requireRole("TEACHER", "ADMIN");
 
@@ -16,7 +21,7 @@ export async function getTodayProgress(batchId: string) {
 
   const today = new Date(`${indiaDate}T00:00:00.000Z`);
 
-  return prisma.progress.findMany({
+  const progress = await prisma.progress.findMany({
     where: {
       batchId,
       date: today,
@@ -28,4 +33,73 @@ export async function getTodayProgress(batchId: string) {
       learnings: true,
     },
   });
+
+  // Collect only valid pattern IDs.
+  const patternIds = [
+    ...new Set(
+      progress.flatMap((row) => {
+        const learnings = Array.isArray(row.learnings)
+          ? (row.learnings as StoredLearning[])
+          : [];
+
+        return learnings.flatMap((learning) => {
+          const patternId = learning.pattern?.id;
+
+          return patternId ? [patternId] : [];
+        });
+      })
+    ),
+  ];
+
+  const patterns = patternIds.length
+    ? await prisma.pattern.findMany({
+        where: {
+          id: {
+            in: patternIds,
+          },
+        },
+        select: {
+          id: true,
+          tocItems: {
+            orderBy: {
+              position: "asc",
+            },
+            select: {
+              id: true,
+              name: true,
+              parentId: true,
+              patternArrId: true,
+              position: true,
+            },
+          },
+        },
+      })
+    : [];
+
+  const tocByPatternId = new Map(
+    patterns.map((pattern) => [pattern.id, pattern.tocItems])
+  );
+
+  return progress.map((row) => ({
+    ...row,
+
+    learnings: Array.isArray(row.learnings)
+      ? (row.learnings as StoredLearning[]).map((learning) => {
+          const patternId = learning.pattern?.id;
+
+          // No pattern or no valid pattern ID.
+          if (!patternId) {
+            return learning;
+          }
+
+          return {
+            ...learning,
+            pattern: {
+              ...learning.pattern,
+              tocItems: tocByPatternId.get(patternId) ?? [],
+            },
+          };
+        })
+      : row.learnings,
+  }));
 }

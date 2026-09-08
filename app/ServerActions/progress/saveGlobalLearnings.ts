@@ -21,7 +21,7 @@ type GlobalLearning = {
 
   status: string;
 
-  values: Record<string, string>;
+  values: Record<string, string | { from: string; to?: string }>;
 };
 
 type SaveGlobalLearningsInput = {
@@ -91,6 +91,20 @@ export async function saveGlobalLearnings(
         })
       );
 
+      const syncOverallProgress = async (studentId: string) => {
+        for (const learning of newLearnings) {
+          if (!learning.pattern) continue;
+          const pattern = await tx.pattern.findUnique({ where: { id: learning.pattern.id }, select: { trackingStatus: true, patternArr: { orderBy: { position: "asc" }, select: { id: true } } } });
+          if (!pattern || learning.status !== pattern.trackingStatus || !pattern.patternArr[0]) continue;
+          const primary = learning.parts.find((part) => part.id === pattern.patternArr[0].id);
+          const raw = primary?.value;
+          const primaryTocId = typeof raw === "object" && raw ? (raw.to || raw.from) : undefined;
+          const studentPattern = await tx.studentPattern.findUnique({ where: { studentId_patternId: { studentId, patternId: learning.pattern.id } }, select: { id: true } });
+          if (!studentPattern) continue;
+          await tx.studentOverallProgress.upsert({ where: { studentPatternId: studentPattern.id }, create: { studentId, patternId: learning.pattern.id, studentPatternId: studentPattern.id, trackingStatus: pattern.trackingStatus, currentValues: learning.parts, currentPrimaryTocItemId: primaryTocId }, update: { trackingStatus: pattern.trackingStatus, currentValues: learning.parts, currentPrimaryTocItemId: primaryTocId } });
+        }
+      };
+
       for (const studentId of data.studentIds) {
         /*
          * Find today's progress for this student.
@@ -130,6 +144,8 @@ export async function saveGlobalLearnings(
 
           savedProgress.push(created);
 
+          await syncOverallProgress(studentId);
+
           continue;
         }
 
@@ -162,7 +178,8 @@ export async function saveGlobalLearnings(
             },
           });
 
-        savedProgress.push(updated);
+          savedProgress.push(updated);
+          await syncOverallProgress(studentId);
       }
 
       return savedProgress;

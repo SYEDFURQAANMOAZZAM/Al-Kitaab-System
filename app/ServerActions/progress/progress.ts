@@ -17,7 +17,7 @@ type ProgressLearning = {
     id: string;
     name: string;
     position: number;
-    value: string;
+    value: string | { from: string; to?: string };
   }[];
 };
 
@@ -66,6 +66,22 @@ export async function submitProgress(
       learnings: data.learnings,
     },
   });
+
+  for (const learning of data.learnings) {
+    if (!learning.pattern) continue;
+    const pattern = await prisma.pattern.findUnique({ where: { id: learning.pattern.id }, select: { trackingStatus: true, patternArr: { orderBy: { position: "asc" }, select: { id: true } } } });
+    if (!pattern || learning.status !== pattern.trackingStatus || !pattern.patternArr[0]) continue;
+    const primary = learning.parts.find((part) => part.id === pattern.patternArr[0].id);
+    const raw = primary?.value;
+    const primaryTocId = typeof raw === "object" && raw ? (raw.to || raw.from) : undefined;
+    const studentPattern = await prisma.studentPattern.findUnique({ where: { studentId_patternId: { studentId: data.studentId, patternId: learning.pattern.id } }, select: { id: true } });
+    if (!studentPattern) continue;
+    await prisma.studentOverallProgress.upsert({
+      where: { studentPatternId: studentPattern.id },
+      create: { studentId: data.studentId, patternId: learning.pattern.id, studentPatternId: studentPattern.id, trackingStatus: pattern.trackingStatus, currentValues: learning.parts, currentPrimaryTocItemId: primaryTocId },
+      update: { trackingStatus: pattern.trackingStatus, currentValues: learning.parts, currentPrimaryTocItemId: primaryTocId },
+    });
+  }
 
   return {
     success: true,

@@ -222,7 +222,7 @@ export default function BatchAction({
 
             {state?.error && (
               <p
-                className="mt-2 text-sm text-red-600"
+                className="mt-2 text-sm text-destructive"
                 role="alert"
               >
                 {state.error}

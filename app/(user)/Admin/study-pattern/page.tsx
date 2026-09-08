@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getPatterns } from "./fetchPatterns";
+import { getPatterns } from "@/app/ServerActions/patternOperations/fetchPatterns";
 import { StudyPatternsList } from "./StudyPatternsList";
 
 export default async function Page() {

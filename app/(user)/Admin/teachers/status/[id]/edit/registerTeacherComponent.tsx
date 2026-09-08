@@ -372,7 +372,7 @@ export default function UserForm({
               className="font-medium text-foreground"
             >
               Full Name{" "}
-              <span className="text-red-500">
+              <span className="text-destructive">
                 *
               </span>
             </Label>
@@ -391,7 +391,7 @@ export default function UserForm({
             </div>
 
             {errors.name && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-destructive">
                 {errors.name.message}
               </p>
             )}
@@ -411,7 +411,7 @@ export default function UserForm({
                 className="font-medium text-foreground"
               >
                 Email Address{" "}
-                <span className="text-red-500">
+                <span className="text-destructive">
                   *
                 </span>
               </Label>
@@ -431,7 +431,7 @@ export default function UserForm({
               </div>
 
               {errors.email && (
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-destructive">
                   {errors.email.message}
                 </p>
               )}
@@ -447,7 +447,7 @@ export default function UserForm({
                 className="font-medium text-foreground"
               >
                 Phone Number{" "}
-                <span className="text-red-500">
+                <span className="text-destructive">
                   *
                 </span>
               </Label>
@@ -467,7 +467,7 @@ export default function UserForm({
               </div>
 
               {errors.phone && (
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-destructive">
                   {errors.phone.message}
                 </p>
               )}
@@ -488,7 +488,7 @@ export default function UserForm({
               >
                 Password{" "}
                 {!isEdit && (
-                  <span className="text-red-500">
+                  <span className="text-destructive">
                     *
                   </span>
                 )}
@@ -513,7 +513,7 @@ export default function UserForm({
               />
 
               {errors.password && (
-                <p className="text-sm text-red-600">
+                  <p className="text-sm text-destructive">
                   {errors.password.message}
                 </p>
               )}
@@ -528,7 +528,7 @@ export default function UserForm({
               >
                 Confirm Password{" "}
                 {!isEdit && (
-                  <span className="text-red-500">
+                  <span className="text-destructive">
                     *
                   </span>
                 )}
@@ -549,7 +549,7 @@ export default function UserForm({
               />
 
               {errors.confirmPassword && (
-                <p className="text-sm text-red-600">
+                  <p className="text-sm text-destructive">
                   {
                     errors.confirmPassword
                       .message
@@ -567,7 +567,7 @@ export default function UserForm({
 
             <Label className="font-medium text-foreground">
               Branches{" "}
-              <span className="text-red-500">
+              <span className="text-destructive">
                 *
               </span>
             </Label>
@@ -596,7 +596,7 @@ export default function UserForm({
             />
 
             {errors.branchIds && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-destructive">
                 {errors.branchIds.message}
               </p>
             )}
@@ -609,7 +609,7 @@ export default function UserForm({
 
             <Label className="font-medium text-foreground">
               Batches{" "}
-              <span className="text-red-500">
+              <span className="text-destructive">
                 *
               </span>
             </Label>
@@ -654,7 +654,7 @@ export default function UserForm({
             />
 
             {errors.batchIds && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-destructive">
                 {errors.batchIds.message}
               </p>
             )}
@@ -664,14 +664,14 @@ export default function UserForm({
           {/* SERVER ERRORS */}
 
           {state?.errors && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+            <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
 
               {Object.entries(
                 state.errors
               ).map(([key, value]) => (
                 <p
                   key={key}
-                  className="text-sm text-red-700"
+                  className="text-sm text-destructive"
                 >
                   {Array.isArray(value)
                     ? value[0]
@@ -683,7 +683,7 @@ export default function UserForm({
           )}
 
           {state?.message && (
-            <p className="text-sm text-red-600">
+            <p className="text-sm text-destructive">
               {state.message}
             </p>
           )}

@@ -15,7 +15,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { PatternTocRangeFields, type TocRange } from "@/components/PatternTocRangeFields";
 
 import {
   Select,
@@ -55,13 +55,14 @@ type Pattern = {
   id: string;
   name: string;
   patternArr: PatternPart[];
+  tocItems?: { id: string; name: string; parentId: string | null; patternArrId: string; position: number }[];
 };
 
 type Learning = {
   id: string;
   pattern: Pattern | null;
   status: string;
-  values: Record<string, string>;
+  values: Record<string, string | TocRange>;
   saved: boolean;
 };
 
@@ -95,7 +96,6 @@ export function ProgressForm({
     )
   );
 
-
   const [globalPatterns, setGlobalPatterns] = useState<
   Awaited<ReturnType<typeof getBatchPatterns>>
 >([]);
@@ -104,7 +104,7 @@ type GlobalLearning = {
   id: string;
   pattern: Pattern | null;
   status: string;
-  values: Record<string, string>;
+  values: Record<string, string | TocRange>;
 };
 
 const [globalLearnings, setGlobalLearnings] =
@@ -406,7 +406,7 @@ const [progressLoading, setProgressLoading] = useState(true);
     studentId: string,
     learningId: string,
     partId: string,
-    value: string
+    value: string | TocRange
   ) => {
     setProgress((current) => ({
       ...current,
@@ -557,7 +557,8 @@ useEffect(() => {
                       id: part.id,
                       name: part.name,
                       position: part.position,
-                    })),
+                      })),
+                    tocItems: learning.pattern.tocItems ?? [],
                   }
                 : null,
 
@@ -597,7 +598,7 @@ useEffect(() => {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-4 px-3 sm:px-4 lg:px-6">
 
         {/* ---------------------------------- */}
         {/* Header */}
@@ -618,7 +619,7 @@ useEffect(() => {
         {/* ---------------------------------- */}
 
  <Collapsible.Root defaultOpen={false}>
-  <Card className="overflow-hidden p-0">
+  <Card className="overflow-hidden border-0 bg-transparent p-0 shadow-none">
 
     {/* Global Learning Header */}
     <Collapsible.Trigger
@@ -659,7 +660,7 @@ useEffect(() => {
     </Collapsible.Trigger>
 
     <Collapsible.Panel>
-      <CardContent className="space-y-4 border-t p-4 sm:p-5">
+      <CardContent className="space-y-3 border-t px-3 py-2 sm:px-4">
 
         {/* ---------------------------------- */}
         {/* Global Learning Header */}
@@ -776,7 +777,7 @@ useEffect(() => {
         {/* ---------------------------------- */}
 
         {globalLearnings.length > 0 && (
-          <div className="overflow-hidden rounded-lg border">
+          <div className="mt-3">
 
             {/* Learnings Header */}
             <button
@@ -786,8 +787,7 @@ useEffect(() => {
                 flex w-full
                 items-center justify-between
                 gap-3
-                bg-muted/30
-                px-4 py-3
+                border-b px-0 py-2
                 text-left
                 transition-colors
                 hover:bg-muted/50
@@ -839,7 +839,7 @@ useEffect(() => {
 
             {/* Learnings Content */}
             {globalLearningsExpanded && (
-              <div className="space-y-3 p-3">
+              <div className="space-y-2 py-2">
 
                 {globalLearnings.map(
                   (learning, learningIndex) => {
@@ -870,7 +870,7 @@ useEffect(() => {
                             items-center justify-between
                             gap-3
                             bg-background
-                            px-4 py-3
+                            px-3 py-2.5
                             text-left
                             transition-colors
                             hover:bg-muted/50
@@ -934,12 +934,12 @@ useEffect(() => {
                         {/* -------------------------------- */}
 
                         {isExpanded && (
-                          <div className="space-y-4 border-t p-4">
+                          <div className="space-y-2 px-3 py-2">
 
                             
 
                             {/* Pattern + Status */}
-                            <div className="grid gap-4 md:grid-cols-2">
+                            <div className="grid gap-2 md:grid-cols-2">
 
                               {/* Pattern */}
                               <div className="space-y-1">
@@ -1022,7 +1022,7 @@ useEffect(() => {
                                     );
                                   }}
                                 >
-                                  <SelectTrigger>
+                                  <SelectTrigger className={learning.status === "SABAQ" ? "border-secondary bg-secondary text-secondary-foreground" : learning.status === "PARASABAQ" ? "border-accent bg-accent text-accent-foreground" : "border-border bg-muted text-muted-foreground"}>
                                     <SelectValue />
                                   </SelectTrigger>
 
@@ -1032,6 +1032,7 @@ useEffect(() => {
                                         <SelectItem
                                           key={status}
                                           value={status}
+                                          className={status === "SABAQ" ? "text-secondary-foreground" : status === "PARASABAQ" ? "text-accent-foreground" : "text-muted-foreground"}
                                         >
                                           {status.toLowerCase()}
                                         </SelectItem>
@@ -1045,83 +1046,13 @@ useEffect(() => {
 
                             {/* Pattern Parts */}
                             {learning.pattern && (
-                              <div className="rounded-lg bg-muted/40 p-4">
+                              <div className="space-y-2">
 
-                                <div className="mb-4">
-                                  <p className="font-medium">
-                                    {
-                                      learning
-                                        .pattern
-                                        .name
-                                    }
-                                  </p>
-
-                                  <p className="text-xs text-muted-foreground">
-                                    Enter the learning
-                                    for each part.
-                                  </p>
+                                <div className="mb-2 flex items-center justify-between gap-2">
+                                  <p className="text-sm font-semibold">Learning ranges</p>
                                 </div>
 
-                                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-
-                                  {learning.pattern.patternArr.map(
-                                    (part) => (
-                                      <div
-                                        key={
-                                          part.id
-                                        }
-                                        className="space-y-1"
-                                      >
-                                        <Label>
-                                          {part.name}
-                                        </Label>
-
-                                        <Input
-                                          value={
-                                            learning
-                                              .values[
-                                              part.id
-                                            ] ??
-                                            ""
-                                          }
-                                          onChange={(
-                                            event
-                                          ) => {
-                                            const value =
-                                              event
-                                                .target
-                                                .value;
-
-                                            setGlobalLearnings(
-                                              (current) =>
-                                                current.map(
-                                                  (
-                                                    item
-                                                  ) =>
-                                                    item.id ===
-                                                    learning.id
-                                                      ? {
-                                                          ...item,
-                                                          values:
-                                                            {
-                                                              ...item.values,
-                                                              [part.id]:
-                                                                value,
-                                                            },
-                                                        }
-                                                      : item
-                                                )
-                                            );
-                                          }}
-                                          placeholder={
-                                            part.name
-                                          }
-                                        />
-                                      </div>
-                                    )
-                                  )}
-
-                                </div>
+                                <PatternTocRangeFields parts={learning.pattern.patternArr} tocItems={learning.pattern.tocItems} values={learning.values} onChange={(partId, value) => setGlobalLearnings(current => current.map(item => item.id === learning.id ? { ...item, values: { ...item.values, [partId]: value } } : item))} />
                               </div>
                             )}
 
@@ -1409,12 +1340,12 @@ useEffect(() => {
     </CardContent>
   </Card>
 ) : (
-<Card>
+<Card className="border-0 bg-transparent shadow-none">
   <CardHeader>
     <CardTitle>Student Progress</CardTitle>
   </CardHeader>
 
-  <CardContent className="space-y-4">
+  <CardContent className="space-y-2 p-0">
     {students.length === 0 ? (
       <div className="rounded-lg border p-8 text-center">
         <p className="text-sm text-muted-foreground">
@@ -1430,10 +1361,10 @@ useEffect(() => {
 
         return (
           <div key={student.id}>
-            <div className="rounded-lg border p-4">
+            <div className="rounded-md border border-border/70 bg-muted/20 p-3">
 
               {/* Student Header */}
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate font-medium">
                     {student.name}
@@ -1466,7 +1397,7 @@ useEffect(() => {
 
               {/* Learnings */}
               {data.learnings.length > 0 && (
-                <div className="mt-4 overflow-hidden rounded-lg border">
+                <div className="mt-3 rounded-md bg-background/70 px-2 py-2">
 
                   {/* Learnings Header */}
                   <button
@@ -1475,8 +1406,7 @@ useEffect(() => {
                       group flex w-full
                       items-center justify-between
                       gap-3
-                      bg-muted/30
-                      px-4 py-3
+                      border-b px-0 py-2
                       text-left
                       transition-colors
                       hover:bg-muted/50
@@ -1524,7 +1454,7 @@ useEffect(() => {
 
                   {/* Individual Learnings */}
                   {isLearningsExpanded && (
-                    <div className="space-y-3 p-3">
+                    <div className="space-y-2 py-2">
 
                       {data.learnings.map(
                         (
@@ -1556,7 +1486,7 @@ useEffect(() => {
                                   items-center justify-between
                                   gap-3
                                   bg-background
-                                  px-4 py-3
+                                  px-3 py-2.5
                                   text-left
                                   transition-colors
                                   hover:bg-muted/50
@@ -1587,7 +1517,7 @@ useEffect(() => {
                                           px-2 py-0.5
                                           text-[11px]
                                           font-medium
-                                          text-green-600
+                                          text-primary
                                         "
                                       >
                                         ✓ Saved
@@ -1627,10 +1557,10 @@ useEffect(() => {
 
                               {/* Learning Content */}
                               {isExpanded && (
-                                <div className="space-y-4 border-t p-4">
+                                <div className="space-y-2 px-3 py-2">
 
                                   {/* Pattern + Status */}
-                                  <div className="grid gap-4 md:grid-cols-2">
+                                  <div className="grid gap-2 md:grid-cols-2">
 
                                     {/* Pattern */}
                                     <div className="space-y-1">
@@ -1704,7 +1634,7 @@ useEffect(() => {
                                           );
                                         }}
                                       >
-                                        <SelectTrigger>
+                                        <SelectTrigger className={learning.status === "SABAQ" ? "border-secondary bg-secondary text-secondary-foreground" : learning.status === "PARASABAQ" ? "border-accent bg-accent text-accent-foreground" : "border-border bg-muted text-muted-foreground"}>
                                           <SelectValue />
                                         </SelectTrigger>
 
@@ -1726,55 +1656,13 @@ useEffect(() => {
 
                                   {/* Pattern Parts */}
                                   {learning.pattern && (
-                                    <div className="rounded-lg bg-muted/40 p-4">
+                                    <div className="space-y-2">
 
-                                      <div className="mb-4">
-                                        <p className="font-medium">
-                                          {learning.pattern.name}
-                                        </p>
-
-                                        <p className="text-xs text-muted-foreground">
-                                          Enter the learning for
-                                          each part.
-                                        </p>
+                                      <div className="mb-2">
+                                        <p className="text-sm font-semibold">Learning ranges</p>
                                       </div>
 
-                                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                        {learning.pattern.patternArr.map(
-                                          (part) => (
-                                            <div
-                                              key={part.id}
-                                              className="space-y-1"
-                                            >
-                                              <Label>
-                                                {part.name}
-                                              </Label>
-
-                                              <Input
-                                                value={
-                                                  learning.values[
-                                                    part.id
-                                                  ] ?? ""
-                                                }
-                                                onChange={(
-                                                  event
-                                                ) =>
-                                                  updateLearningValue(
-                                                    student.id,
-                                                    learning.id,
-                                                    part.id,
-                                                    event.target
-                                                      .value
-                                                  )
-                                                }
-                                                placeholder={
-                                                  part.name
-                                                }
-                                              />
-                                            </div>
-                                          )
-                                        )}
-                                      </div>
+                                      <PatternTocRangeFields parts={learning.pattern.patternArr} tocItems={learning.pattern.tocItems} values={learning.values} onChange={(partId, value) => updateLearningValue(student.id, learning.id, partId, value)} />
                                     </div>
                                   )}
 

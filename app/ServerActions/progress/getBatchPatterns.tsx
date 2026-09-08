@@ -25,6 +25,10 @@ export async function getBatchPatterns(batchId: string) {
               position: true,
             },
           },
+          tocItems: {
+            orderBy: { position: "asc" },
+            select: { id: true, name: true, parentId: true, patternArrId: true, position: true },
+          },
         },
       },
     },

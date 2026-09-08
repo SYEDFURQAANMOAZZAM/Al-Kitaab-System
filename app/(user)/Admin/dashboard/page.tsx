@@ -26,12 +26,12 @@ const totalstudents=await prisma.student.count();
 const totalteachers=await prisma.teacher.count();
 
 const stats: StatCard[] = [
-  { label: "Total Students", value: totalstudents, icon: Users, iconColor: "text-blue-500" },
-  { label: "Total Teachers", value: totalteachers, icon: UsersRound, iconColor: "text-purple-500" },
-  { label: "Active Students", value: 13, icon: CheckCircle2, iconColor: "text-emerald-500" },
-  { label: "Classes", value: 7, icon: BookOpen, iconColor: "text-orange-500" },
-  { label: "Ongoing Lessons", value: 4, icon: BookOpenCheck, iconColor: "text-cyan-500" },
-  { label: "Pending Assignments", value: 13, icon: ClipboardList, iconColor: "text-amber-500" },
+  { label: "Total Students", value: totalstudents, icon: Users, iconColor: "text-chart-1" },
+  { label: "Total Teachers", value: totalteachers, icon: UsersRound, iconColor: "text-chart-2" },
+  { label: "Active Students", value: 13, icon: CheckCircle2, iconColor: "text-primary" },
+  { label: "Classes", value: 7, icon: BookOpen, iconColor: "text-chart-3" },
+  { label: "Ongoing Lessons", value: 4, icon: BookOpenCheck, iconColor: "text-chart-4" },
+  { label: "Pending Assignments", value: 13, icon: ClipboardList, iconColor: "text-chart-5" },
 ];
 
 type Activity = {

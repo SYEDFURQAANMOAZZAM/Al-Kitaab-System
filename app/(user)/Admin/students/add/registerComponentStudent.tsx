@@ -615,7 +615,7 @@ export default function UserForm({
               className="font-medium text-foreground"
             >
               Full Name{" "}
-              <span className="text-red-500">
+              <span className="text-destructive">
                 *
               </span>
             </Label>
@@ -636,7 +636,7 @@ export default function UserForm({
 
 
             {errors.name && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-destructive">
                 {errors.name.message}
               </p>
             )}
@@ -665,7 +665,7 @@ export default function UserForm({
                   className="font-medium text-foreground"
                 >
                   Father&apos;s Name{" "}
-                  <span className="text-red-500">
+                  <span className="text-destructive">
                     *
                   </span>
                 </Label>
@@ -680,7 +680,7 @@ export default function UserForm({
 
 
                 {errors.fatherName && (
-                  <p className="text-sm text-red-600">
+                  <p className="text-sm text-destructive">
                     {errors.fatherName.message}
                   </p>
                 )}
@@ -697,7 +697,7 @@ export default function UserForm({
                   className="font-medium text-foreground"
                 >
                   Address{" "}
-                  <span className="text-red-500">
+                  <span className="text-destructive">
                     *
                   </span>
                 </Label>
@@ -713,7 +713,7 @@ export default function UserForm({
 
 
                 {errors.address && (
-                  <p className="text-sm text-red-600">
+                  <p className="text-sm text-destructive">
                     {errors.address.message}
                   </p>
                 )}
@@ -758,7 +758,7 @@ export default function UserForm({
 
 
             {errors.email && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-destructive">
                 {errors.email.message}
               </p>
             )}
@@ -797,7 +797,7 @@ export default function UserForm({
                 className="font-medium text-foreground"
               >
                 Phone Number{" "}
-                <span className="text-red-500">
+                <span className="text-destructive">
                   *
                 </span>
               </Label>
@@ -819,7 +819,7 @@ export default function UserForm({
 
 
               {errors.phone && (
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-destructive">
                   {errors.phone.message}
                 </p>
               )}
@@ -857,7 +857,7 @@ export default function UserForm({
 
 
                 {errors.phone2 && (
-                  <p className="text-sm text-red-600">
+                  <p className="text-sm text-destructive">
                     {errors.phone2.message}
                   </p>
                 )}
@@ -886,7 +886,7 @@ export default function UserForm({
               >
                 Password{" "}
                 {!isEdit && (
-                  <span className="text-red-500">
+                  <span className="text-destructive">
                     *
                   </span>
                 )}
@@ -912,7 +912,7 @@ export default function UserForm({
 
 
               {errors.password && (
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-destructive">
                   {errors.password.message}
                 </p>
               )}
@@ -930,7 +930,7 @@ export default function UserForm({
               >
                 Confirm Password{" "}
                 {!isEdit && (
-                  <span className="text-red-500">
+                  <span className="text-destructive">
                     *
                   </span>
                 )}
@@ -953,7 +953,7 @@ export default function UserForm({
 
 
               {errors.confirmPassword && (
-                <p className="text-sm text-red-600">
+                  <p className="text-sm text-destructive">
                   {
                     errors
                       .confirmPassword
@@ -1042,7 +1042,7 @@ export default function UserForm({
 
 
             {errors.batchIds && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-destructive">
                 {String(
                   errors.batchIds
                     .message
@@ -1128,7 +1128,7 @@ export default function UserForm({
               className={[
                 "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
                 selected
-                  ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800/50 dark:bg-emerald-950 dark:text-emerald-300"
+                  ? "border-primary/30 bg-primary/10 text-primary"
                   : "border-border bg-background text-foreground hover:bg-muted",
               ].join(" ")}
             >
@@ -1149,7 +1149,7 @@ export default function UserForm({
     />
 
     {errors.patternIds && (
-      <p className="text-sm text-red-600">
+      <p className="text-sm text-destructive">
         {String(errors.patternIds.message)}
       </p>
     )}
@@ -1175,7 +1175,7 @@ export default function UserForm({
 
           {state?.errors && (
 
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+            <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
 
               {Object.entries(
                 state.errors
@@ -1184,7 +1184,7 @@ export default function UserForm({
 
                   <p
                     key={key}
-                    className="text-sm text-red-700"
+                    className="text-sm text-destructive"
                   >
                     {
                       Array.isArray(
@@ -1207,7 +1207,7 @@ export default function UserForm({
 
           {state?.message && (
 
-            <p className="text-sm text-red-600">
+            <p className="text-sm text-destructive">
               {state.message}
             </p>
 
