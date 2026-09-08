@@ -46,28 +46,7 @@ type BatchDetailsProps = {
 };
 
 
-/* =========================================================
-   Attendance
-========================================================= */
 
-// function AttendanceBar({
-//   value,
-// }: {
-//   value: number;
-// }) {
-//   return (
-//     <div className="flex min-w-0 items-center gap-2">
-//       <Progress
-//         value={value}
-//         className="h-2 flex-1"
-//       />
-
-//       <span className="w-10 shrink-0 text-right text-xs font-semibold text-slate-700">
-//         {value}%
-//       </span>
-//     </div>
-//   );
-// }
 
 /* =========================================================
    Student List
@@ -84,7 +63,7 @@ function StudentList({
 }) {
   if (students.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed bg-white p-5 text-center">
+      <div className="rounded-lg border border-dashed bg-card p-5 text-center">
         <p className="text-sm text-muted-foreground">
           No students assigned to this batch.
         </p>
@@ -98,13 +77,13 @@ function StudentList({
         <div
           key={student.id}
           className="
-            rounded-lg border bg-white
+            rounded-lg border bg-card
             p-3
             sm:px-4 sm:py-3
           "
         >
           <div className="flex items-center justify-between gap-3">
-            <p className="min-w-0 truncate text-sm font-medium text-slate-800">
+            <p className="min-w-0 truncate text-sm font-medium text-card-foreground">
               {student.name ?? "Unnamed"}
             </p>
 
@@ -123,7 +102,7 @@ function StudentList({
                   Attendance
                 </span>
 
-                <span className="text-xs font-semibold text-slate-700">
+                <span className="text-xs font-semibold text-foreground">
                   {student.attendance}%
                 </span>
               </div>
@@ -140,7 +119,7 @@ function StudentList({
                   Progress
                 </span>
 
-                <span className="text-xs font-semibold text-slate-700">
+                <span className="text-xs font-semibold text-foreground">
                   {student.progress}%
                 </span>
               </div>
@@ -172,7 +151,7 @@ function TeacherList({
 }) {
   if (teachers.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed bg-white p-5 text-center">
+      <div className="rounded-lg border border-dashed bg-card p-5 text-center">
         <p className="text-sm text-muted-foreground">
           No teachers assigned to this batch.
         </p>
@@ -186,13 +165,13 @@ function TeacherList({
         <div
           key={teacher.id}
           className="
-            rounded-lg border bg-white
+            rounded-lg border bg-card
             p-3
             sm:px-4 sm:py-3
           "
         >
           <div className="flex items-center justify-between gap-3">
-            <p className="min-w-0 truncate text-sm font-medium text-slate-800">
+            <p className="min-w-0 truncate text-sm font-medium text-card-foreground">
               {teacher.name ?? "Unnamed"}
             </p>
 
@@ -210,7 +189,7 @@ function TeacherList({
                 Attendance
               </span>
 
-              <span className="text-xs font-semibold text-slate-700">
+              <span className="text-xs font-semibold text-foreground">
                 {teacher.attendance}%
               </span>
             </div>
@@ -254,7 +233,7 @@ function MemberSection({
   onMemberAdded: () => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
       <div className="flex items-center">
         {/* Expand */}
 
@@ -267,16 +246,16 @@ function MemberSection({
             items-center gap-3
             px-4 py-3.5
             text-left
-            hover:bg-slate-50
+            hover:bg-accent
           "
         >
           <ChevronDown
-            className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${
+            className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
               open ? "rotate-180" : ""
             }`}
           />
 
-          <span className="font-medium text-slate-800">
+          <span className="font-medium text-card-foreground">
             {title}
           </span>
 
@@ -291,7 +270,7 @@ function MemberSection({
       </div>
 
       {open && (
-        <div className="border-t bg-slate-50/60 p-3 sm:p-4">
+        <div className="border-t bg-muted/60 p-3 sm:p-4">
           {pending && !loaded ? (
             <p className="py-3 text-center text-sm text-muted-foreground">
               Loading {title.toLowerCase()}...

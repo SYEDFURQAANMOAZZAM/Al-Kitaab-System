@@ -1,0 +1,7 @@
+"use client";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { setPatternTrackingStatus } from "@/app/ServerActions/patternOperations/toc";
+const statuses = ["SABAQ", "PARASABAQ", "AMUQTA"] as const;
+export default function TrackingSelector({ pattern }: { pattern: { id: string; name: string; trackingStatus: typeof statuses[number] } }) { const [status,setStatus] = useState(pattern.trackingStatus); const [pending,start] = useTransition(); const router=useRouter(); return <main className="mx-auto max-w-xl space-y-5 p-4 sm:p-6"><Link href={`/Admin/study-pattern/${pattern.id}`} className="text-sm text-muted-foreground">← Back to pattern</Link><div><h1 className="text-2xl font-bold">Tracking parameter</h1><p className="mt-1 text-sm text-muted-foreground">Only daily learnings with this status update a student’s overall position for {pattern.name}.</p></div><div className="rounded-xl border bg-card p-5"><label className="text-sm font-medium">Status to track</label><select className="mt-2 h-11 w-full rounded-md border bg-background px-3" value={status} onChange={e=>setStatus(e.target.value as typeof status)}>{statuses.map(x=><option key={x}>{x}</option>)}</select><button disabled={pending} onClick={()=>start(async()=>{await setPatternTrackingStatus(pattern.id,status); router.push(`/Admin/study-pattern/${pattern.id}`)})} className="mt-4 h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">Save tracking parameter</button></div></main>; }

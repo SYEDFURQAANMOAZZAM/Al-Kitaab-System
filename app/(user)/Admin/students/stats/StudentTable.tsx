@@ -1,62 +1,104 @@
-import { Progress } from "@/components/ui/progress";
 import type { Prisma } from "@/generated/prisma/client";
 
 import {
   Building2,
   Users,
 } from "lucide-react";
+
 import StudentActions from "./StudentActions";
 
-type StudentWithDetails = Prisma.StudentGetPayload<{
-  select: {
-    id: true;
+/* =========================================================
+   STUDENT DATA TYPE
+========================================================= */
 
-    user: {
-      select: {
-        name: true;
-        email: true;
+type StudentWithDetails =
+  Prisma.StudentGetPayload<{
+    select: {
+      id: true;
+      userId: true;
+
+      user: {
+        select: {
+          name: true;
+          email: true;
+        };
       };
-    };
 
-    enrollments: {
-      select: {
-        batch: {
-          select: {
-            id: true;
-            branch: {
-              select: {
-                name: true;
+      enrollments: {
+        select: {
+          batch: {
+            select: {
+              name: true;
+
+              branch: {
+                select: {
+                  id: true;
+                  name: true;
+                };
               };
             };
           };
         };
       };
     };
+  }>;
+
+type StudentTableStudent =
+  StudentWithDetails & {
+    stats: {
+      attendance: number;
+      progress: number;
+      progressScore: number;
+      overall: number;
+    };
+
+    rank: number;
   };
-}>;
 
-type StudentTableProps = {
-  students: StudentWithDetails[];
-  currentPage: number;
-  pageSize: number;
-};
+interface Props {
+  students: StudentTableStudent[];
+}
 
+/* =========================================================
+   PROGRESS COLOR
+========================================================= */
 
+function Color(percentage: number) {
+  if (percentage >= 90) {
+    return "bg-primary";
+  }
+
+  if (percentage >= 70) {
+    return "bg-chart-2";
+  }
+
+  if (percentage >= 50) {
+    return "bg-chart-4";
+  }
+
+  return "bg-destructive";
+}
+
+/* =========================================================
+   STUDENT TABLE
+========================================================= */
 
 export default function StudentTable({
   students,
-  currentPage,
-  pageSize,
-}: StudentTableProps) {
+}: Props) {
   return (
     <>
-      {/* ===========================
-          Desktop & Tablet
-      ============================ */}
+      {/* =====================================================
+          DESKTOP / TABLET
+      ===================================================== */}
 
-      <div className="hidden overflow-hidden rounded-xl border bg-white shadow-sm md:block">
+      <div className="hidden overflow-hidden rounded-xl border bg-card shadow-sm md:block">
         <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
+          <table className="min-w-full table-fixed text-sm">
+            {/* =================================================
+                HEADER
+            ================================================= */}
+
             <thead className="bg-muted/50">
               <tr className="border-b">
                 <th className="w-16 px-6 py-4 text-left font-semibold">
@@ -83,34 +125,64 @@ export default function StudentTable({
                   Progress
                 </th>
 
+                <th className="w-64 px-6 py-4 text-left font-semibold">
+                  Scores
+                </th>
+
                 <th className="w-20 px-6 py-4 text-center font-semibold">
                   Actions
                 </th>
               </tr>
             </thead>
 
+            {/* =================================================
+                BODY
+            ================================================= */}
+
             <tbody>
-              {students.map((student, index) => {
-                const enrollment =
-                  student.enrollments?.[0];
+              {students.map((student) => {
+                const branchCount =
+                  new Set(
+                    student.enrollments.map(
+                      (enrollment) =>
+                        enrollment.batch.branch.id
+                    )
+                  ).size;
 
                 const batchCount =
                   student.enrollments.length;
+
+                const attendance =
+                  Math.round(
+                    student.stats.attendance
+                  );
+
+                const progress =
+                  Math.round(
+                    student.stats.progress
+                  );
+
+                const progressScore =
+                  Math.round(
+                    student.stats.progressScore
+                  );
 
                 return (
                   <tr
                     key={student.id}
                     className="border-b transition hover:bg-muted/30"
                   >
-                    {/* Number */}
+                    {/* =========================================
+                        RANK
+                    ========================================= */}
 
-                    <td className="px-6 py-5">
-                      {(currentPage - 1) * pageSize +
-                        index +
-                        1}
+                    <td className="px-6 py-5 font-semibold">
+                      {student.rank}
                     </td>
 
-                    {/* Student */}
+                    {/* =========================================
+                        STUDENT
+                    ========================================= */}
 
                     <td className="px-6 py-5">
                       <div>
@@ -124,61 +196,75 @@ export default function StudentTable({
                       </div>
                     </td>
 
-                    {/* Branch */}
+                    {/* =========================================
+                        BRANCH
+                    ========================================= */}
 
                     <td className="px-6 py-5">
-                      <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                      <div className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
                         <Building2 className="h-3.5 w-3.5" />
 
-                        {enrollment?.batch.branch.name ??
-                          "-"}
+                        {branchCount}
                       </div>
                     </td>
 
-                    {/* Number of Batches */}
+                    {/* =========================================
+                        BATCHES
+                    ========================================= */}
 
                     <td className="px-6 py-5">
-                      <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
+                      <div className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-foreground">
                         <Users className="h-3.5 w-3.5" />
 
                         {batchCount}
                       </div>
                     </td>
 
-                    {/* Attendance */}
+                    {/* =========================================
+                        ATTENDANCE
+                    ========================================= */}
 
                     <td className="px-6 py-5">
-                      <div className="flex items-center gap-3">
-                        <Progress
-                          value={75}
-                          className="h-2"
-                        />
-
+                      <div className="flex items-center justify-center gap-3">
                         <span className="w-10 text-sm font-medium">
-                          75%
+                          {attendance}%
                         </span>
                       </div>
                     </td>
 
-                    {/* Progress */}
+                    {/* =========================================
+                        PROGRESS
+                    ========================================= */}
 
                     <td className="px-6 py-5">
-                      <div className="flex items-center gap-3">
-                        <Progress
-                          value={62}
-                          className="h-2"
-                        />
-
+                      <div className="flex items-center justify-center gap-3">
                         <span className="w-10 text-sm font-medium">
-                          62%
+                          {progress}%
                         </span>
                       </div>
                     </td>
 
-                    {/* Actions */}
+                    {/* =========================================
+                        SCORE
+                    ========================================= */}
+
+                    <td className="px-6 py-5">
+                        <span className="inline-flex min-w-[52px] items-center justify-center px-3 py-1.5 text-sm font-semibold tabular-nums">
+                          {progressScore}%
+                        </span>
+                    </td>
+
+                    {/* =========================================
+                        ACTIONS
+                    ========================================= */}
 
                     <td className="px-6 py-5 text-center">
-                      <StudentActions studentId={student.id} studentName={student.user.name ?? "Unknown Student"}/>
+                      <StudentActions
+                        studentId={student.id}
+                        studentName={
+                          student.user.name
+                        }
+                      />
                     </td>
                   </tr>
                 );
@@ -188,61 +274,99 @@ export default function StudentTable({
         </div>
       </div>
 
-      {/* ===========================
-          Mobile
-      ============================ */}
+      {/* =====================================================
+          MOBILE
+      ===================================================== */}
 
       <div className="grid gap-4 md:hidden">
-        {students.map((student, index) => {
-          const enrollment =
-            student.enrollments?.[0];
-
+        {students.map((student) => {
           const batchCount =
             student.enrollments.length;
+
+          const branchCount =
+            new Set(
+              student.enrollments.map(
+                (enrollment) =>
+                  enrollment.batch.branch.id
+              )
+            ).size;
+
+          const attendance =
+            Math.round(
+              student.stats.attendance
+            );
+
+          const progress =
+            Math.round(
+              student.stats.progress
+            );
+
+          const progressScore =
+            Math.round(
+              student.stats.progressScore
+            );
+
+          const attendanceColor =
+            Color(attendance);
+
+          const progressColor =
+            Color(progress);
 
           return (
             <div
               key={student.id}
-              className="rounded-xl border bg-white p-4 shadow-sm transition hover:shadow-md"
+              className="rounded-xl border bg-card p-4 shadow-sm transition hover:shadow-md"
             >
-              {/* Header */}
+              {/* =============================================
+                  HEADER
+              ============================================= */}
 
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
-                  <h2 className="truncate text-base font-semibold">
-                    {student.user.name}
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      #{student.rank}
+                    </span>
+
+                    <h2 className="truncate text-base font-semibold">
+                      {student.user.name}
+                    </h2>
+                  </div>
 
                   <p className="mt-1 break-all text-xs text-muted-foreground">
                     {student.user.email}
                   </p>
                 </div>
 
-                <StudentActions studentId={student.id} studentName={student.user.name ?? "Unknown Student"}/>
+                <StudentActions
+                  studentId={student.id}
+                  studentName={
+                    student.user.name
+                  }
+                />
               </div>
 
-              {/* Branch & Batches */}
+              {/* =============================================
+                  BRANCH & BATCHES
+              ============================================= */}
 
               <div className="mt-4 grid grid-cols-2 gap-3">
-                {/* Branch */}
-
-                <div className="rounded-lg border bg-slate-50 p-3">
+                <div className="rounded-lg border bg-muted p-3">
                   <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                     <Building2 className="h-3.5 w-3.5" />
-                    Branch
+
+                    Branches
                   </div>
 
-                  <p className="truncate text-sm font-semibold">
-                    {enrollment?.batch.branch.name ??
-                      "-"}
+                  <p className="text-sm font-semibold">
+                    {branchCount}
                   </p>
                 </div>
 
-                {/* Number of Batches */}
-
-                <div className="rounded-lg border bg-emerald-50 p-3">
+                <div className="rounded-lg border bg-accent p-3">
                   <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                     <Users className="h-3.5 w-3.5" />
+
                     Batches
                   </div>
 
@@ -252,7 +376,9 @@ export default function StudentTable({
                 </div>
               </div>
 
-              {/* Attendance */}
+              {/* =============================================
+                  ATTENDANCE
+              ============================================= */}
 
               <div className="mt-5">
                 <div className="mb-2 flex items-center justify-between">
@@ -261,17 +387,23 @@ export default function StudentTable({
                   </span>
 
                   <span className="text-sm font-semibold">
-                    75%
+                    {attendance}%
                   </span>
                 </div>
 
-                <Progress
-                  value={75}
-                  className="h-2"
-                />
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={`h-full rounded-full ${attendanceColor}`}
+                    style={{
+                      width: `${attendance}%`,
+                    }}
+                  />
+                </div>
               </div>
 
-              {/* Progress */}
+              {/* =============================================
+                  PROGRESS
+              ============================================= */}
 
               <div className="mt-5">
                 <div className="mb-2 flex items-center justify-between">
@@ -280,33 +412,38 @@ export default function StudentTable({
                   </span>
 
                   <span className="text-sm font-semibold">
-                    62%
+                    {progress}%
                   </span>
                 </div>
 
-                <Progress
-                  value={62}
-                  className="h-2"
-                />
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={`h-full rounded-full ${progressColor}`}
+                    style={{
+                      width: `${progress}%`,
+                    }}
+                  />
+                </div>
               </div>
 
-              {/* Number */}
+              {/* =============================================
+                  SCORE
+              ============================================= */}
 
-              <p className="mt-4 text-xs text-muted-foreground">
-                #
-                {(currentPage - 1) * pageSize +
-                  index +
-                  1}
-              </p>
+              <span className="mt-5 inline-flex min-w-[52px] items-center justify-center rounded-lg border bg-muted/50 px-3 py-1.5 text-sm font-semibold tabular-nums">
+                {progressScore}% Progress Score
+              </span>
             </div>
           );
         })}
       </div>
 
-      {/* Empty State */}
+      {/* =====================================================
+          EMPTY STATE
+      ===================================================== */}
 
       {students.length === 0 && (
-        <div className="rounded-xl border bg-white py-20 text-center shadow-sm">
+        <div className="rounded-xl border bg-card py-20 text-center shadow-sm">
           <p className="text-lg font-semibold">
             No students found
           </p>

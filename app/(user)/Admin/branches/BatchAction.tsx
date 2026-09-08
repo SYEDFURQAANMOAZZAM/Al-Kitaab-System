@@ -19,6 +19,7 @@ import {
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useRouter } from "next/navigation";
 
 import {
   DropdownMenu,
@@ -42,6 +43,8 @@ export default function BatchAction({
   batchStudents:number;
   batchTeachers:number
 }) {
+  
+  const router = useRouter();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -86,7 +89,7 @@ export default function BatchAction({
   }, 0);
 }
 
-
+ 
 
   function openRenameDialog() {
     setDropdownOpen(false);
@@ -118,8 +121,8 @@ export default function BatchAction({
             p-2
             text-muted-foreground
             transition
-            hover:bg-slate-100
-            hover:text-slate-900
+            hover:bg-accent
+            hover:text-accent-foreground
             sm:right-4
           "
           aria-label={`Actions for ${batchName}`}
@@ -128,6 +131,12 @@ export default function BatchAction({
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="end">
+
+          <DropdownMenuItem onClick={() => router.push(`/Admin/branches/${batchId}/attendance`)}>
+            Mark Attendance
+          </DropdownMenuItem>
+
+
           <DropdownMenuItem onClick={openRenameDialog}>
             Rename Batch
           </DropdownMenuItem>
@@ -213,7 +222,7 @@ export default function BatchAction({
 
             {state?.error && (
               <p
-                className="mt-2 text-sm text-red-600"
+                className="mt-2 text-sm text-destructive"
                 role="alert"
               >
                 {state.error}

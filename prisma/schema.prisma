@@ -21,18 +21,25 @@ enum Role {
 enum Attend{
   PRESENT
   ABSENT
+  LEAVE
 }
 
 enum Studied{
   YES
   NO
-  
+}
+
+enum Status {
+  SABAQ
+  PARASABAQ
+  AMUQTA
 }
 
 model User {
   id         String        @id @default(cuid())
-  email      String        @unique
-  phone      String?       @unique
+  email      String        @unique    
+  phone      String?       
+  phone2     String?      
   password   String
   name       String
   role       Role
@@ -46,11 +53,27 @@ model User {
 }
 
 model Student {
-  id          String               @id @default(cuid())
-  userId      String               @unique
-  user        User                 @relation(fields: [userId], references: [id] ,onDelete:Cascade)
-  progress    Progress[]
-  enrollments StudentEnrollment[]
+  id               String               @id @default(cuid())
+  userId           String               @unique
+  user             User                 @relation(fields: [userId], references: [id] ,onDelete:Cascade)
+  fatherName       String?
+  Adress           String?
+  studentPatterns  StudentPattern[]
+  progress         Progress[]
+  overallProgress  StudentOverallProgress[]
+  enrollments      StudentEnrollment[]
+}
+
+model StudentPattern {
+  id        String  @id @default(cuid())
+  studentId String
+  patternId String
+
+  student   Student @relation(fields: [studentId], references: [id])
+  pattern   Pattern @relation(fields: [patternId], references: [id])
+  overallProgress StudentOverallProgress[]
+
+  @@unique([studentId, patternId])
 }
 
 model Teacher {
@@ -74,20 +97,23 @@ model Batch {
 
   branchId    String
   branch      Branch               @relation(fields: [branchId], references: [id],onDelete:Cascade)
-  
+  holiday     Holiday[]
+  patterns    BatchPattern[]
+
   students    StudentEnrollment[]
   teachers    TeacherAssignment[]
   @@unique([branchId,name])
 }
 
 model StudentEnrollment {
-  id         String     @id @default(cuid())
+  id               String     @id @default(cuid())
 
-  studentId  String
-  batchId    String
+  studentId        String
+  batchId          String
 
-  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  batch      Batch      @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  student          Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  batch            Batch      @relation(fields: [batchId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, batchId])
   @@index([batchId])
@@ -106,6 +132,16 @@ model TeacherAssignment {
   @@index([batchId])
 }
 
+model Holiday {
+  id      String   @id @default(cuid())
+  batchId String?
+  date    DateTime
+  batch   Batch?   @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, date])
+  @@index([batchId, date])
+}
+
 model Attendance {
   id          String    @id @default(cuid())
   userId      String
@@ -115,30 +151,111 @@ model Attendance {
   batchId     String?   
   batchname   String
 
-  date        DateTime
+  date        DateTime  @db.Date
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   @@unique([userId, date ,batchId])
   @@index([batchId])
+  @@index([userId,date])
 }
 
 
 model Progress {
-  id          String    @id @default(cuid())
-  studentId   String
-  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studied     Studied 
-  remarks     String?
-  score       Int
-  batchId     String?
-  batchname   String
-  date        DateTime
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  @@unique([studentId, date ,batchId])
-  @@index([batchId])
+  id        String   @id @default(cuid())
+
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  batchId   String?
+  batchname String
+  date      DateTime @db.Date
+
+  studied   Studied?
+  remarks   String?
+  score     Int?
+
+  learnings Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, date, batchId])
+  @@index([batchId, date])
 }
 
 
 
+model Pattern {
+  id              String           @id @default(cuid())
+  name            String
+  patternArr      PatternArr[]
+  batches         BatchPattern[]
+  studentPatterns StudentPattern[]
+  tocItems        PatternTocItem[]
+  overallProgress StudentOverallProgress[]
+  trackingStatus  Status @default(SABAQ)
+}
 
+model PatternArr{
+  id          String  @id @default(cuid())
+  name        String
+  position     Int
+  patternId   String
+  pattern     Pattern   @relation(fields: [patternId], references: [id], onDelete: Cascade)
+  tocItems    PatternTocItem[]
+  @@unique([patternId, position])   
+}
+
+
+
+model BatchPattern {
+  id        String  @id @default(cuid())
+
+  batchId   String
+  patternId String
+
+  batch     Batch   @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  pattern   Pattern @relation(fields: [patternId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, patternId])
+}
+
+/// A selectable node in a pattern's table of contents.  Nodes are nested,
+/// for example Para 1 -> Ruku 2 -> Ayah 7.
+model PatternTocItem {
+  id           String   @id @default(cuid())
+  patternId    String
+  patternArrId String
+  parentId     String?
+  name         String
+  position     Int
+
+  pattern      Pattern    @relation(fields: [patternId], references: [id], onDelete: Cascade)
+  patternArr   PatternArr @relation(fields: [patternArrId], references: [id], onDelete: Cascade)
+  parent       PatternTocItem?  @relation("TocTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children     PatternTocItem[] @relation("TocTree")
+
+  @@unique([parentId, position])
+  @@index([patternId, patternArrId, parentId])
+}
+
+/// The latest completed position used for long-term student tracking.
+/// It exists only while the student has the corresponding StudentPattern.
+model StudentOverallProgress {
+  id               String   @id @default(cuid())
+  studentId        String
+  patternId        String
+  studentPatternId String   @unique
+  trackingStatus   Status
+  currentValues    Json
+  currentPrimaryTocItemId String?
+  updatedAt        DateTime @updatedAt
+  createdAt        DateTime @default(now())
+
+  student        Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  pattern        Pattern        @relation(fields: [patternId], references: [id], onDelete: Cascade)
+  studentPattern StudentPattern @relation(fields: [studentPatternId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, patternId])
+  @@index([patternId, trackingStatus])
+}
