@@ -1,48 +1,119 @@
-'use client'
-import {
-  LayoutDashboard,
-  UserCheck,
-  Users,
-  Building2,
-  BookOpen,
-  Settings,
-} from "lucide-react";
+export type SidebarIcon =
+  | "dashboard"
+  | "teacher"
+  | "student"
+  | "users"
+  | "branch"
+  | "batch"
+  | "pattern"
+  | "materials"
+  | "book"
+  | "attendance"
+  | "progress"
+  | "performance"
+  | "report"
+  | "calendar"
+  | "schedule"
+  | "test"
+  | "result"
+  | "fees"
+  | "payment"
+  | "notification"
+  | "message"
+  | "profile"
+  | "settings"
+  | "help"
+  | "logout"
+  | "home"
+  | "search"
+  | "folder"
+  | "document"
+  | "check"
+  | "clock"
+  | "star"
+  | "target"
+  | "activity"
+  | "analytics"
+  | "shield";
 
-type SidebarLink = {
+export type SidebarLink = {
   title: string;
   href: string;
-  icon: React.ElementType;
+  icon: SidebarIcon;
 };
 
-type SidebarGroupItem = {
+export type SidebarGroupItem = {
   title: string;
-  icon: React.ElementType;
-  children: { title: string; href: string }[];
+  icon: SidebarIcon;
+  children: SidebarItem[];
 };
 
-type SidebarItem = SidebarLink | SidebarGroupItem;
-
+export type SidebarItem =
+  | SidebarLink
+  | SidebarGroupItem;
 
 export const sidebarItems: SidebarItem[] = [
-  { title: "Dashboard", href: "/Admin/dashboard", icon: LayoutDashboard },
+  {
+    title: "Dashboard",
+    href: "/Admin/dashboard",
+    icon: "dashboard",
+  },
+
   {
     title: "Teacher",
-    icon: UserCheck,
+    icon: "teacher",
     children: [
-      { title: "Teacher Status", href: "/Admin/teachers/status" },
-      { title: "Add Teacher", href: "/Admin/teachers/add" },
+      {
+        title: "Teacher Status",
+        href: "/Admin/teachers/status",
+        icon: "teacher",
+      },
+      {
+        title: "Add Teacher",
+        href: "/Admin/teachers/add",
+        icon: "teacher",
+      },
     ],
   },
+
   {
     title: "Student",
-    icon: Users,
+    icon: "student",
     children: [
-      { title: "Student Stats", href: "/Admin/students/stats" },
-      { title: "Add Student", href: "/Admin/students/add" },
+      {
+        title: "Student Stats",
+        href: "/Admin/students/stats",
+        icon: "student",
+      },
+      {
+        title: "Add Student",
+        href: "/Admin/students/add",
+        icon: "student",
+      },
     ],
   },
- 
-  { title: "Branch", href: "/Admin/branches", icon: Building2 },
-  { title: "Materials", href: "/Admin/materials", icon: BookOpen },
-  { title: "Settings", href: "/Admin/settings", icon: Settings },
-]
+
+  {
+    title: "Branch",
+    href: "/Admin/branches",
+    icon: "branch",
+  },
+
+  {
+    title: "Study Pattern",
+    href: "/Admin/study-pattern",
+    icon: "pattern",
+  },
+
+  {
+    title: "Materials",
+    href: "/Admin/materials",
+    icon: "materials",
+  },
+
+  {
+    title: "Settings",
+    href: "/Admin/settings",
+    icon: "settings",
+  },
+];

@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 import { updateTeacher } from "@/app/ServerActions/updation/updateTeacher";
 
-
-import UserForm from "@/components/registerComponent";
+import UserForm from "./registerTeacherComponent";
 
 import { notFound } from "next/navigation";
 
@@ -14,9 +13,8 @@ type PageProps = {
   }>;
 };
 
-const page = async ({ params }: PageProps) => {
+const Page = async ({ params }: PageProps) => {
   await AuthVerify("ADMIN");
-  
 
   const { id } = await params;
 
@@ -60,6 +58,7 @@ const page = async ({ params }: PageProps) => {
           select: {
             id: true,
             name: true,
+            branchId: true,
           },
         },
       },
@@ -74,26 +73,30 @@ const page = async ({ params }: PageProps) => {
     notFound();
   }
 
-  /*
-   * teacher's current branch.
-   *
-   * Assuming all selected batches belong to the same branch.
-   */
-  const branchId =
-    teacher.assignments[0]?.batch.branchId ?? "";
+  /* ---------------------------------------------
+     GET ASSIGNED BATCH IDS
+  --------------------------------------------- */
 
-  /*
-   * Only send batch IDs to UserForm.
-   */
-  const batchIds =
-    teacher.assignments.map(
-      (assignment) => assignment.batch.id
-    );
+  const batchIds = teacher.assignments.map(
+    (assignment) => assignment.batch.id
+  );
 
-  /*
-   * Shape the object exactly according to
-   * what the form needs.
-   */
+  /* ---------------------------------------------
+     GET BRANCH IDS FROM ASSIGNED BATCHES
+  --------------------------------------------- */
+
+  const branchIds = [
+    ...new Set(
+      teacher.assignments.map(
+        (assignment) => assignment.batch.branchId
+      )
+    ),
+  ];
+
+  /* ---------------------------------------------
+     FORM USER
+  --------------------------------------------- */
+
   const user = {
     id: teacher.id,
 
@@ -101,9 +104,8 @@ const page = async ({ params }: PageProps) => {
     email: teacher.user.email ?? "",
     phone: teacher.user.phone ?? "",
 
-    branchId,
-
-    batch: batchIds,
+    branchIds,
+    batchIds,
 
     role: "TEACHER" as const,
   };
@@ -112,11 +114,11 @@ const page = async ({ params }: PageProps) => {
     <UserForm
       mode="edit"
       role="TEACHER"
-      action={updateTeacher.bind(null, user.id)}
+      action={updateTeacher.bind(null, teacher.id)}
       branches={branches}
       user={user}
     />
   );
 };
 
-export default page;
+export default Page;

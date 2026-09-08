@@ -4,7 +4,7 @@ import AuthVerify from "@/app/ServerActions/auth/authVerify";
 import {
   CreateBatch,
   CreateBranch,
-} from "@/ServiceHandlers/CreateGroups/CreateBatch&Branch";
+} from "./CreateBatch&Branch";
 
 import {
   Accordion,
@@ -17,25 +17,18 @@ import BranchAction from "./BranchAction";
 
 import BatchAction from "./BatchAction"
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import Link from "next/link";
 
 import {
   Building2,
-  MoreVertical,
+  
 } from "lucide-react";
 
-import BatchDetails from "./BatchDetails";
+
 
 const Page = async () => {
-  const timerId = crypto.randomUUID();
 
-  console.time(`branches-total-${timerId}`);
+ 
 
   await AuthVerify("ADMIN");
 
@@ -60,7 +53,7 @@ const Page = async () => {
     },
   });
 
-  console.timeEnd(`branches-total-${timerId}`);
+ 
 
   return (
     <div className="w-full space-y-6">
@@ -69,7 +62,7 @@ const Page = async () => {
       ===================================================== */}
 
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           Branches & Batches
         </h1>
 
@@ -89,12 +82,12 @@ const Page = async () => {
       ===================================================== */}
 
       {branches.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50">
-            <Building2 className="h-6 w-6 text-emerald-600" />
+        <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-14 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-accent">
+            <Building2 className="h-6 w-6 text-primary" />
           </div>
 
-          <h2 className="mt-4 text-base font-semibold text-slate-900">
+          <h2 className="mt-4 text-base font-semibold text-card-foreground">
             No branches yet
           </h2>
 
@@ -130,7 +123,7 @@ const Page = async () => {
               <AccordionItem
                 key={branch.id}
                 value={branch.id}
-                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
               >
                 {/* =================================================
                     BRANCH HEADER
@@ -149,7 +142,7 @@ const Page = async () => {
                       py-5
                       pr-14
                       text-left
-                      hover:bg-slate-50
+                      hover:bg-accent
                       hover:no-underline
                       sm:px-6
                       sm:py-6
@@ -159,20 +152,20 @@ const Page = async () => {
                     <div className="flex min-w-0 w-full items-center gap-4">
                       {/* Branch icon */}
 
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50">
-                        <Building2 className="h-5 w-5 text-emerald-600" />
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent">
+                        <Building2 className="h-5 w-5 text-primary" />
                       </div>
 
                       {/* Branch info */}
 
                       <div className="min-w-0 flex-1">
-                        <h2 className="truncate text-lg font-semibold text-slate-900 sm:text-xl">
+                        <h2 className="truncate text-lg font-semibold text-card-foreground sm:text-xl">
                           {branch.name}
                         </h2>
 
                         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground sm:gap-x-4 sm:text-sm">
                           <span>
-                            <strong className="text-slate-900">
+                            <strong className="text-card-foreground">
                               {branch.batches.length}
                             </strong>{" "}
                             {branch.batches.length === 1
@@ -180,12 +173,12 @@ const Page = async () => {
                               : "Batches"}
                           </span>
 
-                          <span className="text-slate-300">
+                          <span className="text-muted-foreground/60">
                             •
                           </span>
 
                           <span>
-                            <strong className="text-slate-900">
+                            <strong className="text-card-foreground">
                               {totalStudents}
                             </strong>{" "}
                             {totalStudents === 1
@@ -193,12 +186,12 @@ const Page = async () => {
                               : "Students"}
                           </span>
 
-                          <span className="text-slate-300">
+                          <span className="text-muted-foreground/60">
                             •
                           </span>
 
                           <span>
-                            <strong className="text-slate-900">
+                            <strong className="text-card-foreground">
                               {totalTeachers}
                             </strong>{" "}
                             {totalTeachers === 1
@@ -221,13 +214,13 @@ const Page = async () => {
                     BRANCH CONTENT
                 ================================================= */}
 
-                <AccordionContent className="border-t border-slate-200 bg-slate-50/60">
+                <AccordionContent className="border-t border-border bg-muted/60">
                   <div className="space-y-4 p-3 sm:p-5">
                     {/* Batches heading */}
 
                     <div className="flex items-center justify-between px-1">
                       <div>
-                        <h3 className="text-sm font-semibold text-slate-900 sm:text-base">
+                        <h3 className="text-sm font-semibold text-foreground sm:text-base">
                           Batches
                         </h3>
 
@@ -236,7 +229,7 @@ const Page = async () => {
                         </p>
                       </div>
 
-                      <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200">
+                      <span className="rounded-full bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground ring-1 ring-border">
                         {branch.batches.length}
                       </span>
                     </div>
@@ -254,7 +247,7 @@ const Page = async () => {
                           <AccordionItem
                             key={batch.id}
                             value={batch.id}
-                            className="overflow-hidden rounded-xl border border-slate-200 bg-white"
+                            className="overflow-hidden rounded-xl border border-border bg-card"
                           >
                             {/* =================================================
                                 BATCH HEADER
@@ -275,7 +268,7 @@ const Page = async () => {
                                   py-3.5
                                   pr-14
                                   text-left
-                                  hover:bg-slate-50
+                                  hover:bg-accent
                                   hover:no-underline
                                   sm:px-5
                                   sm:py-4
@@ -291,7 +284,7 @@ const Page = async () => {
                                     {/* Batch name */}
 
                                     <div className="min-w-0 flex-1">
-                                      <span className="block truncate text-sm font-semibold text-slate-900 lg:text-base">
+                                      <span className="block truncate text-sm font-semibold text-card-foreground lg:text-base">
                                         {batch.name}
                                       </span>
                                     </div>
@@ -301,7 +294,7 @@ const Page = async () => {
                                     <div className="mr-4 flex shrink-0 items-center gap-6 text-sm text-muted-foreground lg:mr-6">
                                       <span className="whitespace-nowrap">
                                         (
-                                        <strong className="text-slate-900">
+                                        <strong className="text-card-foreground">
                                           {
                                             batch._count
                                               .teachers
@@ -312,7 +305,7 @@ const Page = async () => {
 
                                       <span className="whitespace-nowrap">
                                         (
-                                        <strong className="text-slate-900">
+                                        <strong className="text-card-foreground">
                                           {
                                             batch._count
                                               .students
@@ -328,14 +321,14 @@ const Page = async () => {
                                   ====================================== */}
 
                                   <div className="block min-w-0 md:hidden">
-                                    <span className="block truncate pr-2 text-sm font-semibold text-slate-900">
+                                    <span className="block truncate pr-2 text-sm font-semibold text-card-foreground">
                                       {batch.name}
                                     </span>
 
                                     <div className="mt-1.5 flex items-center gap-4 text-xs text-muted-foreground">
                                       <span className="whitespace-nowrap">
                                         (
-                                        <strong className="text-slate-900">
+                                        <strong className="text-card-foreground">
                                           {
                                             batch._count
                                               .teachers
@@ -346,7 +339,7 @@ const Page = async () => {
 
                                       <span className="whitespace-nowrap">
                                         (
-                                        <strong className="text-slate-900">
+                                        <strong className="text-card-foreground">
                                           {
                                             batch._count
                                               .students
@@ -370,25 +363,37 @@ const Page = async () => {
                                 BATCH DETAILS
                             ================================================= */}
 
-                            <AccordionContent className="border-t border-slate-200 bg-slate-50/50">
-                              <div className="p-3 sm:p-4">
-                                <BatchDetails
-                                  batchId={batch.id}
-                                  studentCount={
-                                    batch._count.students
-                                  }
-                                  teacherCount={
-                                    batch._count.teachers
-                                  }
-                                />
+                            <AccordionContent className="border-t border-border bg-muted/50">
+                              <div className="flex flex-col divide-y divide-border">
+                                <div className="flex items-center justify-between px-4 py-3">
+                                  <span className="text-sm font-medium">Performance</span>
+
+                                  <Link
+                                    href={`/Admin/branches/${batch.id}/performance`}
+                                    className="inline-flex items-center justify-center rounded-md border border-primary/50 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary !no-underline transition-colors hover:bg-primary/20"
+                                  >
+                                    View
+                                  </Link>
+                                </div>
+
+                                <div className="flex items-center justify-between px-4 py-3">
+                                  <span className="text-sm font-medium">Mark Attendance</span>
+
+                                    <Link
+                                      href={`/Admin/branches/${batch.id}/attendance`}
+                                      className="inline-flex items-center justify-center rounded-md border border-primary/50 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary !no-underline transition-colors hover:bg-primary/20"
+                                    >
+                                      Mark
+                                    </Link>
+                                </div>
                               </div>
                             </AccordionContent>
                           </AccordionItem>
                         ))}
                       </Accordion>
                     ) : (
-                      <div className="rounded-xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center">
-                        <p className="text-sm font-medium text-slate-700">
+                      <div className="rounded-xl border border-dashed border-border bg-card px-5 py-10 text-center">
+                        <p className="text-sm font-medium text-foreground">
                           No batches yet
                         </p>
 
@@ -402,7 +407,7 @@ const Page = async () => {
                         CREATE BATCH
                     ================================================= */}
 
-                    <div className="rounded-xl border border-dashed border-slate-300 bg-white p-3 sm:p-4">
+                    <div className="rounded-xl border border-dashed border-border bg-card p-3 sm:p-4">
                       <CreateBatch
                         branchId={branch.id}
                       />

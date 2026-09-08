@@ -80,7 +80,7 @@ async function main() {
     response = await request("/Admin/dashboard", "", { rsc: "1" });
     assert(response.status === 303 && location(response).endsWith("/login"), "missing auth token must redirect RSC navigation to login");
 
-    console.log("AUTH_RUNTIME_SMOKE: PASS");
+   
   } finally {
     await prisma.user.delete({ where: { id: user.id } });
     await prisma.$disconnect();
