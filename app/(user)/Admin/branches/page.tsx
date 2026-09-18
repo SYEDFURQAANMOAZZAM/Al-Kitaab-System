@@ -1,62 +1,18 @@
-import { prisma } from "@/lib/prisma";
-import AuthVerify from "@/app/ServerActions/auth/authVerify";
-
-import {
-  CreateBatch,
-  CreateBranch,
-} from "./CreateBatch&Branch";
-
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-
+import CreateBatch from "./CreateBatch";
+import CreateBranch from "./CreateBranch";
 import BranchAction from "./BranchAction";
-
-import BatchAction from "./BatchAction"
+import BatchAction from "./BatchAction";
 
 import Link from "next/link";
+import { Building2 } from "lucide-react";
 
-import {
-  Building2,
-  
-} from "lucide-react";
-
-
+import getBranchesAndBatches from "@/app/ServerActions/getGroups/getBranchesAndBatches";
 
 const Page = async () => {
-
- 
-
-  await AuthVerify("ADMIN");
-
-  const branches = await prisma.branch.findMany({
-    select: {
-      id: true,
-      name: true,
-
-      batches: {
-        select: {
-          id: true,
-          name: true,
-
-          _count: {
-            select: {
-              students: true,
-              teachers: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
- 
+  const branches = await getBranchesAndBatches();
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-5 sm:px-1 md:px-3 lg:px-4">
       {/* =====================================================
           PAGE HEADER
       ===================================================== */}
@@ -82,12 +38,12 @@ const Page = async () => {
       ===================================================== */}
 
       {branches.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-14 text-center">
+        <div className="rounded-2xl border border-dashed border-border px-6 py-14 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-accent">
             <Building2 className="h-6 w-6 text-primary" />
           </div>
 
-          <h2 className="mt-4 text-base font-semibold text-card-foreground">
+          <h2 className="mt-4 text-base font-semibold text-foreground">
             No branches yet
           </h2>
 
@@ -97,327 +53,264 @@ const Page = async () => {
         </div>
       ) : (
         /* =====================================================
-           BRANCH ACCORDION
+           BRANCHES
         ===================================================== */
 
-        <Accordion
-          multiple
-          className="w-full space-y-4"
-        >
+        <div className="space-y-4">
           {branches.map((branch) => {
-            const totalStudents =
-              branch.batches.reduce(
-                (total, batch) =>
-                  total + batch._count.students,
-                0
-              );
+            const totalStudents = branch.batches.reduce(
+              (total, batch) => total + batch._count.students,
+              0
+            );
 
-            const totalTeachers =
-              branch.batches.reduce(
-                (total, batch) =>
-                  total + batch._count.teachers,
-                0
-              );
+            const totalTeachers = branch.batches.reduce(
+              (total, batch) => total + batch._count.teachers,
+              0
+            );
 
             return (
-              <AccordionItem
+              <section
                 key={branch.id}
-                value={branch.id}
-                className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
+                className="
+                  overflow-hidden
+                  rounded-xl
+                  bg-muted/40
+                  ring-1
+                  ring-border/70
+                "
               >
                 {/* =================================================
                     BRANCH HEADER
                 ================================================= */}
 
-                <div className="relative">
-                  {/*
-                    Keep menu OUTSIDE AccordionTrigger.
-                    This prevents nested buttons.
-                  */}
+                <div
+                  className="
+                    flex
+                    min-w-0
+                    items-center
+                    gap-3
+                    bg-accent/40
+                    px-3
+                    py-3
+                    sm:gap-4
+                    sm:px-4
+                    sm:py-4
+                  "
+                >
+                  {/* Branch icon */}
 
-                  <AccordionTrigger
+                  <div
                     className="
-                      w-full
-                      px-4
-                      py-5
-                      pr-14
-                      text-left
-                      hover:bg-accent
-                      hover:no-underline
-                      sm:px-6
-                      sm:py-6
-                      sm:pr-16
+                      flex
+                      h-9
+                      w-9
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-lg
+                      bg-accent
+                      text-primary
+                      sm:h-10
+                      sm:w-10
                     "
                   >
-                    <div className="flex min-w-0 w-full items-center gap-4">
-                      {/* Branch icon */}
+                    <Building2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
 
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent">
-                        <Building2 className="h-5 w-5 text-primary" />
-                      </div>
+                  {/* Branch information */}
 
-                      {/* Branch info */}
+                  <div className="min-w-0 flex-1">
+                    <h2
+                      className="
+                        truncate
+                        text-sm
+                        font-semibold
+                        text-foreground
+                        sm:text-base
+                      "
+                    >
+                      {branch.name}
+                    </h2>
 
-                      <div className="min-w-0 flex-1">
-                        <h2 className="truncate text-lg font-semibold text-card-foreground sm:text-xl">
-                          {branch.name}
-                        </h2>
+                    <div
+                      className="
+                        mt-1
+                        flex
+                        items-center
+                        gap-1.5
+                        whitespace-nowrap
+                        text-[10px]
+                        text-muted-foreground
+                        sm:gap-2
+                        sm:text-xs
+                      "
+                    >
+                      <span>
+                        {branch.batches.length}{" "}
+                        {branch.batches.length === 1
+                          ? "Batch"
+                          : "Batches"}
+                      </span>
 
-                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground sm:gap-x-4 sm:text-sm">
-                          <span>
-                            <strong className="text-card-foreground">
-                              {branch.batches.length}
-                            </strong>{" "}
-                            {branch.batches.length === 1
-                              ? "Batch"
-                              : "Batches"}
-                          </span>
+                      <span>•</span>
 
-                          <span className="text-muted-foreground/60">
-                            •
-                          </span>
+                      <span>
+                        {totalStudents} Students
+                      </span>
 
-                          <span>
-                            <strong className="text-card-foreground">
-                              {totalStudents}
-                            </strong>{" "}
-                            {totalStudents === 1
-                              ? "Student"
-                              : "Students"}
-                          </span>
+                      <span>•</span>
 
-                          <span className="text-muted-foreground/60">
-                            •
-                          </span>
-
-                          <span>
-                            <strong className="text-card-foreground">
-                              {totalTeachers}
-                            </strong>{" "}
-                            {totalTeachers === 1
-                              ? "Teacher"
-                              : "Teachers"}
-                          </span>
-                        </div>
-                      </div>
+                      <span>
+                        {totalTeachers} Teachers
+                      </span>
                     </div>
-                  </AccordionTrigger>
+                  </div>
 
-                  {/* =================================================
-                      BRANCH ACTIONS
-                  ================================================= */}
+                  {/* Branch Action */}
 
-                  <BranchAction branchName={branch.name} branchId={branch.id} branchBatches={branch.batches.length} />
+                  <div className="relative h-9 w-9 shrink-0">
+                    <BranchAction
+                      branchName={branch.name}
+                      branchId={branch.id}
+                      branchBatches={branch.batches.length}
+                    />
+                  </div>
                 </div>
 
                 {/* =================================================
-                    BRANCH CONTENT
+                    BATCH AREA
+
+                    Slightly inset from branch header so it is
+                    visually clear that these belong to branch.
                 ================================================= */}
 
-                <AccordionContent className="border-t border-border bg-muted/60">
-                  <div className="space-y-4 p-3 sm:p-5">
-                    {/* Batches heading */}
+                <div className="px-2 pb-2 pt-1 sm:px-3 sm:pb-3">
+                  {branch.batches.length > 0 ? (
+                    <div
+                      className="
+                        rounded-lg
+                        bg-background/70
+                        px-2
+                        sm:px-3
+                      "
+                    >
+                      {branch.batches.map((batch, index) => (
+                        <div
+                          key={batch.id}
+                          className={`
+                            py-3
+                            ${index !== 0 ? "border-t border-border/50" : ""}
+                          `}
+                        >
+                          {/* Batch name + BatchAction */}
+                          <div className="flex w-full items-start">
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-xs font-medium text-foreground sm:text-sm">
+                                {batch.name}
+                              </div>
 
-                    <div className="flex items-center justify-between px-1">
-                      <div>
-                        <h3 className="text-sm font-semibold text-foreground sm:text-base">
-                          Batches
-                        </h3>
+                              <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground sm:text-xs">
+                                <span>{batch._count.teachers} Teachers</span>
 
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          Manage batches and their members.
-                        </p>
-                      </div>
+                                <span>•</span>
 
-                      <span className="rounded-full bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground ring-1 ring-border">
-                        {branch.batches.length}
-                      </span>
-                    </div>
-
-                    {/* =================================================
-                        BATCHES
-                    ================================================= */}
-
-                    {branch.batches.length > 0 ? (
-                      <Accordion
-                        multiple
-                        className="w-full space-y-2.5"
-                      >
-                        {branch.batches.map((batch) => (
-                          <AccordionItem
-                            key={batch.id}
-                            value={batch.id}
-                            className="overflow-hidden rounded-xl border border-border bg-card"
-                          >
-                            {/* =================================================
-                                BATCH HEADER
-                            ================================================= */}
-
-                            <div className="relative">
-                              {/*
-                                IMPORTANT:
-                                AccordionTrigger contains ONLY the
-                                clickable batch area.
-                                Three-dot menu is outside it.
-                              */}
-
-                              <AccordionTrigger
-                                className="
-                                  w-full
-                                  px-4
-                                  py-3.5
-                                  pr-14
-                                  text-left
-                                  hover:bg-accent
-                                  hover:no-underline
-                                  sm:px-5
-                                  sm:py-4
-                                  sm:pr-16
-                                "
-                              >
-                                <div className="w-full min-w-0">
-                                  {/* =====================================
-                                      MD+
-                                  ====================================== */}
-
-                                  <div className="hidden min-w-0 items-center md:flex">
-                                    {/* Batch name */}
-
-                                    <div className="min-w-0 flex-1">
-                                      <span className="block truncate text-sm font-semibold text-card-foreground lg:text-base">
-                                        {batch.name}
-                                      </span>
-                                    </div>
-
-                                    {/* Statistics */}
-
-                                    <div className="mr-4 flex shrink-0 items-center gap-6 text-sm text-muted-foreground lg:mr-6">
-                                      <span className="whitespace-nowrap">
-                                        (
-                                        <strong className="text-card-foreground">
-                                          {
-                                            batch._count
-                                              .teachers
-                                          }
-                                        </strong>
-                                        ) Teachers
-                                      </span>
-
-                                      <span className="whitespace-nowrap">
-                                        (
-                                        <strong className="text-card-foreground">
-                                          {
-                                            batch._count
-                                              .students
-                                          }
-                                        </strong>
-                                        ) Students
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {/* =====================================
-                                      XS - SMALL
-                                  ====================================== */}
-
-                                  <div className="block min-w-0 md:hidden">
-                                    <span className="block truncate pr-2 text-sm font-semibold text-card-foreground">
-                                      {batch.name}
-                                    </span>
-
-                                    <div className="mt-1.5 flex items-center gap-4 text-xs text-muted-foreground">
-                                      <span className="whitespace-nowrap">
-                                        (
-                                        <strong className="text-card-foreground">
-                                          {
-                                            batch._count
-                                              .teachers
-                                          }
-                                        </strong>
-                                        ) TR
-                                      </span>
-
-                                      <span className="whitespace-nowrap">
-                                        (
-                                        <strong className="text-card-foreground">
-                                          {
-                                            batch._count
-                                              .students
-                                          }
-                                        </strong>
-                                        ) STDs
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </AccordionTrigger>
-
-                              {/* =================================================
-                                  BATCH ACTIONS
-                              ================================================= */}
-
-                              <BatchAction batchId={batch.id} batchName={batch.name} batchStudents={batch._count.students} batchTeachers={batch._count.teachers}/>
+                                <span>{batch._count.students} Students</span>
+                              </div>
                             </div>
 
-                            {/* =================================================
-                                BATCH DETAILS
-                            ================================================= */}
+                            {/* ONLY BatchAction — far right */}
+                            <div className="relative h-8 w-8 shrink-0">
+                              <BatchAction
+                                batchId={batch.id}
+                                batchName={batch.name}
+                                batchStudents={batch._count.students}
+                                batchTeachers={batch._count.teachers}
+                              />
+                            </div>
+                          </div>
 
-                            <AccordionContent className="border-t border-border bg-muted/50">
-                              <div className="flex flex-col divide-y divide-border">
-                                <div className="flex items-center justify-between px-4 py-3">
-                                  <span className="text-sm font-medium">Performance</span>
+                          {/* Buttons — next line */}
+                          <div className="mt-2 flex items-center gap-2">
+                            <Link
+                              href={`/Admin/branches/${batch.id}/attendance`}
+                              className="
+                                inline-flex
+                                h-8
+                                items-center
+                                justify-center
+                                rounded-md
+                                bg-primary
+                                px-3
+                                text-[10px]
+                                font-medium
+                                text-primary-foreground
+                                shadow-sm
+                                transition-colors
+                                hover:bg-primary/90
+                                focus-visible:outline-none
+                                focus-visible:ring-2
+                                focus-visible:ring-ring
+                              "
+                            >
+                              Mark Attendance
+                            </Link>
 
-                                  <Link
-                                    href={`/Admin/branches/${batch.id}/performance`}
-                                    className="inline-flex items-center justify-center rounded-md border border-primary/50 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary !no-underline transition-colors hover:bg-primary/20"
-                                  >
-                                    View
-                                  </Link>
-                                </div>
-
-                                <div className="flex items-center justify-between px-4 py-3">
-                                  <span className="text-sm font-medium">Mark Attendance</span>
-
-                                    <Link
-                                      href={`/Admin/branches/${batch.id}/attendance`}
-                                      className="inline-flex items-center justify-center rounded-md border border-primary/50 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary !no-underline transition-colors hover:bg-primary/20"
-                                    >
-                                      Mark
-                                    </Link>
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
-                    ) : (
-                      <div className="rounded-xl border border-dashed border-border bg-card px-5 py-10 text-center">
-                        <p className="text-sm font-medium text-foreground">
-                          No batches yet
-                        </p>
-
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Create a batch for this branch.
-                        </p>
-                      </div>
-                    )}
-
-                    {/* =================================================
-                        CREATE BATCH
-                    ================================================= */}
-
-                    <div className="rounded-xl border border-dashed border-border bg-card p-3 sm:p-4">
-                      <CreateBatch
-                        branchId={branch.id}
-                      />
+                            <Link
+                              href={`/Admin/branches/${batch.id}/performance`}
+                              className="
+                                inline-flex
+                                h-8
+                                items-center
+                                justify-center
+                                rounded-md
+                                border
+                                border-border
+                                bg-secondary
+                                px-3
+                                text-[10px]
+                                font-medium
+                                text-secondary-foreground
+                                shadow-sm
+                                transition-colors
+                                hover:bg-secondary/80
+                                focus-visible:outline-none
+                                focus-visible:ring-2
+                                focus-visible:ring-ring
+                              "
+                            >
+                              View Performance
+                            </Link>
+                          </div>
+                        </div>
+                      ))}
                     </div>
+                  ) : (
+                    <div
+                      className="
+                        rounded-lg
+                        bg-background/50
+                        px-3
+                        py-4
+                        text-xs
+                        text-muted-foreground
+                      "
+                    >
+                      No batches yet.
+                    </div>
+                  )}
+
+                  {/* =================================================
+                      CREATE BATCH
+                  ================================================= */}
+
+                  <div className="px-1 pt-2">
+                    <CreateBatch branchId={branch.id} />
                   </div>
-                </AccordionContent>
-              </AccordionItem>
+                </div>
+              </section>
             );
           })}
-        </Accordion>
+        </div>
       )}
     </div>
   );

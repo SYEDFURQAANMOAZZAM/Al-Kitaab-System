@@ -242,6 +242,10 @@ export const EditSchemaStudent = z
    TEACHER SCHEMAS
 ========================================================= */
 
+/* =========================================================
+   TEACHER SCHEMAS
+========================================================= */
+
 /* ---------------------------------------------------------
    CREATE TEACHER
 --------------------------------------------------------- */
@@ -293,6 +297,10 @@ export const CreateSchemaTeacher = z
           "Select at least one batch.",
       }),
 
+    patternIds: z
+      .array(z.string().min(1))
+      .default([]),
+
     password: z
       .string()
       .min(8, {
@@ -333,6 +341,7 @@ export const CreateSchemaTeacher = z
         "Passwords do not match.",
     }
   );
+
 
 /* ---------------------------------------------------------
    EDIT TEACHER
@@ -385,6 +394,10 @@ export const EditSchemaTeacher = z
           "Select at least one batch.",
       }),
 
+    patternIds: z
+      .array(z.string().min(1))
+      .default([]),
+
     password: z
       .string()
       .min(8, {
@@ -423,6 +436,33 @@ export const EditSchemaTeacher = z
         "Passwords do not match.",
     }
   );
+
+
+/* =========================================================
+   TEACHER FORM STATE
+========================================================= */
+
+export type FormStateTeacher = {
+  success?: boolean;
+
+  errors?: {
+    name?: string[];
+
+    email?: string;
+    phone?: string;
+
+    password?: string[];
+    confirmPassword?: string[];
+
+    branchIds?: string[];
+    batchIds?: string[];
+    patternIds?: string[];
+
+    userId?: string[];
+  };
+
+  message?: string;
+};
 
 /* =========================================================
    LOGIN
@@ -480,26 +520,7 @@ export type FormStateRegister = {
    TEACHER FORM STATE
 ========================================================= */
 
-export type FormStateTeacher = {
-  success?: boolean;
 
-  errors?: {
-    name?: string[];
-
-    email?: string;
-    phone?: string;
-
-    password?: string[];
-    confirmPassword?: string[];
-
-    branchIds?: string[];
-    batchIds?: string[];
-
-    userId?: string[];
-  };
-
-  message?: string;
-};
 
 /* =========================================================
    LOGIN STATE

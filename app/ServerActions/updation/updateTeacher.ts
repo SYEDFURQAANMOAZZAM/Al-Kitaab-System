@@ -2,12 +2,16 @@
 
 import bcrypt from "bcryptjs";
 import { Prisma } from "@/generated/prisma/client";
+import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
-import { requireRoleForAction } from "@/lib/auth/require-role";
+import AuthVerify from "@/app/ServerActions/auth/authVerify";
 import { normalizeEmail } from "@/lib/auth/email";
 
-import { revalidatePath } from "next/cache";
+import {
+  TEACHER_FIELD_PERMISSIONS,
+  type EditorRole,
+} from "../auth/teacher-permissions";
 
 import {
   FormStateTeacher,
@@ -45,10 +49,42 @@ function parseJsonArray(
       return null;
     }
 
-    return [...new Set(parsed)];
+    return [
+      ...new Set(
+        parsed.map((value) => value.trim())
+      ),
+    ];
   } catch {
     return null;
   }
+}
+
+/* =========================================================
+   COMPARE STRING ARRAYS
+========================================================= */
+
+function sameStringArray(
+  a: string[],
+  b: string[]
+): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  const setA = new Set(a);
+  const setB = new Set(b);
+
+  if (setA.size !== setB.size) {
+    return false;
+  }
+
+  for (const value of setA) {
+    if (!setB.has(value)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /* =========================================================
@@ -60,50 +96,135 @@ export async function updateTeacher(
   _state: FormStateTeacher,
   formData: FormData
 ): Promise<FormStateTeacher> {
-  await requireRoleForAction([
+  /* =======================================================
+     AUTHORIZATION
+  ======================================================= */
+
+  const session = await AuthVerify(
     "ADMIN",
-    "TEACHER",
-  ]);
-
-  /* =======================================================
-     PARSE BRANCHES
-  ======================================================= */
-
-  const branchIds = parseJsonArray(
-    formData,
-    "branchIds"
+    "TEACHER"
   );
 
-  if (branchIds === null) {
-    return {
-      errors: {
-        branchIds: [
-          "Invalid branch selection.",
-        ],
-      },
-    };
-  }
+  /*
+   * IMPORTANT:
+   * The role comes from the authenticated session.
+   * Never trust FormData for authorization.
+   */
+  const editorRole =
+    session.role as EditorRole;
 
-  if (branchIds.length === 0) {
+  const permissions =
+    TEACHER_FIELD_PERMISSIONS[editorRole];
+
+  /* =======================================================
+     VALIDATE TEACHER ID
+  ======================================================= */
+
+  if (
+    typeof teacherId !== "string" ||
+    !teacherId.trim()
+  ) {
     return {
-      errors: {
-        branchIds: [
-          "Select at least one branch.",
-        ],
-      },
+      message: "Invalid teacher ID.",
     };
   }
 
   /* =======================================================
-     PARSE BATCHES
+     FIND EXISTING TEACHER
   ======================================================= */
 
-  const batchIds = parseJsonArray(
-    formData,
-    "batchIds"
-  );
+  const existingTeacher =
+    await prisma.teacher.findUnique({
+      where: {
+        id: teacherId,
+      },
 
-  if (batchIds === null) {
+      select: {
+        id: true,
+        userId: true,
+
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            role: true,
+          },
+        },
+
+        assignments: {
+          select: {
+            batchId: true,
+          },
+        },
+
+        teacherPatterns: {
+          select: {
+            patternId: true,
+          },
+        },
+      },
+    });
+
+  /* =======================================================
+     VERIFY TEACHER
+  ======================================================= */
+
+  if (
+    !existingTeacher ||
+    existingTeacher.user.role !== "TEACHER"
+  ) {
+    return {
+      message: "Teacher not found.",
+    };
+  }
+
+  /* =======================================================
+     TEACHER OWNERSHIP
+     
+     A TEACHER can only edit their own account.
+  ======================================================= */
+
+  if (
+    editorRole === "TEACHER" &&
+    session.id !== existingTeacher.user.id
+  ) {
+    return {
+      message:
+        "You are not allowed to edit this teacher.",
+    };
+  }
+
+  /* =======================================================
+     EXISTING RELATIONS
+  ======================================================= */
+
+  const existingBatchIds =
+    existingTeacher.assignments.map(
+      (assignment) => assignment.batchId
+    );
+
+  const existingPatternIds =
+    existingTeacher.teacherPatterns.map(
+      (teacherPattern) =>
+        teacherPattern.patternId
+    );
+
+  /* =======================================================
+     PARSE BATCH IDS
+     
+     We parse these even for TEACHER so that an attacker
+     cannot modify the FormData and silently change batches.
+  ======================================================= */
+
+  const submittedBatchIds =
+    parseJsonArray(
+      formData,
+      "batchIds"
+    );
+
+  if (submittedBatchIds === null) {
     return {
       errors: {
         batchIds: [
@@ -113,7 +234,149 @@ export async function updateTeacher(
     };
   }
 
-  if (batchIds.length === 0) {
+  const uniqueBatchIds = [
+    ...new Set(submittedBatchIds),
+  ];
+
+  /* =======================================================
+     PARSE PATTERN IDS
+     
+     We parse these even for TEACHER so unauthorized
+     modifications can be detected.
+  ======================================================= */
+
+  const submittedPatternIds =
+    parseJsonArray(
+      formData,
+      "patternIds"
+    );
+
+  if (submittedPatternIds === null) {
+    return {
+      errors: {
+        patternIds: [
+          "Invalid pattern selection.",
+        ],
+      },
+    };
+  }
+
+  const uniquePatternIds = [
+    ...new Set(submittedPatternIds),
+  ];
+
+  /* =======================================================
+     DETECT UNAUTHORIZED CHANGES
+     
+     This happens BEFORE any database mutation.
+  ======================================================= */
+
+  if (editorRole === "TEACHER") {
+    /* -------------------------------------------------------
+       EMAIL
+    ------------------------------------------------------- */
+
+    if (!permissions.email) {
+      const submittedEmail =
+        formData.get("email");
+
+      if (
+        typeof submittedEmail !== "string" ||
+        normalizeEmail(submittedEmail) !==
+          normalizeEmail(
+            existingTeacher.user.email
+          )
+      ) {
+        return {
+          errors: {
+            email:
+              "You are not allowed to modify your email.",
+          },
+        };
+      }
+    }
+
+    /* -------------------------------------------------------
+       BATCHES
+    ------------------------------------------------------- */
+
+    if (!permissions.batches) {
+      if (
+        !sameStringArray(
+          uniqueBatchIds,
+          existingBatchIds
+        )
+      ) {
+        return {
+          errors: {
+            batchIds: [
+              "You are not allowed to modify batches.",
+            ],
+          },
+        };
+      }
+    }
+
+    /* -------------------------------------------------------
+       PATTERNS
+    ------------------------------------------------------- */
+
+    if (!permissions.patterns) {
+      if (
+        !sameStringArray(
+          uniquePatternIds,
+          existingPatternIds
+        )
+      ) {
+        return {
+          errors: {
+            patternIds: [
+              "You are not allowed to modify patterns.",
+            ],
+          },
+        };
+      }
+    }
+  }
+
+  /* =======================================================
+     EFFECTIVE BATCH VALUES
+     
+     ADMIN:
+       submitted batches
+
+     TEACHER:
+       existing batches
+  ======================================================= */
+
+  const effectiveBatchIds =
+    permissions.batches
+      ? uniqueBatchIds
+      : existingBatchIds;
+
+  /* =======================================================
+     EFFECTIVE PATTERN VALUES
+     
+     ADMIN:
+       submitted patterns
+
+     TEACHER:
+       existing patterns
+  ======================================================= */
+
+  const effectivePatternIds =
+    permissions.patterns
+      ? uniquePatternIds
+      : existingPatternIds;
+
+  /* =======================================================
+     BATCH VALIDATION
+  ======================================================= */
+
+  if (
+    permissions.batches &&
+    effectiveBatchIds.length === 0
+  ) {
     return {
       errors: {
         batchIds: [
@@ -124,23 +387,42 @@ export async function updateTeacher(
   }
 
   /* =======================================================
-     VALIDATE
+     VALIDATE FORM
   ======================================================= */
 
   const validatedFields =
     EditSchemaTeacher.safeParse({
       name: formData.get("name"),
-      email: formData.get("email"),
-      phone: formData.get("phone"),
 
-      password:
-        formData.get("password"),
+      email: permissions.email
+        ? formData.get("email")
+        : existingTeacher.user.email,
+
+      phone: permissions.phone
+        ? formData.get("phone")
+        : existingTeacher.user.phone,
+
+      password: permissions.password
+        ? formData.get("password")
+        : "",
 
       confirmPassword:
-        formData.get("confirmPassword"),
+        permissions.password
+          ? formData.get("confirmPassword")
+          : "",
 
-      branchIds,
-      batchIds,
+      /*
+       * Branches are NOT persisted on Teacher.
+       * They are derived from assigned batches.
+       */
+      branchIds:
+        formData.get("branchIds"),
+
+      batchIds:
+        effectiveBatchIds,
+
+      patternIds:
+        effectivePatternIds,
     });
 
   if (!validatedFields.success) {
@@ -169,6 +451,9 @@ export async function updateTeacher(
 
         batchIds:
           fieldErrors.batchIds,
+
+        patternIds:
+          fieldErrors.patternIds,
       },
     };
   }
@@ -176,120 +461,290 @@ export async function updateTeacher(
   const data = validatedFields.data;
 
   /* =======================================================
-     NORMALIZE
+     VERIFY SELECTED BATCHES
+     
+     Only an actor with batches=true can change them.
   ======================================================= */
 
-  const uniqueBranchIds = [
-    ...new Set(data.branchIds),
-  ];
+  let selectedBatches: {
+    id: string;
+    branchId: string;
+  }[] = [];
 
-  const uniqueBatchIds = [
-    ...new Set(data.batchIds),
-  ];
+  if (permissions.batches) {
+    selectedBatches =
+      await prisma.batch.findMany({
+        where: {
+          id: {
+            in: effectiveBatchIds,
+          },
+        },
 
-  /* =======================================================
-     VERIFY TEACHER
-  ======================================================= */
+        select: {
+          id: true,
+          branchId: true,
+        },
+      });
 
-  const teacher =
-    await prisma.teacher.findUnique({
-      where: {
-        id: teacherId,
-      },
-      select: {
-        id: true,
-        userId: true,
-      },
-    });
+    if (
+      selectedBatches.length !==
+      effectiveBatchIds.length
+    ) {
+      return {
+        errors: {
+          batchIds: [
+            "One or more selected batches are invalid.",
+          ],
+        },
+      };
+    }
 
-  if (!teacher) {
-    return {
-      message: "Teacher not found.",
-    };
+    /* -------------------------------------------------------
+       VERIFY BRANCH IDS
+    ------------------------------------------------------- */
+
+    const submittedBranchIds =
+      parseJsonArray(
+        formData,
+        "branchIds"
+      );
+
+    if (submittedBranchIds === null) {
+      return {
+        errors: {
+          branchIds: [
+            "Invalid branch selection.",
+          ],
+        },
+      };
+    }
+
+    const uniqueBranchIds = [
+      ...new Set(submittedBranchIds),
+    ];
+
+    if (uniqueBranchIds.length === 0) {
+      return {
+        errors: {
+          branchIds: [
+            "Select at least one branch.",
+          ],
+        },
+      };
+    }
+
+    const branches =
+      await prisma.branch.findMany({
+        where: {
+          id: {
+            in: uniqueBranchIds,
+          },
+        },
+
+        select: {
+          id: true,
+        },
+      });
+
+    if (
+      branches.length !==
+      uniqueBranchIds.length
+    ) {
+      return {
+        errors: {
+          branchIds: [
+            "One or more selected branches are invalid.",
+          ],
+        },
+      };
+    }
+
+    const invalidBatch =
+      selectedBatches.some(
+        (batch) =>
+          !uniqueBranchIds.includes(
+            batch.branchId
+          )
+      );
+
+    if (invalidBatch) {
+      return {
+        errors: {
+          batchIds: [
+            "One or more selected batches do not belong to the selected branches.",
+          ],
+        },
+      };
+    }
   }
 
   /* =======================================================
-     VERIFY BRANCHES
+     VERIFY SELECTED PATTERNS
+     
+     Patterns must belong to at least one selected batch.
+     
+     This prevents an ADMIN from manually submitting an
+     unrelated pattern ID.
   ======================================================= */
 
-  const branches =
-    await prisma.branch.findMany({
-      where: {
-        id: {
-          in: uniqueBranchIds,
-        },
-      },
-      select: {
-        id: true,
-      },
-    });
+  if (permissions.patterns) {
+    /*
+     * If no patterns were selected, that's valid.
+     * Otherwise verify all selected patterns exist.
+     */
+    if (effectivePatternIds.length > 0) {
+      const patternCount =
+        await prisma.pattern.count({
+          where: {
+            id: {
+              in: effectivePatternIds,
+            },
+          },
+        });
 
-  if (
-    branches.length !==
-    uniqueBranchIds.length
-  ) {
-    return {
-      errors: {
-        branchIds: [
-          "One or more selected branches are invalid.",
-        ],
-      },
-    };
+      if (
+        patternCount !==
+        effectivePatternIds.length
+      ) {
+        return {
+          errors: {
+            patternIds: [
+              "One or more selected patterns are invalid.",
+            ],
+          },
+        };
+      }
+
+      /*
+       * Get patterns actually available through the
+       * selected batches.
+       */
+      const availableBatchPatterns =
+        await prisma.batchPattern.findMany({
+          where: {
+            batchId: {
+              in: effectiveBatchIds,
+            },
+
+            patternId: {
+              in: effectivePatternIds,
+            },
+          },
+
+          select: {
+            patternId: true,
+          },
+        });
+
+      const availablePatternIds = new Set(
+        availableBatchPatterns.map(
+          (item) => item.patternId
+        )
+      );
+
+      const invalidPatternIds =
+        effectivePatternIds.filter(
+          (patternId) =>
+            !availablePatternIds.has(
+              patternId
+            )
+        );
+
+      if (invalidPatternIds.length > 0) {
+        return {
+          errors: {
+            patternIds: [
+              "One or more selected patterns are not available for the selected batches.",
+            ],
+          },
+        };
+      }
+    }
   }
 
   /* =======================================================
-     VERIFY BATCHES
-  ======================================================= */
-
-  const batches =
-    await prisma.batch.findMany({
-      where: {
-        id: {
-          in: uniqueBatchIds,
-        },
-        branchId: {
-          in: uniqueBranchIds,
-        },
-      },
-      select: {
-        id: true,
-        branchId: true,
-      },
-    });
-
-  if (
-    batches.length !==
-    uniqueBatchIds.length
-  ) {
-    return {
-      errors: {
-        batchIds: [
-          "One or more selected batches do not belong to the selected branches.",
-        ],
-      },
-    };
-  }
-
-  /* =======================================================
-     UPDATE
+     DATABASE TRANSACTION
+     
+     Everything below is atomic.
   ======================================================= */
 
   try {
     await prisma.$transaction(
       async (tx) => {
-        /* -----------------------------------------------
-           USER
-        ------------------------------------------------ */
+        /* ---------------------------------------------------
+           RE-CHECK TEACHER
+        --------------------------------------------------- */
 
-        const userData: Prisma.UserUpdateInput = {
-          name: data.name,
+        const teacher =
+          await tx.teacher.findUnique({
+            where: {
+              id: existingTeacher.id,
+            },
 
-          email:  normalizeEmail(data.email),
+            select: {
+              id: true,
+              userId: true,
 
-          phone: data.phone,
-        };
+              user: {
+                select: {
+                  id: true,
+                  role: true,
+                },
+              },
+            },
+          });
 
-        if (data.password) {
+        if (
+          !teacher ||
+          teacher.user.role !== "TEACHER"
+        ) {
+          throw new Error(
+            "TEACHER_NOT_FOUND"
+          );
+        }
+
+        /* ---------------------------------------------------
+           RE-CHECK OWNERSHIP
+        --------------------------------------------------- */
+
+        if (
+          editorRole === "TEACHER" &&
+          session.id !== teacher.user.id
+        ) {
+          throw new Error(
+            "UNAUTHORIZED_TEACHER"
+          );
+        }
+
+        /* ---------------------------------------------------
+           USER DATA
+        --------------------------------------------------- */
+
+        const userData:
+          Prisma.UserUpdateInput = {};
+
+        if (permissions.name) {
+          userData.name = data.name;
+        }
+
+        if (permissions.email) {
+          userData.email =
+            normalizeEmail(data.email);
+        }
+
+        if (permissions.phone) {
+          userData.phone =
+            data.phone || null;
+        }
+
+        /* ---------------------------------------------------
+           PASSWORD
+        --------------------------------------------------- */
+
+        if (
+          permissions.password &&
+          data.password
+        ) {
           userData.password =
             await bcrypt.hash(
               data.password,
@@ -297,47 +752,130 @@ export async function updateTeacher(
             );
         }
 
-        await tx.user.update({
-          where: {
-            id: teacher.userId,
-          },
-          data: userData,
-        });
+        /* ---------------------------------------------------
+           UPDATE USER
+        --------------------------------------------------- */
 
-        /* -----------------------------------------------
-           REPLACE ASSIGNMENTS
-        ------------------------------------------------ */
+        if (
+          Object.keys(userData).length > 0
+        ) {
+          await tx.user.update({
+            where: {
+              id: teacher.userId,
+            },
 
-        await tx.teacherAssignment.deleteMany({
-          where: {
-            teacherId: teacher.id,
-          },
-        });
+            data: userData,
+          });
+        }
 
-        await tx.teacherAssignment.createMany({
-          data: uniqueBatchIds.map(
-            (batchId) => ({
+        /* ---------------------------------------------------
+           TEACHER ASSIGNMENTS
+           
+           Only ADMIN can modify batches.
+        --------------------------------------------------- */
+
+        if (permissions.batches) {
+          await tx.teacherAssignment.deleteMany({
+            where: {
               teacherId: teacher.id,
-              batchId,
-            })
-          ),
-        });
+            },
+          });
+
+          if (effectiveBatchIds.length > 0) {
+            await tx.teacherAssignment.createMany({
+              data: effectiveBatchIds.map(
+                (batchId) => ({
+                  teacherId: teacher.id,
+                  batchId,
+                })
+              ),
+            });
+          }
+        }
+
+        /* ---------------------------------------------------
+           TEACHER PATTERNS
+           
+           Only ADMIN can modify patterns.
+        --------------------------------------------------- */
+
+        if (permissions.patterns) {
+          await tx.teacherPattern.deleteMany({
+            where: {
+              teacherId: teacher.id,
+            },
+          });
+
+          if (
+            effectivePatternIds.length > 0
+          ) {
+            await tx.teacherPattern.createMany({
+              data: effectivePatternIds.map(
+                (patternId) => ({
+                  teacherId: teacher.id,
+                  patternId,
+                })
+              ),
+            });
+          }
+        }
       }
     );
   } catch (error) {
+    /* =====================================================
+       UNAUTHORIZED TEACHER
+    ===================================================== */
+
+    if (
+      error instanceof Error &&
+      error.message ===
+        "UNAUTHORIZED_TEACHER"
+    ) {
+      return {
+        message:
+          "You are not allowed to edit this teacher.",
+      };
+    }
+
+    /* =====================================================
+       TEACHER NOT FOUND
+    ===================================================== */
+
+    if (
+      error instanceof Error &&
+      error.message ===
+        "TEACHER_NOT_FOUND"
+    ) {
+      return {
+        message: "Teacher not found.",
+      };
+    }
+
+    /* =====================================================
+       PRISMA ERRORS
+    ===================================================== */
+
     if (
       error instanceof
-        Prisma.PrismaClientKnownRequestError
+      Prisma.PrismaClientKnownRequestError
     ) {
+      /* ---------------------------------------------------
+         DUPLICATE UNIQUE VALUE
+      --------------------------------------------------- */
+
       if (error.code === "P2002") {
         const target =
-          Array.isArray(error.meta?.target)
+          Array.isArray(
+            error.meta?.target
+          )
             ? error.meta.target.join(", ")
             : String(
                 error.meta?.target ?? ""
               );
 
-        if (target.includes("email")) {
+        if (
+          target.includes("email")
+        ) {
           return {
             errors: {
               email:
@@ -346,7 +884,9 @@ export async function updateTeacher(
           };
         }
 
-        if (target.includes("phone")) {
+        if (
+          target.includes("phone")
+        ) {
           return {
             errors: {
               phone:
@@ -361,13 +901,21 @@ export async function updateTeacher(
         };
       }
 
+      /* ---------------------------------------------------
+         RECORD NOT FOUND
+      --------------------------------------------------- */
+
       if (error.code === "P2025") {
         return {
           message:
-            "Teacher or related record was not found.",
+            "Teacher could not be found.",
         };
       }
     }
+
+    /* =====================================================
+       UNKNOWN ERROR
+    ===================================================== */
 
     console.error(
       "Unable to update teacher:",
@@ -395,6 +943,10 @@ export async function updateTeacher(
   revalidatePath(
     `/Admin/teachers/status/${teacherId}/edit`
   );
+
+  /* =======================================================
+     SUCCESS
+  ======================================================= */
 
   return {
     success: true,

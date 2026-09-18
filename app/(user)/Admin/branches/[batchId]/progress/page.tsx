@@ -1,7 +1,7 @@
 import { requireRole } from "@/lib/auth/require-role";
 import { prisma } from "@/lib/prisma";
 import { Status } from "@/generated/prisma/client";
-import { ProgressForm } from "./ProgressForm";
+import { ProgressForm } from "@/components/ProgressForm";
 
 const Page = async (props: {
   params: Promise<{ batchId: string }>;

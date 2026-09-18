@@ -11,7 +11,7 @@
 //
 // Adjust the `@/lib/prisma` import to wherever your Prisma
 // client singleton actually lives.
-
+"use server";
 import {prisma} from "@/lib/prisma";
 import type { Branch } from "@/app/(user)/Admin/students/add/registerComponentStudent";
 
