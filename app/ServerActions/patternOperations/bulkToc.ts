@@ -6,7 +6,7 @@ import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { requireRoleForAction } from "@/lib/auth/require-role";
 
-import { parseToc } from "@/app/(user)/Admin/study-pattern/[id]/bulktoc/parser";
+import { parseToc } from "./parser";
 
 const BulkTocSchema = z.object({
   patternId: z

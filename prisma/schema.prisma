@@ -77,11 +77,24 @@ model StudentPattern {
 }
 
 model Teacher {
-  id          String               @id @default(cuid())
-  userId      String               @unique
-  user        User                 @relation(fields: [userId], references: [id],onDelete:Cascade)
+  id               String               @id @default(cuid())
+  userId           String               @unique
+  user             User                 @relation(fields: [userId], references: [id],onDelete:Cascade)
 
-  assignments TeacherAssignment[]
+  assignments      TeacherAssignment[]
+  teacherPatterns  TeacherPattern[]
+}
+
+model TeacherPattern {
+  id        String  @id @default(cuid())
+  teacherId String
+  patternId String
+
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  pattern   Pattern @relation(fields: [patternId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, patternId])
+  @@index([patternId])
 }
 
 model Branch {
@@ -191,6 +204,7 @@ model Pattern {
   patternArr      PatternArr[]
   batches         BatchPattern[]
   studentPatterns StudentPattern[]
+  teacherPatterns TeacherPattern[]
   tocItems        PatternTocItem[]
   overallProgress StudentOverallProgress[]
   trackingStatus  Status @default(SABAQ)

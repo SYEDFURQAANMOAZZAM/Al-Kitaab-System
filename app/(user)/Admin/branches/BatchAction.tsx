@@ -19,7 +19,6 @@ import {
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRouter } from "next/navigation";
 
 import {
   DropdownMenu,
@@ -44,7 +43,7 @@ export default function BatchAction({
   batchTeachers:number
 }) {
   
-  const router = useRouter();
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -131,11 +130,6 @@ export default function BatchAction({
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="end">
-
-          <DropdownMenuItem onClick={() => router.push(`/Admin/branches/${batchId}/attendance`)}>
-            Mark Attendance
-          </DropdownMenuItem>
-
 
           <DropdownMenuItem onClick={openRenameDialog}>
             Rename Batch

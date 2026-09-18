@@ -21,7 +21,7 @@ const CreatePatternSchema = z.object({
 });
 
 export async function createPattern(input: unknown) {
-  await requireRoleForAction(["ADMIN"]);
+  await requireRoleForAction(["ADMIN","TEACHER"]);
 
   const parsed = CreatePatternSchema.safeParse(input);
 

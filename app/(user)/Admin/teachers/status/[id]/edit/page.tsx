@@ -1,22 +1,20 @@
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
+
 import AuthVerify from "@/app/ServerActions/auth/authVerify";
 import { prisma } from "@/lib/prisma";
-
 import { updateTeacher } from "@/app/ServerActions/updation/updateTeacher";
 
-import UserForm from "./registerTeacherComponent";
-
-import { notFound } from "next/navigation";
+import TeacherForm from "@/components/teacherForm";
 
 type PageProps = {
-  params: Promise<{
-    id: string;
-  }>;
+  params: Promise<{ id: string }>;
 };
 
-const Page = async ({ params }: PageProps) => {
-  await AuthVerify("ADMIN");
-
+export default async function Page({ params }: PageProps) {
   const { id } = await params;
+
+  await AuthVerify("ADMIN")
 
   const [teacher, branches] = await Promise.all([
     prisma.teacher.findUnique({
@@ -33,11 +31,14 @@ const Page = async ({ params }: PageProps) => {
             name: true,
             email: true,
             phone: true,
+            role: true,
           },
         },
 
         assignments: {
           select: {
+            batchId: true,
+
             batch: {
               select: {
                 id: true,
@@ -46,79 +47,134 @@ const Page = async ({ params }: PageProps) => {
             },
           },
         },
+
+        teacherPatterns: {
+          select: {
+            patternId: true,
+          },
+        },
       },
     }),
 
+    /*
+     * TeacherForm needs:
+     *
+     * Branch
+     *   └── Batch
+     *        └── BatchPattern
+     *             └── Pattern
+     */
     prisma.branch.findMany({
+      orderBy: {
+        name: "asc",
+      },
+
       select: {
         id: true,
         name: true,
 
         batches: {
+          orderBy: {
+            name: "asc",
+          },
+
           select: {
             id: true,
             name: true,
             branchId: true,
+
+            patterns: {
+              select: {
+                id: true,
+                batchId: true,
+                patternId: true,
+
+                pattern: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
           },
         },
-      },
-
-      orderBy: {
-        name: "asc",
       },
     }),
   ]);
 
-  if (!teacher) {
+  /*
+   * Make sure the teacher exists and the linked user
+   * is actually a TEACHER.
+   */
+  if (!teacher || teacher.user.role !== "TEACHER") {
     notFound();
   }
 
-  /* ---------------------------------------------
-     GET ASSIGNED BATCH IDS
-  --------------------------------------------- */
-
+  /*
+   * TeacherAssignment is the source of truth for batches.
+   */
   const batchIds = teacher.assignments.map(
-    (assignment) => assignment.batch.id
+    (assignment) => assignment.batchId
   );
 
-  /* ---------------------------------------------
-     GET BRANCH IDS FROM ASSIGNED BATCHES
-  --------------------------------------------- */
-
+  /*
+   * Branches are NOT directly assigned to teachers.
+   *
+   * They are derived from the assigned batches:
+   *
+   * Teacher
+   *   -> TeacherAssignment
+   *      -> Batch
+   *         -> Branch
+   */
   const branchIds = [
     ...new Set(
-      teacher.assignments.map(
-        (assignment) => assignment.batch.branchId
-      )
+      teacher.assignments
+        .map((assignment) => assignment.batch.branchId)
+        .filter(Boolean)
     ),
   ];
 
-  /* ---------------------------------------------
-     FORM USER
-  --------------------------------------------- */
+  /*
+   * TeacherPattern is the source of truth for teacher patterns.
+   */
+  const patternIds = teacher.teacherPatterns.map(
+    (teacherPattern) => teacherPattern.patternId
+  );
 
-  const user = {
-    id: teacher.id,
-
-    name: teacher.user.name ?? "",
-    email: teacher.user.email ?? "",
-    phone: teacher.user.phone ?? "",
-
-    branchIds,
-    batchIds,
-
-    role: "TEACHER" as const,
-  };
+  /*
+   * updateTeacher expects:
+   *
+   * updateTeacher(userId, prevState, formData)
+   *
+   * Bind the User ID so TeacherForm only submits
+   * prevState and FormData.
+   */
+  const boundUpdateTeacher = updateTeacher.bind(
+    null,
+    teacher.user.id
+  );
 
   return (
-    <UserForm
-      mode="edit"
-      role="TEACHER"
-      action={updateTeacher.bind(null, teacher.id)}
-      branches={branches}
-      user={user}
-    />
-  );
-};
+    <Suspense fallback={<div>Loading...</div>}>
+      <TeacherForm
+        mode="edit"
+        editorRole="ADMIN"
+        action={boundUpdateTeacher}
+        branches={branches}
+        user={{
+          id: teacher.user.id,
 
-export default Page;
+          name: teacher.user.name,
+          email: teacher.user.email,
+          phone: teacher.user.phone,
+
+          branchIds,
+          batchIds,
+          patternIds,
+        }}
+      />
+    </Suspense>
+  );
+}
