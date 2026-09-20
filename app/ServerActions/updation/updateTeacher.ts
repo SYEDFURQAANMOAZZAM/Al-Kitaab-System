@@ -14,17 +14,17 @@ import {
 } from "../auth/teacher-permissions";
 
 import {
-  FormStateTeacher,
   EditSchemaTeacher,
+  type FormStateTeacher,
 } from "../auth/Validate";
 
 /* =========================================================
-   PARSE JSON ARRAY
+   HELPERS
 ========================================================= */
 
 function parseJsonArray(
   formData: FormData,
-  fieldName: string
+  fieldName: string,
 ): string[] | null {
   const raw = formData.get(fieldName);
 
@@ -43,29 +43,21 @@ function parseJsonArray(
       !parsed.every(
         (value): value is string =>
           typeof value === "string" &&
-          value.trim().length > 0
+          value.trim().length > 0,
       )
     ) {
       return null;
     }
 
-    return [
-      ...new Set(
-        parsed.map((value) => value.trim())
-      ),
-    ];
+    return [...new Set(parsed.map((value) => value.trim()))];
   } catch {
     return null;
   }
 }
 
-/* =========================================================
-   COMPARE STRING ARRAYS
-========================================================= */
-
 function sameStringArray(
   a: string[],
-  b: string[]
+  b: string[],
 ): boolean {
   if (a.length !== b.length) {
     return false;
@@ -94,7 +86,7 @@ function sameStringArray(
 export async function updateTeacher(
   teacherId: string,
   _state: FormStateTeacher,
-  formData: FormData
+  formData: FormData,
 ): Promise<FormStateTeacher> {
   /* =======================================================
      AUTHORIZATION
@@ -102,16 +94,10 @@ export async function updateTeacher(
 
   const session = await AuthVerify(
     "ADMIN",
-    "TEACHER"
+    "TEACHER",
   );
 
-  /*
-   * IMPORTANT:
-   * The role comes from the authenticated session.
-   * Never trust FormData for authorization.
-   */
-  const editorRole =
-    session.role as EditorRole;
+  const editorRole = session.role as EditorRole;
 
   const permissions =
     TEACHER_FIELD_PERMISSIONS[editorRole];
@@ -159,9 +145,9 @@ export async function updateTeacher(
           },
         },
 
-        teacherPatterns: {
+        teacherSubjects: {
           select: {
-            patternId: true,
+            subjectId: true,
           },
         },
       },
@@ -182,8 +168,6 @@ export async function updateTeacher(
 
   /* =======================================================
      TEACHER OWNERSHIP
-     
-     A TEACHER can only edit their own account.
   ======================================================= */
 
   if (
@@ -202,26 +186,56 @@ export async function updateTeacher(
 
   const existingBatchIds =
     existingTeacher.assignments.map(
-      (assignment) => assignment.batchId
+      (assignment) => assignment.batchId,
     );
 
-  const existingPatternIds =
-    existingTeacher.teacherPatterns.map(
-      (teacherPattern) =>
-        teacherPattern.patternId
+  const existingSubjectIds =
+    existingTeacher.teacherSubjects.map(
+      (teacherSubject) => teacherSubject.subjectId,
     );
 
   /* =======================================================
+     PARSE BRANCH IDS
+  ======================================================= */
+
+  const submittedBranchIds =
+    parseJsonArray(
+      formData,
+      "branchIds",
+    );
+
+  if (submittedBranchIds === null) {
+    return {
+      errors: {
+        branchIds: [
+          "Invalid branch selection.",
+        ],
+      },
+    };
+  }
+
+  const uniqueBranchIds = [
+    ...new Set(submittedBranchIds),
+  ];
+
+  if (uniqueBranchIds.length === 0) {
+    return {
+      errors: {
+        branchIds: [
+          "Select at least one branch.",
+        ],
+      },
+    };
+  }
+
+  /* =======================================================
      PARSE BATCH IDS
-     
-     We parse these even for TEACHER so that an attacker
-     cannot modify the FormData and silently change batches.
   ======================================================= */
 
   const submittedBatchIds =
     parseJsonArray(
       formData,
-      "batchIds"
+      "batchIds",
     );
 
   if (submittedBatchIds === null) {
@@ -239,36 +253,31 @@ export async function updateTeacher(
   ];
 
   /* =======================================================
-     PARSE PATTERN IDS
-     
-     We parse these even for TEACHER so unauthorized
-     modifications can be detected.
+     PARSE SUBJECT IDS
   ======================================================= */
 
-  const submittedPatternIds =
+  const submittedSubjectIds =
     parseJsonArray(
       formData,
-      "patternIds"
+      "subjectIds",
     );
 
-  if (submittedPatternIds === null) {
+  if (submittedSubjectIds === null) {
     return {
       errors: {
-        patternIds: [
-          "Invalid pattern selection.",
+        subjectIds: [
+          "Invalid subject selection.",
         ],
       },
     };
   }
 
-  const uniquePatternIds = [
-    ...new Set(submittedPatternIds),
+  const uniqueSubjectIds = [
+    ...new Set(submittedSubjectIds),
   ];
 
   /* =======================================================
      DETECT UNAUTHORIZED CHANGES
-     
-     This happens BEFORE any database mutation.
   ======================================================= */
 
   if (editorRole === "TEACHER") {
@@ -284,7 +293,7 @@ export async function updateTeacher(
         typeof submittedEmail !== "string" ||
         normalizeEmail(submittedEmail) !==
           normalizeEmail(
-            existingTeacher.user.email
+            existingTeacher.user.email,
           )
       ) {
         return {
@@ -304,7 +313,7 @@ export async function updateTeacher(
       if (
         !sameStringArray(
           uniqueBatchIds,
-          existingBatchIds
+          existingBatchIds,
         )
       ) {
         return {
@@ -318,20 +327,20 @@ export async function updateTeacher(
     }
 
     /* -------------------------------------------------------
-       PATTERNS
+       SUBJECTS
     ------------------------------------------------------- */
 
-    if (!permissions.patterns) {
+    if (!permissions.subjects) {
       if (
         !sameStringArray(
-          uniquePatternIds,
-          existingPatternIds
+          uniqueSubjectIds,
+          existingSubjectIds,
         )
       ) {
         return {
           errors: {
-            patternIds: [
-              "You are not allowed to modify patterns.",
+            subjectIds: [
+              "You are not allowed to modify subjects.",
             ],
           },
         };
@@ -341,12 +350,6 @@ export async function updateTeacher(
 
   /* =======================================================
      EFFECTIVE BATCH VALUES
-     
-     ADMIN:
-       submitted batches
-
-     TEACHER:
-       existing batches
   ======================================================= */
 
   const effectiveBatchIds =
@@ -355,22 +358,16 @@ export async function updateTeacher(
       : existingBatchIds;
 
   /* =======================================================
-     EFFECTIVE PATTERN VALUES
-     
-     ADMIN:
-       submitted patterns
-
-     TEACHER:
-       existing patterns
+     EFFECTIVE SUBJECT VALUES
   ======================================================= */
 
-  const effectivePatternIds =
-    permissions.patterns
-      ? uniquePatternIds
-      : existingPatternIds;
+  const effectiveSubjectIds =
+    permissions.subjects
+      ? uniqueSubjectIds
+      : existingSubjectIds;
 
   /* =======================================================
-     BATCH VALIDATION
+     BASIC VALIDATION
   ======================================================= */
 
   if (
@@ -387,83 +384,7 @@ export async function updateTeacher(
   }
 
   /* =======================================================
-     VALIDATE FORM
-  ======================================================= */
-
-  const validatedFields =
-    EditSchemaTeacher.safeParse({
-      name: formData.get("name"),
-
-      email: permissions.email
-        ? formData.get("email")
-        : existingTeacher.user.email,
-
-      phone: permissions.phone
-        ? formData.get("phone")
-        : existingTeacher.user.phone,
-
-      password: permissions.password
-        ? formData.get("password")
-        : "",
-
-      confirmPassword:
-        permissions.password
-          ? formData.get("confirmPassword")
-          : "",
-
-      /*
-       * Branches are NOT persisted on Teacher.
-       * They are derived from assigned batches.
-       */
-      branchIds:
-        formData.get("branchIds"),
-
-      batchIds:
-        effectiveBatchIds,
-
-      patternIds:
-        effectivePatternIds,
-    });
-
-  if (!validatedFields.success) {
-    const fieldErrors =
-      validatedFields.error.flatten()
-        .fieldErrors;
-
-    return {
-      errors: {
-        name: fieldErrors.name,
-
-        email:
-          fieldErrors.email?.[0],
-
-        phone:
-          fieldErrors.phone?.[0],
-
-        password:
-          fieldErrors.password,
-
-        confirmPassword:
-          fieldErrors.confirmPassword,
-
-        branchIds:
-          fieldErrors.branchIds,
-
-        batchIds:
-          fieldErrors.batchIds,
-
-        patternIds:
-          fieldErrors.patternIds,
-      },
-    };
-  }
-
-  const data = validatedFields.data;
-
-  /* =======================================================
-     VERIFY SELECTED BATCHES
-     
-     Only an actor with batches=true can change them.
+     VALIDATE SELECTED BATCHES
   ======================================================= */
 
   let selectedBatches: {
@@ -500,38 +421,8 @@ export async function updateTeacher(
     }
 
     /* -------------------------------------------------------
-       VERIFY BRANCH IDS
+       VALIDATE BRANCHES
     ------------------------------------------------------- */
-
-    const submittedBranchIds =
-      parseJsonArray(
-        formData,
-        "branchIds"
-      );
-
-    if (submittedBranchIds === null) {
-      return {
-        errors: {
-          branchIds: [
-            "Invalid branch selection.",
-          ],
-        },
-      };
-    }
-
-    const uniqueBranchIds = [
-      ...new Set(submittedBranchIds),
-    ];
-
-    if (uniqueBranchIds.length === 0) {
-      return {
-        errors: {
-          branchIds: [
-            "Select at least one branch.",
-          ],
-        },
-      };
-    }
 
     const branches =
       await prisma.branch.findMany({
@@ -559,12 +450,16 @@ export async function updateTeacher(
       };
     }
 
+    /* -------------------------------------------------------
+       VERIFY BATCH → BRANCH RELATION
+    ------------------------------------------------------- */
+
     const invalidBatch =
       selectedBatches.some(
         (batch) =>
           !uniqueBranchIds.includes(
-            batch.branchId
-          )
+            batch.branchId,
+          ),
       );
 
     if (invalidBatch) {
@@ -579,82 +474,78 @@ export async function updateTeacher(
   }
 
   /* =======================================================
-     VERIFY SELECTED PATTERNS
-     
-     Patterns must belong to at least one selected batch.
-     
-     This prevents an ADMIN from manually submitting an
-     unrelated pattern ID.
+     VALIDATE SELECTED SUBJECTS
   ======================================================= */
 
-  if (permissions.patterns) {
-    /*
-     * If no patterns were selected, that's valid.
-     * Otherwise verify all selected patterns exist.
-     */
-    if (effectivePatternIds.length > 0) {
-      const patternCount =
-        await prisma.pattern.count({
+  if (permissions.subjects) {
+    if (effectiveSubjectIds.length > 0) {
+      /* -----------------------------------------------------
+         VERIFY SUBJECTS EXIST
+      ----------------------------------------------------- */
+
+      const subjectCount =
+        await prisma.subject.count({
           where: {
             id: {
-              in: effectivePatternIds,
+              in: effectiveSubjectIds,
             },
           },
         });
 
       if (
-        patternCount !==
-        effectivePatternIds.length
+        subjectCount !==
+        effectiveSubjectIds.length
       ) {
         return {
           errors: {
-            patternIds: [
-              "One or more selected patterns are invalid.",
+            subjectIds: [
+              "One or more selected subjects are invalid.",
             ],
           },
         };
       }
 
-      /*
-       * Get patterns actually available through the
-       * selected batches.
-       */
-      const availableBatchPatterns =
-        await prisma.batchPattern.findMany({
+      /* -----------------------------------------------------
+         VERIFY SUBJECTS BELONG TO SELECTED BATCHES
+      ----------------------------------------------------- */
+
+      const availableBatchSubjects =
+        await prisma.batchSubject.findMany({
           where: {
             batchId: {
               in: effectiveBatchIds,
             },
 
-            patternId: {
-              in: effectivePatternIds,
+            subjectId: {
+              in: effectiveSubjectIds,
             },
           },
 
           select: {
-            patternId: true,
+            subjectId: true,
           },
         });
 
-      const availablePatternIds = new Set(
-        availableBatchPatterns.map(
-          (item) => item.patternId
-        )
-      );
-
-      const invalidPatternIds =
-        effectivePatternIds.filter(
-          (patternId) =>
-            !availablePatternIds.has(
-              patternId
-            )
+      const availableSubjectIds =
+        new Set(
+          availableBatchSubjects.map(
+            (item) => item.subjectId,
+          ),
         );
 
-      if (invalidPatternIds.length > 0) {
+      const invalidSubjectIds =
+        effectiveSubjectIds.filter(
+          (subjectId) =>
+            !availableSubjectIds.has(
+              subjectId,
+            ),
+        );
+
+      if (invalidSubjectIds.length > 0) {
         return {
           errors: {
-            patternIds: [
-              "One or more selected patterns are not available for the selected batches.",
+            subjectIds: [
+              "One or more selected subjects are not available for the selected batches.",
             ],
           },
         };
@@ -663,9 +554,78 @@ export async function updateTeacher(
   }
 
   /* =======================================================
+     VALIDATE FORM
+  ======================================================= */
+
+  const validatedFields =
+    EditSchemaTeacher.safeParse({
+      name: formData.get("name"),
+
+      email: permissions.email
+        ? formData.get("email")
+        : existingTeacher.user.email,
+
+      phone: permissions.phone
+        ? formData.get("phone")
+        : existingTeacher.user.phone,
+
+      password: permissions.password
+        ? formData.get("password")
+        : "",
+
+      confirmPassword:
+        permissions.password
+          ? formData.get("confirmPassword")
+          : "",
+
+      /*
+       * IMPORTANT:
+       * Zod expects arrays here.
+       * FormData gives us JSON strings,
+       * so we pass the parsed arrays.
+       */
+      branchIds: uniqueBranchIds,
+      batchIds: effectiveBatchIds,
+      subjectIds: effectiveSubjectIds,
+    });
+
+  if (!validatedFields.success) {
+    const fieldErrors =
+      validatedFields.error.flatten()
+        .fieldErrors;
+
+    return {
+      errors: {
+        name: fieldErrors.name,
+
+        email:
+          fieldErrors.email?.[0],
+
+        phone:
+          fieldErrors.phone?.[0],
+
+        password:
+          fieldErrors.password,
+
+        confirmPassword:
+          fieldErrors.confirmPassword,
+
+        branchIds:
+          fieldErrors.branchIds,
+
+        batchIds:
+          fieldErrors.batchIds,
+
+        subjectIds:
+          fieldErrors.subjectIds,
+      },
+    };
+  }
+
+  const data = validatedFields.data;
+
+  /* =======================================================
      DATABASE TRANSACTION
-     
-     Everything below is atomic.
   ======================================================= */
 
   try {
@@ -699,7 +659,7 @@ export async function updateTeacher(
           teacher.user.role !== "TEACHER"
         ) {
           throw new Error(
-            "TEACHER_NOT_FOUND"
+            "TEACHER_NOT_FOUND",
           );
         }
 
@@ -712,7 +672,7 @@ export async function updateTeacher(
           session.id !== teacher.user.id
         ) {
           throw new Error(
-            "UNAUTHORIZED_TEACHER"
+            "UNAUTHORIZED_TEACHER",
           );
         }
 
@@ -748,7 +708,7 @@ export async function updateTeacher(
           userData.password =
             await bcrypt.hash(
               data.password,
-              10
+              10,
             );
         }
 
@@ -770,8 +730,6 @@ export async function updateTeacher(
 
         /* ---------------------------------------------------
            TEACHER ASSIGNMENTS
-           
-           Only ADMIN can modify batches.
         --------------------------------------------------- */
 
         if (permissions.batches) {
@@ -781,45 +739,45 @@ export async function updateTeacher(
             },
           });
 
-          if (effectiveBatchIds.length > 0) {
+          if (
+            effectiveBatchIds.length > 0
+          ) {
             await tx.teacherAssignment.createMany({
               data: effectiveBatchIds.map(
                 (batchId) => ({
                   teacherId: teacher.id,
                   batchId,
-                })
+                }),
               ),
             });
           }
         }
 
         /* ---------------------------------------------------
-           TEACHER PATTERNS
-           
-           Only ADMIN can modify patterns.
+           TEACHER SUBJECTS
         --------------------------------------------------- */
 
-        if (permissions.patterns) {
-          await tx.teacherPattern.deleteMany({
+        if (permissions.subjects) {
+          await tx.teacherSubject.deleteMany({
             where: {
               teacherId: teacher.id,
             },
           });
 
           if (
-            effectivePatternIds.length > 0
+            effectiveSubjectIds.length > 0
           ) {
-            await tx.teacherPattern.createMany({
-              data: effectivePatternIds.map(
-                (patternId) => ({
+            await tx.teacherSubject.createMany({
+              data: effectiveSubjectIds.map(
+                (subjectId) => ({
                   teacherId: teacher.id,
-                  patternId,
-                })
+                  subjectId,
+                }),
               ),
             });
           }
         }
-      }
+      },
     );
   } catch (error) {
     /* =====================================================
@@ -866,11 +824,11 @@ export async function updateTeacher(
       if (error.code === "P2002") {
         const target =
           Array.isArray(
-            error.meta?.target
+            error.meta?.target,
           )
             ? error.meta.target.join(", ")
             : String(
-                error.meta?.target ?? ""
+                error.meta?.target ?? "",
               );
 
         if (
@@ -919,7 +877,7 @@ export async function updateTeacher(
 
     console.error(
       "Unable to update teacher:",
-      error
+      error,
     );
 
     return {
@@ -933,15 +891,15 @@ export async function updateTeacher(
   ======================================================= */
 
   revalidatePath(
-    "/Admin/teachers/status"
+    "/Admin/teachers/status",
   );
 
   revalidatePath(
-    "/Admin/branches"
+    "/Admin/branches",
   );
 
   revalidatePath(
-    `/Admin/teachers/status/${teacherId}/edit`
+    `/Admin/teachers/status/${teacherId}/edit`,
   );
 
   /* =======================================================

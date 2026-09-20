@@ -19,12 +19,12 @@ export default async function Page() {
           id: true,
           name: true,
           branchId: true,
-          patterns: {
+          subjects: {
             select: {
               id: true,
               batchId: true,
-              patternId: true,
-              pattern: {
+              subjectId: true,
+              subject: {
                 select: { id: true, name: true },
               },
             },

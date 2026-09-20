@@ -9,7 +9,7 @@ export type StudentField =
   | "phone2"
   | "password"
   | "batches"
-  | "patterns";
+  | "subjects";
 
 export type FieldPermissions = Record<StudentField, boolean>;
 
@@ -26,7 +26,7 @@ export const STUDENT_FIELD_PERMISSIONS: Record<
     phone2: true,
     password: true,
     batches: true,
-    patterns: true,
+    subjects: true,
   },
 
   TEACHER: {
@@ -38,7 +38,7 @@ export const STUDENT_FIELD_PERMISSIONS: Record<
     phone2: true,
     password: true,
     batches: true,
-    patterns: true,
+    subjects: true,
   },
 
   STUDENT: {
@@ -50,6 +50,6 @@ export const STUDENT_FIELD_PERMISSIONS: Record<
     phone2: true,
     password: true,
     batches: false,
-    patterns: false,
+    subjects: false,
   },
 };

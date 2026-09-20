@@ -27,8 +27,7 @@ function parseJsonArray(
   }
 
   try {
-    const parsed: unknown =
-      JSON.parse(raw);
+    const parsed: unknown = JSON.parse(raw);
 
     if (!Array.isArray(parsed)) {
       return null;
@@ -77,8 +76,7 @@ export async function createStudent(
 
   if (batchIds === null) {
     return {
-      message:
-        "Invalid batch selection.",
+      message: "Invalid batch selection.",
     };
   }
 
@@ -93,18 +91,17 @@ export async function createStudent(
   }
 
   /* =======================================================
-     PARSE PATTERN IDS
+     PARSE SUBJECT IDS
   ======================================================= */
 
-  const patternIds = parseJsonArray(
+  const subjectIds = parseJsonArray(
     formData,
-    "patternIds"
+    "subjectIds"
   );
 
-  if (patternIds === null) {
+  if (subjectIds === null) {
     return {
-      message:
-        "Invalid pattern selection.",
+      message: "Invalid subject selection.",
     };
   }
 
@@ -132,7 +129,7 @@ export async function createStudent(
         formData.get("address"),
 
       batchIds,
-      patternIds,
+      subjectIds,
     });
 
   if (!validatedFields.success) {
@@ -168,8 +165,8 @@ export async function createStudent(
         batchIds:
           fieldErrors.batchIds,
 
-        patternIds:
-          fieldErrors.patternIds,
+        subjectIds:
+          fieldErrors.subjectIds,
       },
     };
   }
@@ -184,8 +181,8 @@ export async function createStudent(
     ...new Set(data.batchIds),
   ];
 
-  const uniquePatternIds = [
-    ...new Set(data.patternIds),
+  const uniqueSubjectIds = [
+    ...new Set(data.subjectIds),
   ];
 
   if (uniqueBatchIds.length === 0) {
@@ -213,9 +210,9 @@ export async function createStudent(
       select: {
         id: true,
 
-        patterns: {
+        subjects: {
           select: {
-            patternId: true,
+            subjectId: true,
           },
         },
       },
@@ -235,39 +232,39 @@ export async function createStudent(
   }
 
   /* =======================================================
-     GET AVAILABLE PATTERNS
+     GET AVAILABLE SUBJECTS
   ======================================================= */
 
-  const availablePatternIds =
+  const availableSubjectIds =
     new Set<string>();
 
   for (const batch of selectedBatches) {
-    for (const batchPattern of batch.patterns) {
-      availablePatternIds.add(
-        batchPattern.patternId
+    for (const batchSubject of batch.subjects) {
+      availableSubjectIds.add(
+        batchSubject.subjectId
       );
     }
   }
 
   /* =======================================================
-     VERIFY PATTERNS
+     VERIFY SUBJECTS
   ======================================================= */
 
-  const invalidPatternIds =
-    uniquePatternIds.filter(
-      (patternId) =>
-        !availablePatternIds.has(
-          patternId
+  const invalidSubjectIds =
+    uniqueSubjectIds.filter(
+      (subjectId) =>
+        !availableSubjectIds.has(
+          subjectId
         )
     );
 
   if (
-    invalidPatternIds.length > 0
+    invalidSubjectIds.length > 0
   ) {
     return {
       errors: {
-        patternIds: [
-          "One or more selected patterns are not available for the selected batches.",
+        subjectIds: [
+          "One or more selected subjects are not available for the selected batches.",
         ],
       },
     };
@@ -299,10 +296,9 @@ export async function createStudent(
             data: {
               name: data.name,
 
-              email:normalizeEmail(
-                    data.email
-                  ),
-               
+              email: normalizeEmail(
+                data.email
+              ),
 
               phone:
                 data.phone || null,
@@ -338,34 +334,30 @@ export async function createStudent(
            ENROLLMENTS
         ------------------------------------------------- */
 
-        await tx.studentEnrollment.createMany(
-          {
-            data: uniqueBatchIds.map(
-              (batchId) => ({
-                studentId: student.id,
-                batchId,
-              })
-            ),
-          }
-        );
+        await tx.studentEnrollment.createMany({
+          data: uniqueBatchIds.map(
+            (batchId) => ({
+              studentId: student.id,
+              batchId,
+            })
+          ),
+        });
 
         /* -------------------------------------------------
-           PATTERNS
+           SUBJECTS
         ------------------------------------------------- */
 
         if (
-          uniquePatternIds.length > 0
+          uniqueSubjectIds.length > 0
         ) {
-          await tx.studentPattern.createMany(
-            {
-              data: uniquePatternIds.map(
-                (patternId) => ({
-                  studentId: student.id,
-                  patternId,
-                })
-              ),
-            }
-          );
+          await tx.studentSubject.createMany({
+            data: uniqueSubjectIds.map(
+              (subjectId) => ({
+                studentId: student.id,
+                subjectId,
+              })
+            ),
+          });
         }
       }
     );

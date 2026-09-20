@@ -11,17 +11,24 @@ type PageProps = {
   params: Promise<{ id: string }>;
 };
 
-export default async function Page({ params }: PageProps) {
+export default async function Page({
+  params,
+}: PageProps) {
   const { id } = await params;
 
-  // Both ADMIN and TEACHER may reach this route. `session.role` is the
-  // real, authenticated actor role — this is what drives `editorRole`,
-  // never anything from the client.
-  const session = await AuthVerify("ADMIN", "TEACHER","STUDENT");
+  // The authenticated session role determines the editor role.
+  const session = await AuthVerify(
+    "ADMIN",
+    "TEACHER",
+    "STUDENT"
+  );
 
   const [student, branches] = await Promise.all([
     prisma.student.findUnique({
-      where: { id: id },
+      where: {
+        id,
+      },
+
       select: {
         fatherName: true,
         Adress: true,
@@ -38,33 +45,49 @@ export default async function Page({ params }: PageProps) {
         },
 
         enrollments: {
-          select: { batchId: true },
+          select: {
+            batchId: true,
+          },
         },
 
-        studentPatterns: {
-          select: { patternId: true },
+        studentSubjects: {
+          select: {
+            subjectId: true,
+          },
         },
       },
     }),
 
     prisma.branch.findMany({
-      orderBy: { name: "asc" },
+      orderBy: {
+        name: "asc",
+      },
+
       select: {
         id: true,
         name: true,
+
         batches: {
-          orderBy: { name: "asc" },
+          orderBy: {
+            name: "asc",
+          },
+
           select: {
             id: true,
             name: true,
             branchId: true,
-            patterns: {
+
+            subjects: {
               select: {
                 id: true,
                 batchId: true,
-                patternId: true,
-                pattern: {
-                  select: { id: true, name: true },
+                subjectId: true,
+
+                subject: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
                 },
               },
             },
@@ -74,16 +97,33 @@ export default async function Page({ params }: PageProps) {
     }),
   ]);
 
-  if (!student || student.user.role !== "STUDENT") {
+  if (
+    !student ||
+    student.user.role !== "STUDENT"
+  ) {
     notFound();
   }
 
-  // `updateStudent(userId, prevState, formData)` — bind the id so the
-  // form can still call it as `(prevState, formData) => ...`.
-  const boundUpdateStudent = updateStudent.bind(null, student.user.id);
+  /*
+   * updateStudent expects:
+   *
+   * updateStudent(userId, prevState, formData)
+   *
+   * Bind the user ID so UserForm only submits
+   * prevState and FormData.
+   */
+  const boundUpdateStudent =
+    updateStudent.bind(
+      null,
+      student.user.id
+    );
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense
+      fallback={
+        <div>Loading...</div>
+      }
+    >
       <UserForm
         mode="edit"
         editorRole={session.role}
@@ -97,8 +137,18 @@ export default async function Page({ params }: PageProps) {
           phone2: student.user.phone2,
           fatherName: student.fatherName,
           address: student.Adress,
-          batchIds: student.enrollments.map((e) => e.batchId),
-          patternIds: student.studentPatterns.map((sp) => sp.patternId),
+
+          batchIds:
+            student.enrollments.map(
+              (enrollment) =>
+                enrollment.batchId
+            ),
+
+          subjectIds:
+            student.studentSubjects.map(
+              (studentSubject) =>
+                studentSubject.subjectId
+            ),
         }}
       />
     </Suspense>

@@ -66,16 +66,16 @@ export type FormMode = "create" | "edit";
 
 
 
-export type Pattern = { id: string; name: string };
+export type Subject = { id: string; name: string };
 
-export type BatchPattern = {
+export type BatchSubject = {
   id: string;
   batchId: string;
-  patternId: string;
-  pattern: Pattern;
+  subjectId: string;
+  subject: Subject;
 };
 
-export type Batch = { id: string; name: string; patterns: BatchPattern[] };
+export type Batch = { id: string; name: string; subjects: BatchSubject[] };
 
 export type Branch = { id: string; name: string; batches: Batch[] };
 
@@ -90,7 +90,7 @@ export type StudentFormValues = {
   password: string;
   confirmPassword: string;
   batchIds: string[];
-  patternIds: string[];
+  subjectIds: string[];
 };
 
 export type StudentFormState = {
@@ -113,7 +113,7 @@ type StudentFormUser = {
   fatherName?: string | null;
   address?: string | null;
   batchIds?: string[];
-  patternIds?: string[];
+  subjectIds?: string[];
 };
 
 type StudentFormProps = {
@@ -148,7 +148,7 @@ export type StudentField =
   | "phone2"
   | "password"
   | "batches"
-  | "patterns";
+  | "subjects";
 
 export type FieldPermissions = Record<StudentField, boolean>;
 
@@ -199,7 +199,7 @@ export default function StudentForm({
       password: "",
       confirmPassword: "",
       batchIds: user?.batchIds ?? [],
-      patternIds: user?.patternIds ?? [],
+      subjectIds: user?.subjectIds ?? [],
     } as DefaultValues<StudentFormValues>,
   });
 
@@ -227,12 +227,12 @@ export default function StudentForm({
       password: "",
       confirmPassword: "",
       batchIds: userBatchIds,
-      patternIds: user.patternIds ?? [],
+      subjectIds: user.subjectIds ?? [],
     });
   }, [user, branches, reset]);
 
   const selectedBatchIds = watch("batchIds") ?? [];
-  const selectedPatternIds = watch("patternIds") ?? [];
+  const selectedSubjectIds = watch("subjectIds") ?? [];
 
   const allBatches = useMemo(
     () => branches.flatMap((branch) => branch.batches),
@@ -252,50 +252,50 @@ export default function StudentForm({
     [selectedBatchIds, batchesById]
   );
 
-  const availablePatterns = useMemo(() => {
-    const patternMap = new Map<string, Pattern>();
+  const availableSubjects = useMemo(() => {
+    const subjectMap = new Map<string, Subject>();
 
     for (const batchId of selectedBatchIds) {
       const batch = batchesById.get(batchId);
       if (!batch) continue;
 
-      for (const batchPattern of batch.patterns) {
-        patternMap.set(batchPattern.pattern.id, batchPattern.pattern);
+      for (const batchSubject of batch.subjects) {
+        subjectMap.set(batchSubject.subject.id, batchSubject.subject);
       }
     }
 
-    return Array.from(patternMap.values());
+    return Array.from(subjectMap.values());
   }, [selectedBatchIds, batchesById]);
 
-  const selectedPatterns = useMemo(
+  const selectedSubjects = useMemo(
     () =>
-      availablePatterns.filter((pattern) =>
-        selectedPatternIds.includes(pattern.id)
+      availableSubjects.filter((subject) =>
+        selectedSubjectIds.includes(subject.id)
       ),
-    [availablePatterns, selectedPatternIds]
+    [availableSubjects, selectedSubjectIds]
   );
 
   useEffect(() => {
     // Only auto-prune stale pattern selections when patterns are
     // actually editable — a read-only view should keep showing
     // whatever the student already has, unmodified.
-    if (!permissions.patterns) return;
+    if (!permissions.subjects) return;
 
-    const availableIds = new Set(availablePatterns.map((p) => p.id));
-    const validPatternIds = selectedPatternIds.filter((id) =>
+    const availableIds = new Set(availableSubjects.map((subject) => subject.id));
+    const validSubjectIds = selectedSubjectIds.filter((id) =>
       availableIds.has(id)
     );
 
-    if (validPatternIds.length !== selectedPatternIds.length) {
-      setValue("patternIds", validPatternIds, {
+    if (validSubjectIds.length !== selectedSubjectIds.length) {
+      setValue("subjectIds", validSubjectIds, {
         shouldValidate: true,
         shouldDirty: true,
         shouldTouch: true,
       });
     }
-  }, [availablePatterns, selectedPatternIds, setValue, permissions.patterns]);
+  }, [availableSubjects, selectedSubjectIds, setValue, permissions.subjects]);
 
-  const patternAnchor = useComboboxAnchor();
+  const subjectAnchor = useComboboxAnchor();
 
   const pageTitle = isEdit ? "Edit Student" : "Register New Student";
   const pageDescription = isEdit
@@ -605,116 +605,138 @@ export default function StudentForm({
             )}
           </div>
 
-          {/* PATTERNS */}
-          <div className="space-y-3">
-            <div>
-              <Label className="font-medium text-foreground">Patterns</Label>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Choose the study patterns this student should use.
-              </p>
-            </div>
+          {/* SUBJECTS */}
+<div className="space-y-3">
+  <div>
+    <Label className="font-medium text-foreground">Subjects</Label>
+    <p className="mt-1 text-sm text-muted-foreground">
+      Choose the subjects this student should study.
+    </p>
+  </div>
 
-            {permissions.patterns ? (
-              <>
-                {selectedBatchIds.length === 0 && (
-                  <div className="flex h-12 items-center rounded-xl border border-dashed border-border bg-muted px-4 text-sm text-muted-foreground">
-                    Select a batch to choose patterns.
-                  </div>
-                )}
+  {permissions.subjects ? (
+    <>
+      {selectedBatchIds.length === 0 && (
+        <div className="flex h-12 items-center rounded-xl border border-dashed border-border bg-muted px-4 text-sm text-muted-foreground">
+          Select a batch to choose subjects.
+        </div>
+      )}
 
-                {selectedBatchIds.length > 0 && availablePatterns.length === 0 && (
-                  <div className="flex h-12 items-center rounded-xl border border-dashed border-border bg-muted px-4 text-sm text-muted-foreground">
-                    No patterns are available for the selected batches.
-                  </div>
-                )}
+      {selectedBatchIds.length > 0 && availableSubjects.length === 0 && (
+        <div className="flex h-12 items-center rounded-xl border border-dashed border-border bg-muted px-4 text-sm text-muted-foreground">
+          No subjects are available for the selected batches.
+        </div>
+      )}
 
-                {availablePatterns.length > 0 && (
-                  <Combobox
-                    items={availablePatterns}
-                    multiple
-                    value={selectedPatterns}
-                    onValueChange={(items: Pattern[]) =>
-                      setValue(
-                        "patternIds",
-                        items.map((pattern) => pattern.id),
-                        { shouldValidate: true, shouldDirty: true, shouldTouch: true }
-                      )
-                    }
-                    itemToStringValue={(pattern: Pattern) => pattern.name}
-                  >
-                    <ComboboxChips
-                      ref={patternAnchor}
-                      className="min-h-12 rounded-xl border-input overflow-y-auto bg-background px-3 py-2 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20"
-                    >
-                      <ComboboxValue>
-                        {selectedPatterns.map((pattern) => (
-                          <ComboboxChip
-                            key={pattern.id}
-                            className="gap-1.5 rounded-full border-primary/30 bg-primary/10 pl-3 pr-1.5 text-primary"
-                          >
-                            {pattern.name}
-                          </ComboboxChip>
-                        ))}
-                      </ComboboxValue>
+      {availableSubjects.length > 0 && (
+        <Combobox
+          items={availableSubjects}
+          multiple
+          value={selectedSubjects}
+          onValueChange={(items: Subject[]) =>
+            setValue(
+              "subjectIds",
+              items.map((subject) => subject.id),
+              {
+                shouldValidate: true,
+                shouldDirty: true,
+                shouldTouch: true,
+              }
+            )
+          }
+          itemToStringValue={(subject: Subject) => subject.name}
+        >
+          <ComboboxChips
+            ref={subjectAnchor}
+            className="min-h-12 overflow-y-auto rounded-xl border-input bg-background px-3 py-2 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20"
+          >
+            <ComboboxValue>
+              {selectedSubjects.map((subject) => (
+                <ComboboxChip
+                  key={subject.id}
+                  className="gap-1.5 rounded-full border-primary/30 bg-primary/10 pl-3 pr-1.5 text-primary"
+                >
+                  {subject.name}
+                </ComboboxChip>
+              ))}
+            </ComboboxValue>
 
-                      <ComboboxChipsInput
-                        placeholder={selectedPatterns.length === 0 ? "Select patterns..." : ""}
-                      />
-                    </ComboboxChips>
-
-                    <ComboboxContent anchor={patternAnchor} className="rounded-xl">
-                      <ComboboxEmpty>No patterns found.</ComboboxEmpty>
-                      <ComboboxList>
-                        <ComboboxCollection>
-                          {(pattern: Pattern) => (
-                            <ComboboxItem key={pattern.id} value={pattern}>
-                              {pattern.name}
-                            </ComboboxItem>
-                          )}
-                        </ComboboxCollection>
-                      </ComboboxList>
-                    </ComboboxContent>
-                  </Combobox>
-                )}
-              </>
-            ) : (
-              <div
-                aria-disabled="true"
-                className="flex min-h-12 flex-wrap items-center gap-2 rounded-xl border border-input bg-muted/60 px-4 py-3 text-muted-foreground"
-              >
-                {selectedPatterns.length > 0 ? (
-                  selectedPatterns.map((pattern) => (
-                    <Badge key={pattern.id} variant="secondary" className="rounded-full">
-                      {pattern.name}
-                    </Badge>
-                  ))
-                ) : (
-                  <span className="text-sm">No patterns assigned</span>
-                )}
-              </div>
-            )}
-
-            <input
-              type="hidden"
-              {...register("patternIds")}
-              value={JSON.stringify(selectedPatternIds)}
-              readOnly
+            <ComboboxChipsInput
+              placeholder={
+                selectedSubjects.length === 0
+                  ? "Select subjects..."
+                  : ""
+              }
             />
+          </ComboboxChips>
 
-            {errors.patternIds && (
-              <p className="text-sm text-destructive">
-                {String(errors.patternIds.message)}
-              </p>
-            )}
+          <ComboboxContent
+            anchor={subjectAnchor}
+            className="rounded-xl"
+          >
+            <ComboboxEmpty>No subjects found.</ComboboxEmpty>
 
-            {state?.success && (
-            <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-4">
-              <p className="text-sm font-medium text-green-600">
-                {successText}
-              </p>
-            </div>
-          )}
-          </div>
+            <ComboboxList>
+              <ComboboxCollection>
+                {(subject: Subject) => (
+                  <ComboboxItem
+                    key={subject.id}
+                    value={subject}
+                  >
+                    {subject.name}
+                  </ComboboxItem>
+                )}
+              </ComboboxCollection>
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
+      )}
+    </>
+  ) : (
+    <div
+      aria-disabled="true"
+      className="flex min-h-12 flex-wrap items-center gap-2 rounded-xl border border-input bg-muted/60 px-4 py-3 text-muted-foreground"
+    >
+      {selectedSubjects.length > 0 ? (
+        selectedSubjects.map((subject) => (
+          <Badge
+            key={subject.id}
+            variant="secondary"
+            className="rounded-full"
+          >
+            {subject.name}
+          </Badge>
+        ))
+      ) : (
+        <span className="text-sm">
+          No subjects assigned
+        </span>
+      )}
+    </div>
+  )}
+
+  {/* Always submit subjects, including when the field is read-only */}
+  <input
+    type="hidden"
+    {...register("subjectIds")}
+    value={JSON.stringify(selectedSubjectIds)}
+    readOnly
+  />
+
+  {errors.subjectIds && (
+    <p className="text-sm text-destructive">
+      {String(errors.subjectIds.message)}
+    </p>
+  )}
+
+  {state?.success && (
+    <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-4">
+      <p className="text-sm font-medium text-green-600">
+        {successText}
+      </p>
+    </div>
+  )}
+</div>
 
           <input type="hidden" name="role" value="STUDENT" />
 

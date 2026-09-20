@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
+import { useEffect, useMemo, useState } from "react";
 import { useActionState } from "react";
 
 import {
@@ -35,7 +30,6 @@ import {
 } from "@/app/ServerActions/auth/teacher-permissions";
 
 import { PasswordInput } from "@/components/passwordInput";
-
 import BatchSelector from "@/components/BatchSelector";
 
 import {
@@ -66,27 +60,25 @@ import {
    TYPES
 ========================================================= */
 
-export type FormMode =
-  | "create"
-  | "edit";
+export type FormMode = "create" | "edit";
 
-export type Pattern = {
+export type Subject = {
   id: string;
   name: string;
 };
 
-export type BatchPattern = {
+export type BatchSubject = {
   id: string;
   batchId: string;
-  patternId: string;
-  pattern: Pattern;
+  subjectId: string;
+  subject: Subject;
 };
 
 export type Batch = {
   id: string;
   name: string;
   branchId: string;
-  patterns: BatchPattern[];
+  subjects: BatchSubject[];
 };
 
 export type Branch = {
@@ -107,7 +99,7 @@ export type TeacherFormValues = {
 
   branchIds: string[];
   batchIds: string[];
-  patternIds: string[];
+  subjectIds: string[];
 };
 
 export type TeacherFormUser = {
@@ -119,12 +111,12 @@ export type TeacherFormUser = {
 
   branchIds: string[];
   batchIds: string[];
-  patternIds: string[];
+  subjectIds: string[];
 };
 
 type TeacherFormAction = (
   prevState: FormStateTeacher,
-  formData: FormData
+  formData: FormData,
 ) => Promise<FormStateTeacher>;
 
 type TeacherFormProps = {
@@ -149,22 +141,17 @@ export default function TeacherForm({
   const isEdit = mode === "edit";
 
   const permissions =
-    TEACHER_FIELD_PERMISSIONS[
-      editorRole
-    ];
+    TEACHER_FIELD_PERMISSIONS[editorRole];
 
   /* =======================================================
      SERVER ACTION
   ======================================================= */
 
-  const [
-    state,
-    formAction,
-    pending,
-  ] = useActionState<
-    FormStateTeacher,
-    FormData
-  >(action, {});
+  const [state, formAction, pending] =
+    useActionState<FormStateTeacher, FormData>(
+      action,
+      {},
+    );
 
   /* =======================================================
      SCHEMA
@@ -192,6 +179,7 @@ export default function TeacherForm({
     resolver: zodResolver(schema) as never,
 
     mode: "onChange",
+    reValidateMode: "onChange",
 
     defaultValues: {
       userId: user?.id ?? "",
@@ -203,14 +191,9 @@ export default function TeacherForm({
       password: "",
       confirmPassword: "",
 
-      branchIds:
-        user?.branchIds ?? [],
-
-      batchIds:
-        user?.batchIds ?? [],
-
-      patternIds:
-        user?.patternIds ?? [],
+      branchIds: user?.branchIds ?? [],
+      batchIds: user?.batchIds ?? [],
+      subjectIds: user?.subjectIds ?? [],
     } as DefaultValues<TeacherFormValues>,
   });
 
@@ -222,7 +205,7 @@ export default function TeacherForm({
     selectedBranchIds,
     setSelectedBranchIds,
   ] = useState<string[]>(
-    user?.branchIds ?? []
+    user?.branchIds ?? [],
   );
 
   /* =======================================================
@@ -232,9 +215,11 @@ export default function TeacherForm({
   useEffect(() => {
     if (!user) return;
 
-    setSelectedBranchIds(
-      user.branchIds ?? []
-    );
+    const branchIds = user.branchIds ?? [];
+    const batchIds = user.batchIds ?? [];
+    const subjectIds = user.subjectIds ?? [];
+
+    setSelectedBranchIds(branchIds);
 
     reset({
       userId: user.id,
@@ -246,16 +231,14 @@ export default function TeacherForm({
       password: "",
       confirmPassword: "",
 
-      branchIds:
-        user.branchIds ?? [],
-
-      batchIds:
-        user.batchIds ?? [],
-
-      patternIds:
-        user.patternIds ?? [],
+      branchIds,
+      batchIds,
+      subjectIds,
     });
-  }, [user, reset]);
+
+    // Recalculate Zod/RHF validity after loading edit values.
+    void trigger();
+  }, [user, reset, trigger]);
 
   /* =======================================================
      WATCH
@@ -264,8 +247,8 @@ export default function TeacherForm({
   const selectedBatchIds =
     watch("batchIds") ?? [];
 
-  const selectedPatternIds =
-    watch("patternIds") ?? [];
+  const selectedSubjectIds =
+    watch("subjectIds") ?? [];
 
   /* =======================================================
      LOOKUPS
@@ -277,17 +260,17 @@ export default function TeacherForm({
         branches.map((branch) => [
           branch.id,
           branch,
-        ])
+        ]),
       ),
-    [branches]
+    [branches],
   );
 
   const allBatches = useMemo(
     () =>
       branches.flatMap(
-        (branch) => branch.batches
+        (branch) => branch.batches,
       ),
-    [branches]
+    [branches],
   );
 
   const batchesById = useMemo(
@@ -296,164 +279,147 @@ export default function TeacherForm({
         allBatches.map((batch) => [
           batch.id,
           batch,
-        ])
+        ]),
       ),
-    [allBatches]
+    [allBatches],
   );
 
   /* =======================================================
      SELECTED BRANCH NAMES
   ======================================================= */
 
-  const selectedBranchNames =
-    useMemo(
-      () =>
-        selectedBranchIds
-          .map(
-            (id) =>
-              branchesById.get(id)?.name
-          )
-          .filter(
-            (
-              name
-            ): name is string =>
-              Boolean(name)
-          ),
-      [
-        selectedBranchIds,
-        branchesById,
-      ]
-    );
+  const selectedBranchNames = useMemo(
+    () =>
+      selectedBranchIds
+        .map(
+          (id) =>
+            branchesById.get(id)?.name,
+        )
+        .filter(
+          (name): name is string =>
+            Boolean(name),
+        ),
+    [selectedBranchIds, branchesById],
+  );
 
   /* =======================================================
      SELECTED BATCH NAMES
   ======================================================= */
 
-  const selectedBatchNames =
-    useMemo(
-      () =>
-        selectedBatchIds
-          .map(
-            (id) =>
-              batchesById.get(id)?.name
-          )
-          .filter(
-            (
-              name
-            ): name is string =>
-              Boolean(name)
-          ),
-      [
-        selectedBatchIds,
-        batchesById,
-      ]
-    );
-
-  /* =======================================================
-     AVAILABLE PATTERNS
-     
-     Union of patterns across selected batches.
-  ======================================================= */
-
-  const availablePatterns =
-    useMemo(() => {
-      const patternMap =
-        new Map<string, Pattern>();
-
-      for (const batchId of selectedBatchIds) {
-        const batch =
-          batchesById.get(batchId);
-
-        if (!batch) continue;
-
-        for (const batchPattern of
-          batch.patterns) {
-          patternMap.set(
-            batchPattern.pattern.id,
-            batchPattern.pattern
-          );
-        }
-      }
-
-      return Array.from(
-        patternMap.values()
-      );
-    }, [
-      selectedBatchIds,
-      batchesById,
-    ]);
-
-  /* =======================================================
-     SELECTED PATTERNS
-  ======================================================= */
-
-  const selectedPatterns =
-    useMemo(
-      () =>
-        availablePatterns.filter(
-          (pattern) =>
-            selectedPatternIds.includes(
-              pattern.id
-            )
+  const selectedBatchNames = useMemo(
+    () =>
+      selectedBatchIds
+        .map(
+          (id) =>
+            batchesById.get(id)?.name,
+        )
+        .filter(
+          (name): name is string =>
+            Boolean(name),
         ),
-      [
-        availablePatterns,
-        selectedPatternIds,
-      ]
-    );
+    [selectedBatchIds, batchesById],
+  );
 
   /* =======================================================
-     PRUNE STALE PATTERNS
-     
-     Only ADMIN can edit patterns.
-     
-     A TEACHER's existing patterns must remain untouched.
+     AVAILABLE SUBJECTS
+
+     Union of subjects across selected batches.
+  ======================================================= */
+
+  const availableSubjects = useMemo(() => {
+    const subjectMap =
+      new Map<string, Subject>();
+
+    for (const batchId of selectedBatchIds) {
+      const batch =
+        batchesById.get(batchId);
+
+      if (!batch) continue;
+
+      for (const batchSubject of batch.subjects) {
+        subjectMap.set(
+          batchSubject.subject.id,
+          batchSubject.subject,
+        );
+      }
+    }
+
+    return Array.from(subjectMap.values());
+  }, [
+    selectedBatchIds,
+    batchesById,
+  ]);
+
+  /* =======================================================
+     SELECTED SUBJECTS
+  ======================================================= */
+
+  const selectedSubjects = useMemo(
+    () =>
+      availableSubjects.filter(
+        (subject) =>
+          selectedSubjectIds.includes(
+            subject.id,
+          ),
+      ),
+    [
+      availableSubjects,
+      selectedSubjectIds,
+    ],
+  );
+
+  /* =======================================================
+     PRUNE STALE SUBJECTS
+
+     Only roles allowed to edit subjects can
+     modify the selection.
+
+     Existing subject selections remain untouched
+     for read-only roles.
   ======================================================= */
 
   useEffect(() => {
-    if (!permissions.patterns) {
+    if (!permissions.subjects) {
       return;
     }
 
-    const availableIds =
-      new Set(
-        availablePatterns.map(
-          (pattern) => pattern.id
-        )
-      );
+    const availableIds = new Set(
+      availableSubjects.map(
+        (subject) => subject.id,
+      ),
+    );
 
-    const validPatternIds =
-      selectedPatternIds.filter(
-        (id) =>
-          availableIds.has(id)
+    const validSubjectIds =
+      selectedSubjectIds.filter(
+        (id) => availableIds.has(id),
       );
 
     if (
-      validPatternIds.length !==
-      selectedPatternIds.length
+      validSubjectIds.length !==
+      selectedSubjectIds.length
     ) {
       setValue(
-        "patternIds",
-        validPatternIds,
+        "subjectIds",
+        validSubjectIds,
         {
           shouldValidate: true,
           shouldDirty: true,
           shouldTouch: true,
-        }
+        },
       );
     }
   }, [
-    availablePatterns,
-    selectedPatternIds,
+    availableSubjects,
+    selectedSubjectIds,
     setValue,
-    permissions.patterns,
+    permissions.subjects,
   ]);
 
   /* =======================================================
      COMBOBOX
   ======================================================= */
 
-  const patternAnchor =
+  const subjectAnchor =
     useComboboxAnchor();
 
   /* =======================================================
@@ -465,7 +431,7 @@ export default function TeacherForm({
 
   const fieldClass = (
     base: string,
-    editable: boolean
+    editable: boolean,
   ) =>
     editable
       ? base
@@ -524,26 +490,19 @@ export default function TeacherForm({
           </span>
         </div>
 
-        {/* 
-          IMPORTANT:
-          editorRole is NOT submitted.
-
-          The server derives the real editor role
-          from the authenticated session.
-        */}
-
         <form
           action={formAction}
           className="space-y-6"
         >
-          {/* Teacher role being edited.
-              This is NOT used for authorization. */}
+          {/* ROLE */}
 
           <input
             type="hidden"
             name="role"
             value="TEACHER"
           />
+
+          {/* USER ID */}
 
           {isEdit && (
             <input
@@ -573,14 +532,12 @@ export default function TeacherForm({
               <Input
                 id="name"
                 readOnly={!permissions.name}
-                aria-disabled={
-                  !permissions.name
-                }
+                aria-disabled={!permissions.name}
                 {...register("name")}
                 placeholder="Enter full name"
                 className={fieldClass(
                   "h-12 rounded-xl border-input bg-background pl-10 transition-all focus:border-ring focus:ring-2 focus:ring-ring/20",
-                  permissions.name
+                  permissions.name,
                 )}
               />
             </div>
@@ -617,17 +574,13 @@ export default function TeacherForm({
                 <Input
                   id="email"
                   type="email"
-                  readOnly={
-                    !permissions.email
-                  }
-                  aria-disabled={
-                    !permissions.email
-                  }
+                  readOnly={!permissions.email}
+                  aria-disabled={!permissions.email}
                   {...register("email")}
                   placeholder="teacher@alkitaab.com"
                   className={fieldClass(
                     "h-12 rounded-xl border-input bg-background pl-10 transition-all focus:border-ring focus:ring-2 focus:ring-ring/20",
-                    permissions.email
+                    permissions.email,
                   )}
                 />
               </div>
@@ -658,17 +611,13 @@ export default function TeacherForm({
                 <Input
                   id="phone"
                   type="tel"
-                  readOnly={
-                    !permissions.phone
-                  }
-                  aria-disabled={
-                    !permissions.phone
-                  }
+                  readOnly={!permissions.phone}
+                  aria-disabled={!permissions.phone}
                   {...register("phone")}
                   placeholder="e.g. 9876543210"
                   className={fieldClass(
                     "h-12 rounded-xl border-input bg-background pl-10 transition-all focus:border-ring focus:ring-2 focus:ring-ring/20",
-                    permissions.phone
+                    permissions.phone,
                   )}
                 />
               </div>
@@ -702,17 +651,12 @@ export default function TeacherForm({
 
               <PasswordInput
                 id="password"
-                readOnly={
-                  !permissions.password
-                }
-                aria-disabled={
-                  !permissions.password
-                }
+                readOnly={!permissions.password}
+                aria-disabled={!permissions.password}
                 {...register("password", {
                   onChange: () => {
-                    trigger(
-                      "confirmPassword"
-                    );
+                    void trigger("password");
+                    void trigger("confirmPassword");
                   },
                 })}
                 placeholder={
@@ -723,7 +667,7 @@ export default function TeacherForm({
                 required={!isEdit}
                 className={fieldClass(
                   "border-input",
-                  permissions.password
+                  permissions.password,
                 )}
               />
 
@@ -749,15 +693,9 @@ export default function TeacherForm({
 
               <PasswordInput
                 id="confirmPassword"
-                readOnly={
-                  !permissions.password
-                }
-                aria-disabled={
-                  !permissions.password
-                }
-                {...register(
-                  "confirmPassword"
-                )}
+                readOnly={!permissions.password}
+                aria-disabled={!permissions.password}
+                {...register("confirmPassword")}
                 placeholder={
                   isEdit
                     ? "Leave blank to keep current password"
@@ -766,16 +704,13 @@ export default function TeacherForm({
                 required={!isEdit}
                 className={fieldClass(
                   "border-input",
-                  permissions.password
+                  permissions.password,
                 )}
               />
 
               {errors.confirmPassword && (
                 <p className="text-sm text-destructive">
-                  {
-                    errors.confirmPassword
-                      .message
-                  }
+                  {errors.confirmPassword.message}
                 </p>
               )}
             </div>
@@ -796,13 +731,9 @@ export default function TeacherForm({
             {permissions.batches ? (
               <BatchSelector
                 branches={branches}
-                selectedBranchIds={
-                  selectedBranchIds
-                }
+                selectedBranchIds={selectedBranchIds}
                 onBranchChange={(ids) => {
-                  setSelectedBranchIds(
-                    ids
-                  );
+                  setSelectedBranchIds(ids);
 
                   setValue(
                     "branchIds",
@@ -811,12 +742,10 @@ export default function TeacherForm({
                       shouldValidate: true,
                       shouldDirty: true,
                       shouldTouch: true,
-                    }
+                    },
                   );
                 }}
-                selectedBatchIds={
-                  selectedBatchIds
-                }
+                selectedBatchIds={selectedBatchIds}
                 onBatchChange={(ids) => {
                   setValue(
                     "batchIds",
@@ -825,7 +754,7 @@ export default function TeacherForm({
                       shouldValidate: true,
                       shouldDirty: true,
                       shouldTouch: true,
-                    }
+                    },
                   );
                 }}
               />
@@ -838,8 +767,7 @@ export default function TeacherForm({
                   aria-disabled="true"
                   className="flex min-h-12 flex-wrap items-center gap-2 rounded-xl border border-input bg-muted/60 px-4 py-3 text-muted-foreground"
                 >
-                  {selectedBranchNames.length >
-                  0 ? (
+                  {selectedBranchNames.length > 0 ? (
                     selectedBranchNames.map(
                       (name) => (
                         <Badge
@@ -849,7 +777,7 @@ export default function TeacherForm({
                         >
                           {name}
                         </Badge>
-                      )
+                      ),
                     )
                   ) : (
                     <span className="text-sm">
@@ -864,8 +792,7 @@ export default function TeacherForm({
                   aria-disabled="true"
                   className="flex min-h-12 flex-wrap items-center gap-2 rounded-xl border border-input bg-muted/60 px-4 py-3 text-muted-foreground"
                 >
-                  {selectedBatchNames.length >
-                  0 ? (
+                  {selectedBatchNames.length > 0 ? (
                     selectedBatchNames.map(
                       (name) => (
                         <Badge
@@ -875,7 +802,7 @@ export default function TeacherForm({
                         >
                           {name}
                         </Badge>
-                      )
+                      ),
                     )
                   ) : (
                     <span className="text-sm">
@@ -886,23 +813,23 @@ export default function TeacherForm({
               </div>
             )}
 
-            {/* Always submit branch IDs */}
+            {/* ALWAYS SUBMIT BRANCH IDS */}
 
             <input
               type="hidden"
               name="branchIds"
               value={JSON.stringify(
-                selectedBranchIds
+                selectedBranchIds,
               )}
             />
 
-            {/* Always submit batch IDs */}
+            {/* ALWAYS SUBMIT BATCH IDS */}
 
             <input
               type="hidden"
-              {...register("batchIds")}
+              name="batchIds"
               value={JSON.stringify(
-                selectedBatchIds
+                selectedBatchIds,
               )}
               readOnly
             />
@@ -910,7 +837,7 @@ export default function TeacherForm({
             {errors.branchIds && (
               <p className="text-sm text-destructive">
                 {String(
-                  errors.branchIds.message
+                  errors.branchIds.message,
                 )}
               </p>
             )}
@@ -918,189 +845,164 @@ export default function TeacherForm({
             {errors.batchIds && (
               <p className="text-sm text-destructive">
                 {String(
-                  errors.batchIds.message
+                  errors.batchIds.message,
                 )}
               </p>
             )}
           </div>
 
           {/* =================================================
-              PATTERNS
+              SUBJECTS
           ================================================= */}
 
           <div className="space-y-3">
             <div>
               <Label className="font-medium text-foreground">
-                Patterns
+                Subjects
               </Label>
 
               <p className="mt-1 text-sm text-muted-foreground">
-                Choose the study patterns this
-                teacher should use.
+                Choose the subjects this teacher should use.
               </p>
             </div>
 
-            {permissions.patterns ? (
+            {permissions.subjects ? (
               <>
                 {/* NO BATCH */}
 
-                {selectedBatchIds.length ===
-                  0 && (
+                {selectedBatchIds.length === 0 && (
+                  <div className="flex h-12 items-center rounded-xl border border-dashed border-border bg-muted px-4 text-sm text-muted-foreground">
+                    Select a batch to choose subjects.
+                  </div>
+                )}
+
+                {/* NO SUBJECTS */}
+
+                {selectedBatchIds.length > 0 &&
+                  availableSubjects.length === 0 && (
                     <div className="flex h-12 items-center rounded-xl border border-dashed border-border bg-muted px-4 text-sm text-muted-foreground">
-                      Select a batch to choose
-                      patterns.
+                      No subjects are available for the selected batches.
                     </div>
                   )}
 
-                {/* NO PATTERNS */}
+                {/* SUBJECT SELECTOR */}
 
-                {selectedBatchIds.length >
-                  0 &&
-                  availablePatterns.length ===
-                    0 && (
-                    <div className="flex h-12 items-center rounded-xl border border-dashed border-border bg-muted px-4 text-sm text-muted-foreground">
-                      No patterns are available
-                      for the selected batches.
-                    </div>
-                  )}
-
-                {/* PATTERN SELECTOR */}
-
-                {availablePatterns.length >
-                  0 && (
-                    <Combobox
-                      items={availablePatterns}
-                      multiple
-                      value={selectedPatterns}
-                      onValueChange={(
-                        items: Pattern[]
-                      ) => {
-                        setValue(
-                          "patternIds",
-                          items.map(
-                            (pattern) =>
-                              pattern.id
-                          ),
-                          {
-                            shouldValidate: true,
-                            shouldDirty: true,
-                            shouldTouch: true,
-                          }
-                        );
-                      }}
-                      itemToStringValue={(
-                        pattern: Pattern
-                      ) =>
-                        pattern.name
-                      }
+                {availableSubjects.length > 0 && (
+                  <Combobox
+                    items={availableSubjects}
+                    multiple
+                    value={selectedSubjects}
+                    onValueChange={(items: Subject[]) => {
+                      setValue(
+                        "subjectIds",
+                        items.map(
+                          (subject) => subject.id,
+                        ),
+                        {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                          shouldTouch: true,
+                        },
+                      );
+                    }}
+                    itemToStringValue={(
+                      subject: Subject,
+                    ) => subject.name}
+                  >
+                    <ComboboxChips
+                      ref={subjectAnchor}
+                      className="min-h-12 overflow-y-auto rounded-xl border-input bg-background px-3 py-2 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20"
                     >
-                      <ComboboxChips
-                        ref={patternAnchor}
-                        className="min-h-12 overflow-y-auto rounded-xl border-input bg-background px-3 py-2 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20"
-                      >
-                        <ComboboxValue>
-                          {selectedPatterns.map(
-                            (pattern) => (
-                              <ComboboxChip
-                                key={
-                                  pattern.id
-                                }
-                                className="gap-1.5 rounded-full border-primary/30 bg-primary/10 pl-3 pr-1.5 text-primary"
-                              >
-                                {pattern.name}
-                              </ComboboxChip>
-                            )
+                      <ComboboxValue>
+                        {selectedSubjects.map(
+                          (subject) => (
+                            <ComboboxChip
+                              key={subject.id}
+                              className="gap-1.5 rounded-full border-primary/30 bg-primary/10 pl-3 pr-1.5 text-primary"
+                            >
+                              {subject.name}
+                            </ComboboxChip>
+                          ),
+                        )}
+                      </ComboboxValue>
+
+                      <ComboboxChipsInput
+                        placeholder={
+                          selectedSubjects.length === 0
+                            ? "Select subjects..."
+                            : ""
+                        }
+                      />
+                    </ComboboxChips>
+
+                    <ComboboxContent
+                      anchor={subjectAnchor}
+                      className="rounded-xl"
+                    >
+                      <ComboboxEmpty>
+                        No subjects found.
+                      </ComboboxEmpty>
+
+                      <ComboboxList>
+                        <ComboboxCollection>
+                          {(subject: Subject) => (
+                            <ComboboxItem
+                              key={subject.id}
+                              value={subject}
+                            >
+                              {subject.name}
+                            </ComboboxItem>
                           )}
-                        </ComboboxValue>
-
-                        <ComboboxChipsInput
-                          placeholder={
-                            selectedPatterns.length ===
-                            0
-                              ? "Select patterns..."
-                              : ""
-                          }
-                        />
-                      </ComboboxChips>
-
-                      <ComboboxContent
-                        anchor={patternAnchor}
-                        className="rounded-xl"
-                      >
-                        <ComboboxEmpty>
-                          No patterns found.
-                        </ComboboxEmpty>
-
-                        <ComboboxList>
-                          <ComboboxCollection>
-                            {(
-                              pattern: Pattern
-                            ) => (
-                              <ComboboxItem
-                                key={
-                                  pattern.id
-                                }
-                                value={pattern}
-                              >
-                                {pattern.name}
-                              </ComboboxItem>
-                            )}
-                          </ComboboxCollection>
-                        </ComboboxList>
-                      </ComboboxContent>
-                    </Combobox>
-                  )}
+                        </ComboboxCollection>
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
+                )}
               </>
             ) : (
               /* =================================================
-                 READ-ONLY PATTERNS
+                 READ-ONLY SUBJECTS
               ================================================= */
 
               <div
                 aria-disabled="true"
                 className="flex min-h-12 flex-wrap items-center gap-2 rounded-xl border border-input bg-muted/60 px-4 py-3 text-muted-foreground"
               >
-                {selectedPatterns.length >
-                0 ? (
-                  selectedPatterns.map(
-                    (pattern) => (
+                {selectedSubjects.length > 0 ? (
+                  selectedSubjects.map(
+                    (subject) => (
                       <Badge
-                        key={pattern.id}
+                        key={subject.id}
                         variant="secondary"
                         className="rounded-full"
                       >
-                        {pattern.name}
+                        {subject.name}
                       </Badge>
-                    )
+                    ),
                   )
                 ) : (
                   <span className="text-sm">
-                    No patterns assigned
+                    No subjects assigned
                   </span>
                 )}
               </div>
             )}
 
-            {/* Always submit pattern IDs.
-                
-                This is important because a TEACHER cannot
-                edit patterns, but the server still needs
-                to receive the existing values so it can
-                verify that they were not changed. */}
+            {/* ALWAYS SUBMIT SUBJECT IDS */}
 
             <input
               type="hidden"
-              {...register("patternIds")}
+              name="subjectIds"
               value={JSON.stringify(
-                selectedPatternIds
+                selectedSubjectIds,
               )}
               readOnly
             />
 
-            {errors.patternIds && (
+            {errors.subjectIds && (
               <p className="text-sm text-destructive">
                 {String(
-                  errors.patternIds.message
+                  errors.subjectIds.message,
                 )}
               </p>
             )}
@@ -1124,9 +1026,7 @@ export default function TeacherForm({
 
           {state?.errors && (
             <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
-              {Object.entries(
-                state.errors
-              ).map(
+              {Object.entries(state.errors).map(
                 ([key, value]) => (
                   <p
                     key={key}
@@ -1136,7 +1036,7 @@ export default function TeacherForm({
                       ? value[0]
                       : value}
                   </p>
-                )
+                ),
               )}
             </div>
           )}
@@ -1153,9 +1053,7 @@ export default function TeacherForm({
 
           <Button
             type="submit"
-            disabled={
-              !isValid || pending
-            }
+            disabled={pending || !isValid}
             className="
               h-12
               w-full
@@ -1169,6 +1067,8 @@ export default function TeacherForm({
               hover:bg-primary/90
               hover:shadow-md
               active:scale-[0.99]
+              disabled:pointer-events-none
+              disabled:opacity-50
             "
           >
             {pending

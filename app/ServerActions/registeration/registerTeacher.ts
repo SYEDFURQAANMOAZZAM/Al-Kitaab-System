@@ -121,19 +121,19 @@ export async function registerTeacher(
   }
 
   /* =======================================================
-     PARSE PATTERNS
+     PARSE SUBJECTS
   ======================================================= */
 
-  const patternIds = parseJsonArray(
+  const subjectIds = parseJsonArray(
     formData,
-    "patternIds"
+    "subjectIds"
   );
 
-  if (patternIds === null) {
+  if (subjectIds === null) {
     return {
       errors: {
-        patternIds: [
-          "Invalid pattern selection.",
+        subjectIds: [
+          "Invalid subject selection.",
         ],
       },
     };
@@ -155,7 +155,7 @@ export async function registerTeacher(
 
       branchIds,
       batchIds,
-      patternIds,
+      subjectIds,
     });
 
   if (!validatedFields.success) {
@@ -185,8 +185,8 @@ export async function registerTeacher(
         batchIds:
           fieldErrors.batchIds,
 
-        patternIds:
-          fieldErrors.patternIds,
+        subjectIds:
+          fieldErrors.subjectIds,
       },
     };
   }
@@ -205,8 +205,8 @@ export async function registerTeacher(
     ...new Set(data.batchIds),
   ];
 
-  const uniquePatternIds = [
-    ...new Set(data.patternIds),
+  const uniqueSubjectIds = [
+    ...new Set(data.subjectIds),
   ];
 
   /* =======================================================
@@ -259,9 +259,9 @@ export async function registerTeacher(
         id: true,
         branchId: true,
 
-        patterns: {
+        subjects: {
           select: {
-            patternId: true,
+            subjectId: true,
           },
         },
       },
@@ -281,39 +281,39 @@ export async function registerTeacher(
   }
 
   /* =======================================================
-     GET AVAILABLE PATTERNS
+     GET AVAILABLE SUBJECTS
   ======================================================= */
 
-  const availablePatternIds =
+  const availableSubjectIds =
     new Set<string>();
 
   for (const batch of batches) {
-    for (const batchPattern of batch.patterns) {
-      availablePatternIds.add(
-        batchPattern.patternId
+    for (const batchSubject of batch.subjects) {
+      availableSubjectIds.add(
+        batchSubject.subjectId
       );
     }
   }
 
   /* =======================================================
-     VERIFY PATTERNS
+     VERIFY SUBJECTS
   ======================================================= */
 
-  const invalidPatternIds =
-    uniquePatternIds.filter(
-      (patternId) =>
-        !availablePatternIds.has(
-          patternId
+  const invalidSubjectIds =
+    uniqueSubjectIds.filter(
+      (subjectId) =>
+        !availableSubjectIds.has(
+          subjectId
         )
     );
 
   if (
-    invalidPatternIds.length > 0
+    invalidSubjectIds.length > 0
   ) {
     return {
       errors: {
-        patternIds: [
-          "One or more selected patterns are not available for the selected batches.",
+        subjectIds: [
+          "One or more selected subjects are not available for the selected batches.",
         ],
       },
     };
@@ -382,17 +382,17 @@ export async function registerTeacher(
         });
 
         /* -------------------------------------------------
-           PATTERN ASSIGNMENTS
+           SUBJECT ASSIGNMENTS
         ------------------------------------------------- */
 
         if (
-          uniquePatternIds.length > 0
+          uniqueSubjectIds.length > 0
         ) {
-          await tx.teacherPattern.createMany({
-            data: uniquePatternIds.map(
-              (patternId) => ({
+          await tx.teacherSubject.createMany({
+            data: uniqueSubjectIds.map(
+              (subjectId) => ({
                 teacherId: teacher.id,
-                patternId,
+                subjectId,
               })
             ),
           });
