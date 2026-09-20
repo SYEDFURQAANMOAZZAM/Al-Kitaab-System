@@ -14,7 +14,7 @@ type PageProps = {
 export default async function Page({ params }: PageProps) {
   const { id } = await params;
 
-  await AuthVerify("ADMIN")
+  await AuthVerify("ADMIN");
 
   const [teacher, branches] = await Promise.all([
     prisma.teacher.findUnique({
@@ -48,22 +48,14 @@ export default async function Page({ params }: PageProps) {
           },
         },
 
-        teacherPatterns: {
+        teacherSubjects: {
           select: {
-            patternId: true,
+            subjectId: true,
           },
         },
       },
     }),
 
-    /*
-     * TeacherForm needs:
-     *
-     * Branch
-     *   └── Batch
-     *        └── BatchPattern
-     *             └── Pattern
-     */
     prisma.branch.findMany({
       orderBy: {
         name: "asc",
@@ -83,13 +75,13 @@ export default async function Page({ params }: PageProps) {
             name: true,
             branchId: true,
 
-            patterns: {
+            subjects: {
               select: {
                 id: true,
                 batchId: true,
-                patternId: true,
+                subjectId: true,
 
-                pattern: {
+                subject: {
                   select: {
                     id: true,
                     name: true,
@@ -103,57 +95,29 @@ export default async function Page({ params }: PageProps) {
     }),
   ]);
 
-  /*
-   * Make sure the teacher exists and the linked user
-   * is actually a TEACHER.
-   */
   if (!teacher || teacher.user.role !== "TEACHER") {
     notFound();
   }
 
-  /*
-   * TeacherAssignment is the source of truth for batches.
-   */
   const batchIds = teacher.assignments.map(
-    (assignment) => assignment.batchId
+    (assignment) => assignment.batchId,
   );
 
-  /*
-   * Branches are NOT directly assigned to teachers.
-   *
-   * They are derived from the assigned batches:
-   *
-   * Teacher
-   *   -> TeacherAssignment
-   *      -> Batch
-   *         -> Branch
-   */
   const branchIds = [
     ...new Set(
       teacher.assignments
         .map((assignment) => assignment.batch.branchId)
-        .filter(Boolean)
+        .filter((branchId): branchId is string => Boolean(branchId)),
     ),
   ];
 
-  /*
-   * TeacherPattern is the source of truth for teacher patterns.
-   */
-  const patternIds = teacher.teacherPatterns.map(
-    (teacherPattern) => teacherPattern.patternId
+  const subjectIds = teacher.teacherSubjects.map(
+    (teacherSubject) => teacherSubject.subjectId,
   );
 
-  /*
-   * updateTeacher expects:
-   *
-   * updateTeacher(userId, prevState, formData)
-   *
-   * Bind the User ID so TeacherForm only submits
-   * prevState and FormData.
-   */
   const boundUpdateTeacher = updateTeacher.bind(
     null,
-    teacher.user.id
+    teacher.id,
   );
 
   return (
@@ -165,14 +129,12 @@ export default async function Page({ params }: PageProps) {
         branches={branches}
         user={{
           id: teacher.user.id,
-
           name: teacher.user.name,
           email: teacher.user.email,
           phone: teacher.user.phone,
-
           branchIds,
           batchIds,
-          patternIds,
+          subjectIds,
         }}
       />
     </Suspense>

@@ -111,7 +111,8 @@ export async function updateStudent(
     "STUDENT"
   );
 
-  const editorRole = session.role as EditorRole;
+  const editorRole =
+    session.role as EditorRole;
 
   const permissions =
     STUDENT_FIELD_PERMISSIONS[editorRole];
@@ -162,9 +163,9 @@ export async function updateStudent(
           },
         },
 
-        studentPatterns: {
+        studentSubjects: {
           select: {
-            patternId: true,
+            subjectId: true,
           },
         },
       },
@@ -185,7 +186,7 @@ export async function updateStudent(
 
   /* =======================================================
      STUDENT OWNERSHIP
-     
+
      STUDENT can only edit their own account.
   ======================================================= */
 
@@ -208,15 +209,15 @@ export async function updateStudent(
       (enrollment) => enrollment.batchId
     );
 
-  const existingPatternIds =
-    existingStudent.studentPatterns.map(
-      (studentPattern) =>
-        studentPattern.patternId
+  const existingSubjectIds =
+    existingStudent.studentSubjects.map(
+      (studentSubject) =>
+        studentSubject.subjectId
     );
 
   /* =======================================================
      PARSE BATCH IDS
-     
+
      We parse these even for STUDENT so that we can detect
      an attempt to modify a restricted field.
   ======================================================= */
@@ -242,32 +243,32 @@ export async function updateStudent(
   ];
 
   /* =======================================================
-     PARSE PATTERN IDS
+     PARSE SUBJECT IDS
   ======================================================= */
 
-  const submittedPatternIds =
+  const submittedSubjectIds =
     parseJsonArray(
       formData,
-      "patternIds"
+      "subjectIds"
     );
 
-  if (submittedPatternIds === null) {
+  if (submittedSubjectIds === null) {
     return {
       errors: {
-        patternIds: [
-          "Invalid pattern selection.",
+        subjectIds: [
+          "Invalid subject selection.",
         ],
       },
     };
   }
 
-  const uniquePatternIds = [
-    ...new Set(submittedPatternIds),
+  const uniqueSubjectIds = [
+    ...new Set(submittedSubjectIds),
   ];
 
   /* =======================================================
      DETECT UNAUTHORIZED CHANGES
-     
+
      IMPORTANT:
      This happens BEFORE any database mutation.
 
@@ -346,9 +347,9 @@ export async function updateStudent(
       ) {
         return {
           errors: {
-            fatherName:[
+            fatherName: [
               "You are not allowed to modify the father's name.",
-            ]
+            ],
           },
         };
       }
@@ -374,9 +375,9 @@ export async function updateStudent(
       ) {
         return {
           errors: {
-            address:[
+            address: [
               "You are not allowed to modify the address.",
-            ]
+            ],
           },
         };
       }
@@ -395,32 +396,30 @@ export async function updateStudent(
       ) {
         return {
           errors: {
-            batchIds:
-              [
-                "You are not allowed to modify batches.",
-              ],
+            batchIds: [
+              "You are not allowed to modify batches.",
+            ],
           },
         };
       }
     }
 
     /* -------------------------------------------------------
-       PATTERNS
+       SUBJECTS
     ------------------------------------------------------- */
 
-    if (!permissions.patterns) {
+    if (!permissions.subjects) {
       if (
         !sameStringArray(
-          uniquePatternIds,
-          existingPatternIds
+          uniqueSubjectIds,
+          existingSubjectIds
         )
       ) {
         return {
           errors: {
-            patternIds:
-              [
-                "You are not allowed to modify patterns.",
-              ],
+            subjectIds: [
+              "You are not allowed to modify subjects.",
+            ],
           },
         };
       }
@@ -429,7 +428,7 @@ export async function updateStudent(
 
   /* =======================================================
      DETERMINE EFFECTIVE VALUES
-     
+
      At this point:
        - Admin/Teacher -> submitted values
        - Student -> restricted values are guaranteed
@@ -441,10 +440,10 @@ export async function updateStudent(
       ? uniqueBatchIds
       : existingBatchIds;
 
-  const effectivePatternIds =
-    permissions.patterns
-      ? uniquePatternIds
-      : existingPatternIds;
+  const effectiveSubjectIds =
+    permissions.subjects
+      ? uniqueSubjectIds
+      : existingSubjectIds;
 
   /* =======================================================
      BATCH VALIDATION
@@ -495,13 +494,14 @@ export async function updateStudent(
           ? formData.get("fatherName")
           : existingStudent.fatherName,
 
-      address: permissions.address
-        ? formData.get("address")
-        : existingStudent.Adress,
+      address:
+        permissions.address
+          ? formData.get("address")
+          : existingStudent.Adress,
 
       batchIds: effectiveBatchIds,
 
-      patternIds: effectivePatternIds,
+      subjectIds: effectiveSubjectIds,
     });
 
   if (!validatedFields.success) {
@@ -537,8 +537,8 @@ export async function updateStudent(
         batchIds:
           fieldErrors.batchIds,
 
-        patternIds:
-          fieldErrors.patternIds,
+        subjectIds:
+          fieldErrors.subjectIds,
       },
     };
   }
@@ -547,14 +547,14 @@ export async function updateStudent(
 
   /* =======================================================
      VERIFY SELECTED BATCHES
-     
+
      Only necessary when batches are editable.
   ======================================================= */
 
   let selectedBatches: {
     id: string;
-    patterns: {
-      patternId: string;
+    subjects: {
+      subjectId: string;
     }[];
   }[] = [];
 
@@ -570,9 +570,9 @@ export async function updateStudent(
         select: {
           id: true,
 
-          patterns: {
+          subjects: {
             select: {
-              patternId: true,
+              subjectId: true,
             },
           },
         },
@@ -593,10 +593,10 @@ export async function updateStudent(
   }
 
   /* =======================================================
-     VERIFY PATTERNS
+     VERIFY SUBJECTS
   ======================================================= */
 
-  if (permissions.patterns) {
+  if (permissions.subjects) {
     /*
      * If batches are editable, use the newly selected
      * batches.
@@ -616,41 +616,41 @@ export async function updateStudent(
           select: {
             id: true,
 
-            patterns: {
+            subjects: {
               select: {
-                patternId: true,
+                subjectId: true,
               },
             },
           },
         });
     }
 
-    const availablePatternIds =
+    const availableSubjectIds =
       new Set<string>();
 
     for (const batch of selectedBatches) {
-      for (const batchPattern of batch.patterns) {
-        availablePatternIds.add(
-          batchPattern.patternId
+      for (const batchSubject of batch.subjects) {
+        availableSubjectIds.add(
+          batchSubject.subjectId
         );
       }
     }
 
-    const invalidPatternIds =
-      effectivePatternIds.filter(
-        (patternId) =>
-          !availablePatternIds.has(
-            patternId
+    const invalidSubjectIds =
+      effectiveSubjectIds.filter(
+        (subjectId) =>
+          !availableSubjectIds.has(
+            subjectId
           )
       );
 
     if (
-      invalidPatternIds.length > 0
+      invalidSubjectIds.length > 0
     ) {
       return {
         errors: {
-          patternIds: [
-            "One or more selected patterns are not available for the selected batches.",
+          subjectIds: [
+            "One or more selected subjects are not available for the selected batches.",
           ],
         },
       };
@@ -659,7 +659,7 @@ export async function updateStudent(
 
   /* =======================================================
      DATABASE TRANSACTION
-     
+
      Everything below is atomic.
 
      If ANY operation throws:
@@ -703,7 +703,7 @@ export async function updateStudent(
 
         /* ---------------------------------------------------
            RE-CHECK OWNERSHIP INSIDE TRANSACTION
-           
+
            This prevents the authorization assumption from
            becoming stale between the initial query and update.
         --------------------------------------------------- */
@@ -721,8 +721,8 @@ export async function updateStudent(
            USER DATA
         --------------------------------------------------- */
 
-        const userData: Prisma.UserUpdateInput =
-          {};
+        const userData:
+          Prisma.UserUpdateInput = {};
 
         if (permissions.name) {
           userData.name = data.name;
@@ -805,7 +805,7 @@ export async function updateStudent(
 
         /* ---------------------------------------------------
            BATCHES
-           
+
            Only when permitted.
         --------------------------------------------------- */
 
@@ -827,26 +827,26 @@ export async function updateStudent(
         }
 
         /* ---------------------------------------------------
-           PATTERNS
-           
+           SUBJECTS
+
            Only when permitted.
         --------------------------------------------------- */
 
-        if (permissions.patterns) {
-          await tx.studentPattern.deleteMany({
+        if (permissions.subjects) {
+          await tx.studentSubject.deleteMany({
             where: {
               studentId: student.id,
             },
           });
 
           if (
-            effectivePatternIds.length > 0
+            effectiveSubjectIds.length > 0
           ) {
-            await tx.studentPattern.createMany({
-              data: effectivePatternIds.map(
-                (patternId) => ({
+            await tx.studentSubject.createMany({
+              data: effectiveSubjectIds.map(
+                (subjectId) => ({
                   studentId: student.id,
-                  patternId,
+                  subjectId,
                 })
               ),
             });

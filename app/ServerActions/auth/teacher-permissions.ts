@@ -8,7 +8,7 @@ export type TeacherField =
   | "phone"
   | "password"
   | "batches"
-  | "patterns";
+  | "subjects";
 
 export type TeacherFieldPermissions =
   Record<TeacherField, boolean>;
@@ -24,7 +24,7 @@ export const TEACHER_FIELD_PERMISSIONS:
       phone: true,
       password: true,
       batches: true,
-      patterns: true,
+      subjects: true,
     },
 
     TEACHER: {
@@ -33,6 +33,6 @@ export const TEACHER_FIELD_PERMISSIONS:
       phone: true,
       password: true,
       batches: false,
-      patterns: false,
+      subjects: false,
     },
   };

@@ -77,7 +77,7 @@ export const CreateSchemaStudent = z
           "Select at least one batch.",
       }),
 
-    patternIds: z
+    subjectIds: z
       .array(z.string().min(1))
       .default([]),
 
@@ -195,7 +195,7 @@ export const EditSchemaStudent = z
           "Select at least one batch.",
       }),
 
-    patternIds: z
+    subjectIds: z
       .array(z.string().min(1))
       .default([]),
 
@@ -237,10 +237,6 @@ export const EditSchemaStudent = z
         "Passwords do not match.",
     }
   );
-
-/* =========================================================
-   TEACHER SCHEMAS
-========================================================= */
 
 /* =========================================================
    TEACHER SCHEMAS
@@ -297,7 +293,7 @@ export const CreateSchemaTeacher = z
           "Select at least one batch.",
       }),
 
-    patternIds: z
+    subjectIds: z
       .array(z.string().min(1))
       .default([]),
 
@@ -341,7 +337,6 @@ export const CreateSchemaTeacher = z
         "Passwords do not match.",
     }
   );
-
 
 /* ---------------------------------------------------------
    EDIT TEACHER
@@ -394,7 +389,7 @@ export const EditSchemaTeacher = z
           "Select at least one batch.",
       }),
 
-    patternIds: z
+    subjectIds: z
       .array(z.string().min(1))
       .default([]),
 
@@ -437,7 +432,6 @@ export const EditSchemaTeacher = z
     }
   );
 
-
 /* =========================================================
    TEACHER FORM STATE
 ========================================================= */
@@ -456,7 +450,7 @@ export type FormStateTeacher = {
 
     branchIds?: string[];
     batchIds?: string[];
-    patternIds?: string[];
+    subjectIds?: string[];
 
     userId?: string[];
   };
@@ -508,19 +502,13 @@ export type FormStateRegister = {
     userId?: string[];
 
     batchIds?: string[];
-    patternIds?: string[];
+    subjectIds?: string[];
 
     role?: string[];
   };
 
   message?: string;
 };
-
-/* =========================================================
-   TEACHER FORM STATE
-========================================================= */
-
-
 
 /* =========================================================
    LOGIN STATE

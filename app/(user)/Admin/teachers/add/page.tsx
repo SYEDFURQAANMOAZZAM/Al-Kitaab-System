@@ -1,31 +1,42 @@
-import AuthVerify from "@/app/ServerActions/auth/authVerify";
-import { prisma } from "@/lib/prisma";
 import { Suspense } from "react";
 
-import UserForm from "@/components/teacherForm";
+import AuthVerify from "@/app/ServerActions/auth/authVerify";
+import { prisma } from "@/lib/prisma";
 import { registerTeacher } from "@/app/ServerActions/registeration/registerTeacher";
+
+import TeacherForm from "@/components/teacherForm";
 
 export default async function Page() {
   await AuthVerify("ADMIN");
 
   const branches = await prisma.branch.findMany({
-    orderBy: { name: "asc" },
+    orderBy: {
+      name: "asc",
+    },
     select: {
       id: true,
       name: true,
+
       batches: {
-        orderBy: { name: "asc" },
+        orderBy: {
+          name: "asc",
+        },
         select: {
           id: true,
           name: true,
           branchId: true,
-          patterns: {
+
+          subjects: {
             select: {
               id: true,
               batchId: true,
-              patternId: true,
-              pattern: {
-                select: { id: true, name: true },
+              subjectId: true,
+
+              subject: {
+                select: {
+                  id: true,
+                  name: true,
+                },
               },
             },
           },
@@ -36,7 +47,7 @@ export default async function Page() {
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <UserForm
+      <TeacherForm
         mode="create"
         editorRole="ADMIN"
         action={registerTeacher}
