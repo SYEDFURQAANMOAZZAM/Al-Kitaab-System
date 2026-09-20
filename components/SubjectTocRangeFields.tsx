@@ -3,6 +3,7 @@
 import {
   useEffect,
   useState,
+  type ChangeEvent,
 } from "react";
 
 import { Input } from "@/components/ui/input";
@@ -92,14 +93,12 @@ export function SubjectTocRangeFields({
   ): Toc[] => {
     /*
      * First part:
-     *
      * show root TOC items.
      */
     if (part.position === 0) {
       return tocItems.filter(
         (item) =>
-          item.subjectPartId ===
-            part.id &&
+          item.subjectPartId === part.id &&
           !item.parentId,
       );
     }
@@ -128,12 +127,10 @@ export function SubjectTocRangeFields({
       );
 
     /*
-     * For FROM:
-     *
+     * FROM:
      * use previous FROM.
      *
-     * For TO:
-     *
+     * TO:
      * use previous TO if available,
      * otherwise previous FROM.
      */
@@ -148,8 +145,7 @@ export function SubjectTocRangeFields({
 
     return tocItems.filter(
       (item) =>
-        item.subjectPartId ===
-          part.id &&
+        item.subjectPartId === part.id &&
         item.parentId === parentId,
     );
   };
@@ -178,11 +174,9 @@ export function SubjectTocRangeFields({
       range.from = id;
 
       /*
-       * If FROM changes, an old TO may
-       * belong to a completely different
-       * parent.
-       *
-       * Clear TO to prevent invalid ranges.
+       * If FROM changes or is cleared,
+       * the existing TO may no longer belong
+       * to the selected parent.
        */
       range.to = undefined;
     } else {
@@ -193,6 +187,21 @@ export function SubjectTocRangeFields({
     onChange(
       partId,
       range,
+    );
+  };
+
+  /* ==========================================================
+     CLEAR
+  ========================================================== */
+
+  const clear = (
+    partId: string,
+    side: "from" | "to",
+  ) => {
+    update(
+      partId,
+      side,
+      "",
     );
   };
 
@@ -215,7 +224,6 @@ export function SubjectTocRangeFields({
             py-3
             first:pt-0
             last:pb-0
-
             sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)]
             sm:gap-3
           "
@@ -250,6 +258,12 @@ export function SubjectTocRangeFields({
                 id,
               )
             }
+            onClear={() =>
+              clear(
+                part.id,
+                "from",
+              )
+            }
           />
 
           <SearchPicker
@@ -262,12 +276,17 @@ export function SubjectTocRangeFields({
               part,
               "to",
             )}
-            optional
             onChange={(id) =>
               update(
                 part.id,
                 "to",
                 id,
+              )
+            }
+            onClear={() =>
+              clear(
+                part.id,
+                "to",
               )
             }
           />
@@ -286,7 +305,7 @@ type SearchPickerProps = {
   value: string;
   options: Toc[];
   onChange: (id: string) => void;
-  optional?: boolean;
+  onClear: () => void;
 };
 
 function SearchPicker({
@@ -294,7 +313,7 @@ function SearchPicker({
   value,
   options,
   onChange,
-  optional = false,
+  onClear,
 }: SearchPickerProps) {
   /* ==========================================================
      FIND SELECTED ITEM
@@ -323,18 +342,27 @@ function SearchPicker({
 
   useEffect(() => {
     /*
-     * When ProgressForm loads today's
-     * progress asynchronously, `value`
-     * changes after this component has
-     * already mounted.
+     * When the picker is closed, keep the
+     * displayed text synchronized with the
+     * selected TOC item.
      *
-     * Keep the visible input synchronized.
+     * requestAnimationFrame prevents the
+     * synchronous setState-in-effect warning.
      */
     if (!open) {
-      setQuery(
-        selected?.name ?? "",
-      );
+      const nextQuery =
+        selected?.name ?? "";
+
+      const frame =
+        requestAnimationFrame(() => {
+          setQuery(nextQuery);
+        });
+
+      return () =>
+        cancelAnimationFrame(frame);
     }
+
+    return undefined;
   }, [
     value,
     selected?.name,
@@ -345,33 +373,50 @@ function SearchPicker({
      SEARCH
   ========================================================== */
 
-  const typedWord =
-    query.trim().length > 0;
+  const trimmedQuery =
+    query.trim();
 
-  const matches = typedWord
-    ? options.filter((item) =>
-        item.name
-          .toLocaleLowerCase()
-          .includes(
-            query
-              .trim()
-              .toLocaleLowerCase(),
-          ),
-      )
-    : [];
+  const matches =
+    trimmedQuery.length > 0
+      ? options.filter(
+          (item) =>
+            item.name
+              .toLocaleLowerCase()
+              .includes(
+                trimmedQuery.toLocaleLowerCase(),
+              ),
+        )
+      : [];
 
   /* ==========================================================
      FOCUS
   ========================================================== */
 
   const handleFocus = () => {
-    setOpen(true);
-
     /*
-     * Clear search text so user can
-     * immediately type a new search.
+     * IMPORTANT:
+     *
+     * Do NOT clear the query here.
+     *
+     * If a value is already selected,
+     * clicking the field should allow the
+     * user to inspect it.
      */
-    setQuery("");
+    setOpen(true);
+  };
+
+  /* ==========================================================
+     CHANGE
+  ========================================================== */
+
+  const handleChange = (
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    setQuery(
+      event.target.value,
+    );
+
+    setOpen(true);
   };
 
   /* ==========================================================
@@ -384,7 +429,6 @@ function SearchPicker({
     onChange(item.id);
 
     setQuery(item.name);
-
     setOpen(false);
   };
 
@@ -393,10 +437,9 @@ function SearchPicker({
   ========================================================== */
 
   const handleClear = () => {
-    onChange("");
+    onClear();
 
     setQuery("");
-
     setOpen(false);
   };
 
@@ -428,18 +471,8 @@ function SearchPicker({
         <Input
           value={query}
           onFocus={handleFocus}
-          onChange={(event) => {
-            setQuery(
-              event.target.value,
-            );
-
-            setOpen(true);
-          }}
-          placeholder={
-            optional
-              ? "Optional"
-              : "Search"
-          }
+          onChange={handleChange}
+          placeholder="Search"
           className="
             h-9
             min-w-0
@@ -454,83 +487,84 @@ function SearchPicker({
             DROPDOWN
         ================================================== */}
 
-        {open && typedWord && (
-          <div
-            className="
-              absolute
-              left-0
-              top-[calc(100%+4px)]
-              z-[100]
-              w-full
-              overflow-hidden
-              rounded-md
-              border
-              border-border
-              bg-popover
-              shadow-lg
-              ring-1
-              ring-black/5
-            "
-          >
-            <div className="max-h-52 overflow-y-auto p-1">
-              {matches.length > 0 ? (
-                matches.map(
-                  (item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onMouseDown={(
-                        event,
-                      ) =>
-                        event.preventDefault()
-                      }
-                      onClick={() =>
-                        handleSelect(
-                          item,
-                        )
-                      }
-                      className="
-                        block
-                        w-full
-                        rounded-sm
-                        px-2.5
-                        py-2
-                        text-left
-                        text-sm
-                        text-popover-foreground
-                        transition-colors
-                        hover:bg-accent
-                        hover:text-accent-foreground
-                      "
-                    >
-                      {item.name}
-                    </button>
-                  ),
-                )
-              ) : (
-                <p
-                  className="
-                    px-2.5
-                    py-2
-                    text-sm
-                    text-muted-foreground
-                  "
-                >
-                  No matching{" "}
-                  {label.toLowerCase()}{" "}
-                  value.
-                </p>
-              )}
+        {open &&
+          trimmedQuery.length > 0 && (
+            <div
+              className="
+                absolute
+                left-0
+                top-[calc(100%+4px)]
+                z-[100]
+                w-full
+                overflow-hidden
+                rounded-md
+                border
+                border-border
+                bg-popover
+                shadow-lg
+                ring-1
+                ring-black/5
+              "
+            >
+              <div className="max-h-52 overflow-y-auto p-1">
+                {matches.length > 0 ? (
+                  matches.map(
+                    (item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onMouseDown={(
+                          event,
+                        ) =>
+                          event.preventDefault()
+                        }
+                        onClick={() =>
+                          handleSelect(
+                            item,
+                          )
+                        }
+                        className="
+                          block
+                          w-full
+                          rounded-sm
+                          px-2.5
+                          py-2
+                          text-left
+                          text-sm
+                          text-popover-foreground
+                          transition-colors
+                          hover:bg-accent
+                          hover:text-accent-foreground
+                        "
+                      >
+                        {item.name}
+                      </button>
+                    ),
+                  )
+                ) : (
+                  <p
+                    className="
+                      px-2.5
+                      py-2
+                      text-sm
+                      text-muted-foreground
+                    "
+                  >
+                    No matching{" "}
+                    {label.toLowerCase()}{" "}
+                    value.
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
 
       {/* ====================================================
-          CLEAR TO
+          CLEAR
       ==================================================== */}
 
-      {optional && value && (
+      {value && (
         <div className="flex justify-end pt-1">
           <button
             type="button"
@@ -545,10 +579,11 @@ function SearchPicker({
               hover:text-foreground
             "
           >
-            Clear To
+            Clear {label}
           </button>
         </div>
       )}
     </div>
   );
 }
+
