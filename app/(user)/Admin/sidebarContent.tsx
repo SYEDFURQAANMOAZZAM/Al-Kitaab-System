@@ -100,8 +100,8 @@ export const sidebarItems: SidebarItem[] = [
   },
 
   {
-    title: "Study Pattern",
-    href: "/Admin/study-pattern",
+    title: "Subjects",
+    href: "/Admin/subjects",
     icon: "pattern",
   },
 

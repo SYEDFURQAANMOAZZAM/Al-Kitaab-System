@@ -1,0 +1,110 @@
+app/(user)/Admin/students/add/page.tsx(22,11): error TS2353: Object literal may only specify known properties, and 'patterns' does not exist in type 'BatchSelect<DefaultArgs>'.
+app/(user)/Admin/students/add/page.tsx(43,9): error TS2322: Type '{ id: string; name: string; }[]' is not assignable to type 'Branch[]'.
+  Property 'batches' is missing in type '{ id: string; name: string; }' but required in type 'Branch'.
+app/(user)/Admin/students/stats/[id]/edit/page.tsx(44,9): error TS2353: Object literal may only specify known properties, and 'studentPatterns' does not exist in type 'StudentSelect<DefaultArgs>'.
+app/(user)/Admin/students/stats/[id]/edit/page.tsx(61,13): error TS2353: Object literal may only specify known properties, and 'patterns' does not exist in type 'BatchSelect<DefaultArgs>'.
+app/(user)/Admin/students/stats/[id]/edit/page.tsx(77,27): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; fatherName: string | null; Adress: string | null; }'.
+app/(user)/Admin/students/stats/[id]/edit/page.tsx(83,63): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; fatherName: string | null; Adress: string | null; }'.
+app/(user)/Admin/students/stats/[id]/edit/page.tsx(91,9): error TS2322: Type '{ id: string; name: string; }[]' is not assignable to type 'Branch[]'.
+  Property 'batches' is missing in type '{ id: string; name: string; }' but required in type 'Branch'.
+app/(user)/Admin/students/stats/[id]/edit/page.tsx(93,23): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; fatherName: string | null; Adress: string | null; }'.
+app/(user)/Admin/students/stats/[id]/edit/page.tsx(94,25): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; fatherName: string | null; Adress: string | null; }'.
+app/(user)/Admin/students/stats/[id]/edit/page.tsx(95,26): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; fatherName: string | null; Adress: string | null; }'.
+app/(user)/Admin/students/stats/[id]/edit/page.tsx(96,26): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; fatherName: string | null; Adress: string | null; }'.
+app/(user)/Admin/students/stats/[id]/edit/page.tsx(97,27): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; fatherName: string | null; Adress: string | null; }'.
+app/(user)/Admin/students/stats/[id]/edit/page.tsx(100,29): error TS2339: Property 'enrollments' does not exist on type '{ id: string; userId: string; fatherName: string | null; Adress: string | null; }'.
+app/(user)/Admin/students/stats/[id]/edit/page.tsx(100,46): error TS7006: Parameter 'e' implicitly has an 'any' type.
+app/(user)/Admin/students/stats/[id]/edit/page.tsx(101,31): error TS2339: Property 'studentPatterns' does not exist on type '{ id: string; userId: string; fatherName: string | null; Adress: string | null; }'.
+app/(user)/Admin/students/stats/[id]/edit/page.tsx(101,52): error TS7006: Parameter 'sp' implicitly has an 'any' type.
+app/(user)/Admin/study-pattern/[id]/bulktoc/page.tsx(19,18): error TS2339: Property 'pattern' does not exist on type 'PrismaClient<never, GlobalOmitConfig | undefined, DefaultArgs>'.
+app/(user)/Admin/study-pattern/[id]/page.tsx(23,32): error TS2339: Property 'pattern' does not exist on type 'PrismaClient<never, GlobalOmitConfig | undefined, DefaultArgs>'.
+app/(user)/Admin/study-pattern/[id]/page.tsx(71,6): error TS7006: Parameter 'groups' implicitly has an 'any' type.
+app/(user)/Admin/study-pattern/[id]/page.tsx(71,14): error TS7006: Parameter 'item' implicitly has an 'any' type.
+app/(user)/Admin/study-pattern/[id]/page.tsx(180,38): error TS7006: Parameter 'part' implicitly has an 'any' type.
+app/(user)/Admin/study-pattern/[id]/page.tsx(180,44): error TS7006: Parameter 'index' implicitly has an 'any' type.
+app/(user)/Admin/study-pattern/[id]/page.tsx(257,24): error TS18046: 'batches' is of type 'unknown'.
+app/(user)/Admin/study-pattern/[id]/page.tsx(258,24): error TS18046: 'batches' is of type 'unknown'.
+app/(user)/Admin/study-pattern/[id]/page.tsx(267,22): error TS18046: 'batches' is of type 'unknown'.
+app/(user)/Admin/study-pattern/[id]/page.tsx(267,35): error TS7006: Parameter 'batch' implicitly has an 'any' type.
+app/(user)/Admin/study-pattern/[id]/toc/page.tsx(7,32): error TS2339: Property 'pattern' does not exist on type 'PrismaClient<never, GlobalOmitConfig | undefined, DefaultArgs>'.
+app/(user)/Admin/study-pattern/[id]/tracking/page.tsx(6,32): error TS2339: Property 'pattern' does not exist on type 'PrismaClient<never, GlobalOmitConfig | undefined, DefaultArgs>'.
+app/(user)/Admin/teachers/add/page.tsx(22,11): error TS2353: Object literal may only specify known properties, and 'patterns' does not exist in type 'BatchSelect<DefaultArgs>'.
+app/(user)/Admin/teachers/add/page.tsx(43,9): error TS2322: Type '{ id: string; name: string; }[]' is not assignable to type 'Branch[]'.
+  Property 'batches' is missing in type '{ id: string; name: string; }' but required in type 'Branch'.
+app/(user)/Admin/teachers/status/[id]/edit/page.tsx(51,9): error TS2353: Object literal may only specify known properties, and 'teacherPatterns' does not exist in type 'TeacherSelect<DefaultArgs>'.
+app/(user)/Admin/teachers/status/[id]/edit/page.tsx(86,13): error TS2353: Object literal may only specify known properties, and 'patterns' does not exist in type 'BatchSelect<DefaultArgs>'.
+app/(user)/Admin/teachers/status/[id]/edit/page.tsx(110,27): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; }'.
+app/(user)/Admin/teachers/status/[id]/edit/page.tsx(117,28): error TS2339: Property 'assignments' does not exist on type '{ id: string; userId: string; }'.
+app/(user)/Admin/teachers/status/[id]/edit/page.tsx(118,6): error TS7006: Parameter 'assignment' implicitly has an 'any' type.
+app/(user)/Admin/teachers/status/[id]/edit/page.tsx(133,15): error TS2339: Property 'assignments' does not exist on type '{ id: string; userId: string; }'.
+app/(user)/Admin/teachers/status/[id]/edit/page.tsx(134,15): error TS7006: Parameter 'assignment' implicitly has an 'any' type.
+app/(user)/Admin/teachers/status/[id]/edit/page.tsx(142,30): error TS2339: Property 'teacherPatterns' does not exist on type '{ id: string; userId: string; }'.
+app/(user)/Admin/teachers/status/[id]/edit/page.tsx(143,6): error TS7006: Parameter 'teacherPattern' implicitly has an 'any' type.
+app/(user)/Admin/teachers/status/[id]/edit/page.tsx(156,13): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; }'.
+app/(user)/Admin/teachers/status/[id]/edit/page.tsx(165,9): error TS2322: Type '{ id: string; name: string; }[]' is not assignable to type 'Branch[]'.
+  Property 'batches' is missing in type '{ id: string; name: string; }' but required in type 'Branch'.
+app/(user)/Admin/teachers/status/[id]/edit/page.tsx(167,23): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; }'.
+app/(user)/Admin/teachers/status/[id]/edit/page.tsx(169,25): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; }'.
+app/(user)/Admin/teachers/status/[id]/edit/page.tsx(170,26): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; }'.
+app/(user)/Admin/teachers/status/[id]/edit/page.tsx(171,26): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; }'.
+app/(user)/Admin/teachers/status/[id]/edit/page.tsx(173,11): error TS2322: Type 'unknown[]' is not assignable to type 'string[]'.
+  Type 'unknown' is not assignable to type 'string'.
+app/ServerActions/getGroups/getBranchesAndBatchesforRegister.ts(27,11): error TS2353: Object literal may only specify known properties, and 'patterns' does not exist in type 'BatchInclude<DefaultArgs>'.
+app/ServerActions/getGroups/getBranchesAndBatchesforRegister.ts(37,3): error TS2322: Type '{ id: string; name: string; }[]' is not assignable to type 'Branch[]'.
+  Property 'batches' is missing in type '{ id: string; name: string; }' but required in type 'Branch'.
+app/ServerActions/patternOperations/bulkToc.ts(73,18): error TS2339: Property 'pattern' does not exist on type 'PrismaClient<never, GlobalOmitConfig | undefined, DefaultArgs>'.
+app/ServerActions/patternOperations/bulkToc.ts(287,18): error TS2339: Property 'patternTocItem' does not exist on type 'Omit<PrismaClient<never, undefined, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$use" | "$extends">'.
+app/ServerActions/patternOperations/deletePattern.ts(17,18): error TS2339: Property 'pattern' does not exist on type 'PrismaClient<never, GlobalOmitConfig | undefined, DefaultArgs>'.
+app/ServerActions/patternOperations/fetchPatterns.ts(10,35): error TS2339: Property 'pattern' does not exist on type 'PrismaClient<never, GlobalOmitConfig | undefined, DefaultArgs>'.
+app/ServerActions/patternOperations/toc.ts(19,29): error TS2339: Property 'patternArr' does not exist on type 'PrismaClient<never, GlobalOmitConfig | undefined, DefaultArgs>'.
+app/ServerActions/patternOperations/toc.ts(22,33): error TS2339: Property 'patternTocItem' does not exist on type 'PrismaClient<never, GlobalOmitConfig | undefined, DefaultArgs>'.
+app/ServerActions/patternOperations/toc.ts(25,30): error TS2339: Property 'patternTocItem' does not exist on type 'PrismaClient<never, GlobalOmitConfig | undefined, DefaultArgs>'.
+app/ServerActions/patternOperations/toc.ts(32,16): error TS2339: Property 'patternTocItem' does not exist on type 'PrismaClient<never, GlobalOmitConfig | undefined, DefaultArgs>'.
+app/ServerActions/patternOperations/toc.ts(38,16): error TS2339: Property 'patternTocItem' does not exist on type 'PrismaClient<never, GlobalOmitConfig | undefined, DefaultArgs>'.
+app/ServerActions/registeration/registerStudent.ts(216,9): error TS2353: Object literal may only specify known properties, and 'patterns' does not exist in type 'BatchSelect<DefaultArgs>'.
+app/ServerActions/registeration/registerStudent.ts(245,38): error TS2339: Property 'patterns' does not exist on type '{ id: string; name: string; branchId: string; }'.
+app/ServerActions/registeration/registerStudent.ts(359,20): error TS2339: Property 'studentPattern' does not exist on type 'Omit<PrismaClient<never, undefined, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$use" | "$extends">'.
+app/ServerActions/registeration/registerTeacher.ts(262,9): error TS2353: Object literal may only specify known properties, and 'patterns' does not exist in type 'BatchSelect<DefaultArgs>'.
+app/ServerActions/registeration/registerTeacher.ts(291,38): error TS2339: Property 'patterns' does not exist on type '{ id: string; name: string; branchId: string; }'.
+app/ServerActions/registeration/registerTeacher.ts(391,20): error TS2339: Property 'teacherPattern' does not exist on type 'Omit<PrismaClient<never, undefined, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$use" | "$extends">'.
+app/ServerActions/updation/updateStudent.ts(165,9): error TS2353: Object literal may only specify known properties, and 'studentPatterns' does not exist in type 'StudentSelect<DefaultArgs>'.
+app/ServerActions/updation/updateStudent.ts(179,21): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; fatherName: string | null; Adress: string | null; }'.
+app/ServerActions/updation/updateStudent.ts(194,36): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; fatherName: string | null; Adress: string | null; }'.
+app/ServerActions/updation/updateStudent.ts(207,21): error TS2339: Property 'enrollments' does not exist on type '{ id: string; userId: string; fatherName: string | null; Adress: string | null; }'.
+app/ServerActions/updation/updateStudent.ts(208,8): error TS7006: Parameter 'enrollment' implicitly has an 'any' type.
+app/ServerActions/updation/updateStudent.ts(212,21): error TS2339: Property 'studentPatterns' does not exist on type '{ id: string; userId: string; fatherName: string | null; Adress: string | null; }'.
+app/ServerActions/updation/updateStudent.ts(213,8): error TS7006: Parameter 'studentPattern' implicitly has an 'any' type.
+app/ServerActions/updation/updateStudent.ts(293,29): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; fatherName: string | null; Adress: string | null; }'.
+app/ServerActions/updation/updateStudent.ts(317,29): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; fatherName: string | null; Adress: string | null; }'.
+app/ServerActions/updation/updateStudent.ts(476,27): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; fatherName: string | null; Adress: string | null; }'.
+app/ServerActions/updation/updateStudent.ts(480,27): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; fatherName: string | null; Adress: string | null; }'.
+app/ServerActions/updation/updateStudent.ts(562,5): error TS2322: Type '{ id: string; name: string; branchId: string; }[]' is not assignable to type '{ id: string; patterns: { patternId: string; }[]; }[]'.
+  Property 'patterns' is missing in type '{ id: string; name: string; branchId: string; }' but required in type '{ id: string; patterns: { patternId: string; }[]; }'.
+app/ServerActions/updation/updateStudent.ts(573,11): error TS2353: Object literal may only specify known properties, and 'patterns' does not exist in type 'BatchSelect<DefaultArgs>'.
+app/ServerActions/updation/updateStudent.ts(608,7): error TS2322: Type '{ id: string; name: string; branchId: string; }[]' is not assignable to type '{ id: string; patterns: { patternId: string; }[]; }[]'.
+  Property 'patterns' is missing in type '{ id: string; name: string; branchId: string; }' but required in type '{ id: string; patterns: { patternId: string; }[]; }'.
+app/ServerActions/updation/updateStudent.ts(619,13): error TS2353: Object literal may only specify known properties, and 'patterns' does not exist in type 'BatchSelect<DefaultArgs>'.
+app/ServerActions/updation/updateStudent.ts(641,10): error TS7006: Parameter 'patternId' implicitly has an 'any' type.
+app/ServerActions/updation/updateStudent.ts(821,16): error TS7006: Parameter 'batchId' implicitly has an 'any' type.
+app/ServerActions/updation/updateStudent.ts(836,20): error TS2339: Property 'studentPattern' does not exist on type 'Omit<PrismaClient<never, undefined, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$use" | "$extends">'.
+app/ServerActions/updation/updateStudent.ts(845,22): error TS2339: Property 'studentPattern' does not exist on type 'Omit<PrismaClient<never, undefined, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$use" | "$extends">'.
+app/ServerActions/updation/updateStudent.ts(847,18): error TS7006: Parameter 'patternId' implicitly has an 'any' type.
+app/ServerActions/updation/updateTeacher.ts(162,9): error TS2353: Object literal may only specify known properties, and 'teacherPatterns' does not exist in type 'TeacherSelect<DefaultArgs>'.
+app/ServerActions/updation/updateTeacher.ts(176,21): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; }'.
+app/ServerActions/updation/updateTeacher.ts(191,36): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; }'.
+app/ServerActions/updation/updateTeacher.ts(204,21): error TS2339: Property 'assignments' does not exist on type '{ id: string; userId: string; }'.
+app/ServerActions/updation/updateTeacher.ts(205,8): error TS7006: Parameter 'assignment' implicitly has an 'any' type.
+app/ServerActions/updation/updateTeacher.ts(209,21): error TS2339: Property 'teacherPatterns' does not exist on type '{ id: string; userId: string; }'.
+app/ServerActions/updation/updateTeacher.ts(210,8): error TS7006: Parameter 'teacherPattern' implicitly has an 'any' type.
+app/ServerActions/updation/updateTeacher.ts(287,29): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; }'.
+app/ServerActions/updation/updateTeacher.ts(399,27): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; }'.
+app/ServerActions/updation/updateTeacher.ts(403,27): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; }'.
+app/ServerActions/updation/updateTeacher.ts(597,22): error TS2339: Property 'pattern' does not exist on type 'PrismaClient<never, GlobalOmitConfig | undefined, DefaultArgs>'.
+app/ServerActions/updation/updateTeacher.ts(623,22): error TS2339: Property 'batchPattern' does not exist on type 'PrismaClient<never, GlobalOmitConfig | undefined, DefaultArgs>'.
+app/ServerActions/updation/updateTeacher.ts(641,12): error TS7006: Parameter 'item' implicitly has an 'any' type.
+app/ServerActions/updation/updateTeacher.ts(647,12): error TS7006: Parameter 'patternId' implicitly has an 'any' type.
+app/ServerActions/updation/updateTeacher.ts(787,18): error TS7006: Parameter 'batchId' implicitly has an 'any' type.
+app/ServerActions/updation/updateTeacher.ts(803,20): error TS2339: Property 'teacherPattern' does not exist on type 'Omit<PrismaClient<never, undefined, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$use" | "$extends">'.
+app/ServerActions/updation/updateTeacher.ts(812,22): error TS2339: Property 'teacherPattern' does not exist on type 'Omit<PrismaClient<never, undefined, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$use" | "$extends">'.
+app/ServerActions/updation/updateTeacher.ts(814,18): error TS7006: Parameter 'patternId' implicitly has an 'any' type.
+scripts/check-toc.ts(4,33): error TS2339: Property 'patternTocItem' does not exist on type 'PrismaClient<never, GlobalOmitConfig | undefined, DefaultArgs>'.

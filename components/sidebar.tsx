@@ -130,7 +130,7 @@ export type SidebarItem =
 ========================================================= */
 
 function isGroup(
-  item: SidebarItem
+  item: SidebarItem,
 ): item is SidebarGroupItem {
   return "children" in item;
 }
@@ -141,14 +141,14 @@ function isGroup(
  */
 function isItemActive(
   item: SidebarItem,
-  pathname: string
+  pathname: string,
 ): boolean {
   if (!isGroup(item)) {
     return pathname === item.href;
   }
 
   return item.children.some((child) =>
-    isItemActive(child, pathname)
+    isItemActive(child, pathname),
   );
 }
 
@@ -168,10 +168,12 @@ function SidebarItems({
   items,
   pathname,
   level = 0,
+  onNavigate,
 }: {
   items: SidebarItem[];
   pathname: string;
   level?: number;
+  onNavigate: () => void;
 }) {
   const [openGroups, setOpenGroups] = useState<
     Record<string, boolean>
@@ -180,10 +182,11 @@ function SidebarItems({
 
     items.forEach((item) => {
       if (isGroup(item)) {
-        initial[item.title] = isItemActive(
-          item,
-          pathname
-        );
+        initial[item.title] =
+          isItemActive(
+            item,
+            pathname,
+          );
       }
     });
 
@@ -213,17 +216,23 @@ function SidebarItems({
         ================================================= */
 
         if (isGroup(item)) {
-          const open = openGroups[item.title] ?? false;
+          const open =
+            openGroups[item.title] ?? false;
 
-          const groupActive = isItemActive(
-            item,
-            pathname
-          );
+          const groupActive =
+            isItemActive(
+              item,
+              pathname,
+            );
 
           return (
             <SidebarMenuItem key={key}>
               <SidebarMenuButton
-                onClick={() => toggleGroup(item.title)}
+                onClick={() =>
+                  toggleGroup(
+                    item.title,
+                  )
+                }
                 className={`h-10 rounded-lg text-[15px] ${
                   groupActive
                     ? "font-semibold text-foreground"
@@ -235,11 +244,15 @@ function SidebarItems({
                   strokeWidth={1.75}
                 />
 
-                <span>{item.title}</span>
+                <span>
+                  {item.title}
+                </span>
 
                 <ChevronDown
                   className={`ml-auto h-4 w-4 text-muted-foreground transition-transform ${
-                    open ? "rotate-180" : ""
+                    open
+                      ? "rotate-180"
+                      : ""
                   }`}
                 />
               </SidebarMenuButton>
@@ -256,6 +269,9 @@ function SidebarItems({
                     items={item.children}
                     pathname={pathname}
                     level={level + 1}
+                    onNavigate={
+                      onNavigate
+                    }
                   />
                 </SidebarMenuSub>
               )}
@@ -274,12 +290,18 @@ function SidebarItems({
          * Nested links use SidebarMenuSubItem.
          * Top-level links use SidebarMenuItem.
          */
+
         if (level > 0) {
           return (
-            <SidebarMenuSubItem key={key}>
+            <SidebarMenuSubItem
+              key={key}
+            >
               <SidebarMenuSubButton
                 render={
-                  <Link href={item.href} />
+                  <Link
+                    href={item.href}
+                    onClick={onNavigate}
+                  />
                 }
                 isActive={active}
                 className={`h-9 rounded-lg text-[14px] ${
@@ -293,7 +315,9 @@ function SidebarItems({
                   strokeWidth={1.75}
                 />
 
-                <span>{item.title}</span>
+                <span>
+                  {item.title}
+                </span>
               </SidebarMenuSubButton>
             </SidebarMenuSubItem>
           );
@@ -303,7 +327,10 @@ function SidebarItems({
           <SidebarMenuItem key={key}>
             <SidebarMenuButton
               render={
-                <Link href={item.href} />
+                <Link
+                  href={item.href}
+                  onClick={onNavigate}
+                />
               }
               isActive={active}
               className={`h-10 rounded-lg text-[15px] ${
@@ -317,7 +344,9 @@ function SidebarItems({
                 strokeWidth={1.75}
               />
 
-              <span>{item.title}</span>
+              <span>
+                {item.title}
+              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         );
@@ -339,6 +368,18 @@ export default function AppSidebar({
     isMobile,
     setOpenMobile,
   } = useSidebar();
+
+  /*
+   * Close the sidebar only on mobile.
+   *
+   * This is called by actual navigation links.
+   * Group buttons do not call this.
+   */
+  const handleNavigate = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   return (
     <Sidebar
@@ -390,6 +431,9 @@ export default function AppSidebar({
             <SidebarItems
               items={sidebarItems}
               pathname={pathname}
+              onNavigate={
+                handleNavigate
+              }
             />
           </SidebarMenu>
         </SidebarGroup>

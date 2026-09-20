@@ -1,15 +1,14 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
+import AuthVerify from "@/app/ServerActions/auth/authVerify";
 import { prisma } from "@/lib/prisma";
-import { getBranchesWithBatches } from "@/app/ServerActions/getGroups/getBranchesAndBatchesforRegister";
 import { updateStudent } from "@/app/ServerActions/updation/updateStudent";
 
-import UserForm from "./registerComponentStudent";
+import UserForm from "@/components/UserForm";
 
 type PageProps = {
-  params: Promise<{
-    id: string;
-  }>;
+  params: Promise<{ id: string }>;
 };
 
 export default async function Page({
@@ -17,13 +16,33 @@ export default async function Page({
 }: PageProps) {
   const { id } = await params;
 
+  // The authenticated session role determines the editor role.
+  const session = await AuthVerify(
+    "ADMIN",
+    "TEACHER",
+    "STUDENT"
+  );
+
   const [student, branches] = await Promise.all([
     prisma.student.findUnique({
       where: {
         id,
       },
-      include: {
-        user: true,
+
+      select: {
+        fatherName: true,
+        Adress: true,
+
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            phone2: true,
+            role: true,
+          },
+        },
 
         enrollments: {
           select: {
@@ -31,54 +50,107 @@ export default async function Page({
           },
         },
 
-        studentPatterns: {
+        studentSubjects: {
           select: {
-            patternId: true,
+            subjectId: true,
           },
         },
       },
     }),
 
-    getBranchesWithBatches(),
+    prisma.branch.findMany({
+      orderBy: {
+        name: "asc",
+      },
+
+      select: {
+        id: true,
+        name: true,
+
+        batches: {
+          orderBy: {
+            name: "asc",
+          },
+
+          select: {
+            id: true,
+            name: true,
+            branchId: true,
+
+            subjects: {
+              select: {
+                id: true,
+                batchId: true,
+                subjectId: true,
+
+                subject: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    }),
   ]);
 
-  if (!student || student.user.role !== "STUDENT") {
-    console.log("Student not found:", id);
+  if (
+    !student ||
+    student.user.role !== "STUDENT"
+  ) {
     notFound();
   }
 
+  /*
+   * updateStudent expects:
+   *
+   * updateStudent(userId, prevState, formData)
+   *
+   * Bind the user ID so UserForm only submits
+   * prevState and FormData.
+   */
+  const boundUpdateStudent =
+    updateStudent.bind(
+      null,
+      student.user.id
+    );
+
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-10">
+    <Suspense
+      fallback={
+        <div>Loading...</div>
+      }
+    >
       <UserForm
         mode="edit"
-        role="STUDENT"
-        action={updateStudent.bind(
-          null,
-          student.user.id
-        )}
+        editorRole={session.role}
+        action={boundUpdateStudent}
         branches={branches}
         user={{
           id: student.user.id,
-
           name: student.user.name,
           email: student.user.email,
           phone: student.user.phone,
           phone2: student.user.phone2,
-
           fatherName: student.fatherName,
           address: student.Adress,
 
-          batchIds: student.enrollments.map(
-            (enrollment) => enrollment.batchId
-          ),
+          batchIds:
+            student.enrollments.map(
+              (enrollment) =>
+                enrollment.batchId
+            ),
 
-          patternIds: student.studentPatterns.map(
-            (pattern) => pattern.patternId
-          ),
-
-          role: "STUDENT",
+          subjectIds:
+            student.studentSubjects.map(
+              (studentSubject) =>
+                studentSubject.subjectId
+            ),
         }}
       />
-    </div>
+    </Suspense>
   );
 }
