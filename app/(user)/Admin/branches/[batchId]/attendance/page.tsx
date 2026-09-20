@@ -1,6 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/require-role";
-import { AttendanceForm } from "./AtendanceForm";
+import { AttendanceForm } from "@/components/AttendanceForm";
+import { getAttendanceForDate } from "@/app/ServerActions/attendance/createAttendance";
+
+function getTodayDate() {
+  const now = new Date();
+
+  return new Date(
+    Date.UTC(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    )
+  );
+}
 
 export default async function Page({
   params,
@@ -43,29 +56,9 @@ export default async function Page({
     throw new Error("Batch not found");
   }
 
-  
+  const today = getTodayDate();
 
-
-
-
-  /*
-   * Fetch today's attendance for this batch.
-   *
-   * If records exist, the attendance has already
-   * been taken.
-   */
-  const now = new Date();
-
-const today = new Date(
-  Date.UTC(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate()
-  )
-);
-
-const existingAttendance =
-  await prisma.attendance.findMany({
+  const existingAttendance = await prisma.attendance.findMany({
     where: {
       batchId,
       date: today,
@@ -76,24 +69,8 @@ const existingAttendance =
     },
   });
 
-  const attendanceTaken =
-    existingAttendance.length > 0;
+  const attendanceTaken = existingAttendance.length > 0;
 
-  /*
-   * Convert:
-   *
-   * [
-   *   { userId: "abc", attended: "PRESENT" },
-   *   { userId: "xyz", attended: "LEAVE" }
-   * ]
-   *
-   * into:
-   *
-   * {
-   *   abc: "PRESENT",
-   *   xyz: "LEAVE"
-   * }
-   */
   const todayAttendance = Object.fromEntries(
     existingAttendance.map((record) => [
       record.userId,
@@ -101,23 +78,21 @@ const existingAttendance =
     ])
   );
 
-  const students = batch.students.map(
-    ({ student }) => ({
-      id: student.id,
-      userId: student.userId,
-      name: student.user.name,
-      phone: student.user.phone,
-    })
-  );
-
+  const students = batch.students.map(({ student }) => ({
+    id: student.id,
+    userId: student.userId,
+    name: student.user.name,
+    phone: student.user.phone,
+  }));
 
   return (
     <AttendanceForm
       batchId={batch.id}
       students={students}
+      initialDate={today}
       attendanceTaken={attendanceTaken}
       todayAttendance={todayAttendance}
+      getAttendanceForDate={getAttendanceForDate}
     />
   );
 }
-

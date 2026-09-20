@@ -77,7 +77,7 @@ export const CreateSchemaStudent = z
           "Select at least one batch.",
       }),
 
-    patternIds: z
+    subjectIds: z
       .array(z.string().min(1))
       .default([]),
 
@@ -195,7 +195,7 @@ export const EditSchemaStudent = z
           "Select at least one batch.",
       }),
 
-    patternIds: z
+    subjectIds: z
       .array(z.string().min(1))
       .default([]),
 
@@ -293,6 +293,10 @@ export const CreateSchemaTeacher = z
           "Select at least one batch.",
       }),
 
+    subjectIds: z
+      .array(z.string().min(1))
+      .default([]),
+
     password: z
       .string()
       .min(8, {
@@ -385,6 +389,10 @@ export const EditSchemaTeacher = z
           "Select at least one batch.",
       }),
 
+    subjectIds: z
+      .array(z.string().min(1))
+      .default([]),
+
     password: z
       .string()
       .min(8, {
@@ -423,6 +431,32 @@ export const EditSchemaTeacher = z
         "Passwords do not match.",
     }
   );
+
+/* =========================================================
+   TEACHER FORM STATE
+========================================================= */
+
+export type FormStateTeacher = {
+  success?: boolean;
+
+  errors?: {
+    name?: string[];
+
+    email?: string;
+    phone?: string;
+
+    password?: string[];
+    confirmPassword?: string[];
+
+    branchIds?: string[];
+    batchIds?: string[];
+    subjectIds?: string[];
+
+    userId?: string[];
+  };
+
+  message?: string;
+};
 
 /* =========================================================
    LOGIN
@@ -468,34 +502,9 @@ export type FormStateRegister = {
     userId?: string[];
 
     batchIds?: string[];
-    patternIds?: string[];
+    subjectIds?: string[];
 
     role?: string[];
-  };
-
-  message?: string;
-};
-
-/* =========================================================
-   TEACHER FORM STATE
-========================================================= */
-
-export type FormStateTeacher = {
-  success?: boolean;
-
-  errors?: {
-    name?: string[];
-
-    email?: string;
-    phone?: string;
-
-    password?: string[];
-    confirmPassword?: string[];
-
-    branchIds?: string[];
-    batchIds?: string[];
-
-    userId?: string[];
   };
 
   message?: string;
