@@ -13,13 +13,13 @@ export function getSidebarItems(
   return [
     {
       title: "Dashboard",
-      href: "/Teacher",
+      href: "/teacher",
       icon: "dashboard",
     },
 
     {
       title: "Branches",
-      href: "/Teacher/branches",
+      href: "/teacher/branches",
       icon: "branch",
     },
 
@@ -34,13 +34,13 @@ export function getSidebarItems(
         children: [
           {
             title: "Mark Attendance / Progress",
-            href: `/Teacher/batches/${batch.id}/attendance`,
+            href: `/teacher/batches/${batch.id}/attendance`,
             icon: "attendance",
           },
 
           {
             title: "Performance",
-            href: `/Teacher/batches/${batch.id}/performance`,
+            href: `/teacher/batches/${batch.id}/performance`,
             icon: "performance",
           },
         ],
@@ -49,7 +49,7 @@ export function getSidebarItems(
     },
     {
     title: "Materials",
-    href: "/Teacher/materials",
+    href: "/teacher/materials",
     icon: "materials",
   },
   ];

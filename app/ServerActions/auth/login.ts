@@ -183,15 +183,15 @@ function isAuthorizedForPath(
 function getRequiredRole(
   pathname: string
 ) {
-  if (matchesRoute(pathname, "/Admin")) {
+  if (matchesRoute(pathname, "/admin")) {
     return "ADMIN";
   }
 
-  if (matchesRoute(pathname, "/Teacher")) {
+  if (matchesRoute(pathname, "/teacher")) {
     return "TEACHER";
   }
 
-  if (matchesRoute(pathname, "/Student")) {
+  if (matchesRoute(pathname, "/student")) {
     return "STUDENT";
   }
 
@@ -207,13 +207,13 @@ function homeForRole(
 ) {
   switch (role) {
     case "ADMIN":
-      return "/Admin";
+      return "/admin";
 
     case "TEACHER":
-      return "/Teacher";
+      return "/teacher";
 
     case "STUDENT":
-      return "/Student";
+      return "/student";
   }
 }
 

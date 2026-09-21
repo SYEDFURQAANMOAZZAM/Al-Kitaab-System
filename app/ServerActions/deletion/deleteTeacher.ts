@@ -28,7 +28,7 @@ export async function deleteTeacher(teacherId: string) {
       id: teacher.userId,
     },
   });
-  revalidatePath("/(user)/Admin/teachers/status");
+  revalidatePath("/(user)/admin/teachers/status");
   return {
     success: true,
   };

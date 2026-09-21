@@ -28,7 +28,7 @@ export async function deleteStudent(studentId: string) {
       id: student.userId,
     },
   });
-  revalidatePath("/(user)/Admin/students/stats");
+  revalidatePath("/(user)/admin/students/stats");
   return {
     success: true,
   };

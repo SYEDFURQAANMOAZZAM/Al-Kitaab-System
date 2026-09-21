@@ -53,15 +53,18 @@ export function SubjectTocRangeFields({
   values,
   onChange,
 }: Props) {
-  if (!tocItems?.length) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        This subject has no table of contents yet.
-        An administrator can add it from the subject
-        page.
-      </p>
-    );
-  }
+  /*
+   * Which picker is currently open.
+   *
+   * Example:
+   * "part-id:from"
+   * "part-id:to"
+   *
+   * Keeping this state here prevents multiple dropdowns
+   * from creating competing stacking contexts.
+   */
+  const [activePicker, setActivePicker] =
+    useState<string | null>(null);
 
   /* ==========================================================
      GET SELECTED VALUE
@@ -96,11 +99,11 @@ export function SubjectTocRangeFields({
      * show root TOC items.
      */
     if (part.position === 0) {
-      return tocItems.filter(
+      return tocItems?.filter(
         (item) =>
           item.subjectPartId === part.id &&
           !item.parentId,
-      );
+      ) ?? [];
     }
 
     /*
@@ -143,10 +146,12 @@ export function SubjectTocRangeFields({
       return [];
     }
 
-    return tocItems.filter(
-      (item) =>
-        item.subjectPartId === part.id &&
-        item.parentId === parentId,
+    return (
+      tocItems?.filter(
+        (item) =>
+          item.subjectPartId === part.id &&
+          item.parentId === parentId,
+      ) ?? []
     );
   };
 
@@ -159,35 +164,29 @@ export function SubjectTocRangeFields({
     side: "from" | "to",
     id: string,
   ) => {
-    const current =
-      values[partId];
+    const current = values[partId];
 
     const range: TocRange =
-      typeof current === "object" &&
-      current
+      typeof current === "object" && current
         ? { ...current }
         : {
             from: "",
           };
 
     if (side === "from") {
+      // Change From
       range.from = id;
 
-      /*
-       * If FROM changes or is cleared,
-       * the existing TO may no longer belong
-       * to the selected parent.
-       */
-      range.to = undefined;
+      // IMPORTANT:
+      // Do NOT clear To.
+      //
+      // If To was already selected, keep it.
     } else {
-      range.to =
-        id || undefined;
+      // Change To
+      range.to = id || undefined;
     }
 
-    onChange(
-      partId,
-      range,
-    );
+    onChange(partId, range);
   };
 
   /* ==========================================================
@@ -203,7 +202,23 @@ export function SubjectTocRangeFields({
       side,
       "",
     );
+
+    setActivePicker(null);
   };
+
+  /* ==========================================================
+     NO TOC
+  ========================================================== */
+
+  if (!tocItems?.length) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        This subject has no table of contents yet.
+        An administrator can add it from the subject
+        page.
+      </p>
+    );
+  }
 
   /* ==========================================================
      RENDER
@@ -211,87 +226,159 @@ export function SubjectTocRangeFields({
 
   return (
     <div className="divide-y divide-border/70">
-      {parts.map((part) => (
-        <section
-          key={part.id}
-          className="
-            grid
-            min-h-[5rem]
-            grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,1fr)]
-            items-start
-            gap-2
-            px-1
-            py-3
-            first:pt-0
-            last:pb-0
-            sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)]
-            sm:gap-3
-          "
-        >
-          <h3
-            className="
-              min-w-0
-              pt-6
-              truncate
-              text-sm
-              font-medium
-              text-foreground
-            "
+      {parts.map((part) => {
+        const fromPickerKey =
+          `${part.id}:from`;
+
+        const toPickerKey =
+          `${part.id}:to`;
+
+        const isFromOpen =
+          activePicker === fromPickerKey;
+
+        const isToOpen =
+          activePicker === toPickerKey;
+
+        const isRowOpen =
+          isFromOpen || isToOpen;
+
+        return (
+          <section
+            key={part.id}
+            className={cn(
+              `
+                relative
+                grid
+                min-h-[5rem]
+                grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,1fr)]
+                items-start
+                gap-2
+                px-1
+                py-3
+                first:pt-0
+                last:pb-0
+                sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)]
+                sm:gap-3
+              `,
+              /*
+               * The currently active row is placed above
+               * every other range row.
+               *
+               * This is the important part that prevents
+               * the next row from overlapping the dropdown.
+               */
+              isRowOpen
+                ? "z-50"
+                : "z-0",
+            )}
           >
-            {part.name}
-          </h3>
+            {/* ==================================================
+                PART NAME
+            ================================================== */}
 
-          <SearchPicker
-            label="From"
-            value={selection(
-              part.id,
-              "from",
-            )}
-            options={options(
-              part,
-              "from",
-            )}
-            onChange={(id) =>
-              update(
+            <h3
+              className="
+                min-w-0
+                pt-6
+                truncate
+                text-sm
+                font-medium
+                text-foreground
+              "
+            >
+              {part.name}
+            </h3>
+
+            {/* ==================================================
+                FROM
+            ================================================== */}
+
+            <SearchPicker
+              pickerKey={fromPickerKey}
+              label="From"
+              value={selection(
                 part.id,
                 "from",
-                id,
-              )
-            }
-            onClear={() =>
-              clear(
-                part.id,
+              )}
+              options={options(
+                part,
                 "from",
-              )
-            }
-          />
+              )}
+              open={isFromOpen}
+              onOpen={() =>
+                setActivePicker(
+                  fromPickerKey,
+                )
+              }
+              onClose={() => {
+                if (
+                  activePicker ===
+                  fromPickerKey
+                ) {
+                  setActivePicker(null);
+                }
+              }}
+              onChange={(id) =>
+                update(
+                  part.id,
+                  "from",
+                  id,
+                )
+              }
+              onClear={() =>
+                clear(
+                  part.id,
+                  "from",
+                )
+              }
+            />
 
-          <SearchPicker
-            label="To"
-            value={selection(
-              part.id,
-              "to",
-            )}
-            options={options(
-              part,
-              "to",
-            )}
-            onChange={(id) =>
-              update(
+            {/* ==================================================
+                TO
+            ================================================== */}
+
+            <SearchPicker
+              pickerKey={toPickerKey}
+              label="To"
+              value={selection(
                 part.id,
                 "to",
-                id,
-              )
-            }
-            onClear={() =>
-              clear(
-                part.id,
+              )}
+              options={options(
+                part,
                 "to",
-              )
-            }
-          />
-        </section>
-      ))}
+              )}
+              open={isToOpen}
+              onOpen={() =>
+                setActivePicker(
+                  toPickerKey,
+                )
+              }
+              onClose={() => {
+                if (
+                  activePicker ===
+                  toPickerKey
+                ) {
+                  setActivePicker(null);
+                }
+              }}
+              onChange={(id) =>
+                update(
+                  part.id,
+                  "to",
+                  id,
+                )
+              }
+              onClear={() =>
+                clear(
+                  part.id,
+                  "to",
+                )
+              }
+            />
+          </section>
+        );
+      })}
     </div>
   );
 }
@@ -301,17 +388,30 @@ export function SubjectTocRangeFields({
 ============================================================ */
 
 type SearchPickerProps = {
+  pickerKey: string;
   label: string;
   value: string;
   options: Toc[];
+  open: boolean;
+
+  onOpen: () => void;
+  onClose: () => void;
+
   onChange: (id: string) => void;
   onClear: () => void;
 };
+
+/* ============================================================
+   SEARCH PICKER COMPONENT
+============================================================ */
 
 function SearchPicker({
   label,
   value,
   options,
+  open,
+  onOpen,
+  onClose,
   onChange,
   onClear,
 }: SearchPickerProps) {
@@ -319,10 +419,11 @@ function SearchPicker({
      FIND SELECTED ITEM
   ========================================================== */
 
-  const selected = options.find(
-    (item) =>
-      item.id === value,
-  );
+  const selected =
+    options.find(
+      (item) =>
+        item.id === value,
+    );
 
   /* ==========================================================
      SEARCH TEXT
@@ -333,21 +434,16 @@ function SearchPicker({
       selected?.name ?? "",
     );
 
-  const [open, setOpen] =
-    useState(false);
-
   /* ==========================================================
      SYNC VALUE → QUERY
   ========================================================== */
 
   useEffect(() => {
     /*
-     * When the picker is closed, keep the
-     * displayed text synchronized with the
-     * selected TOC item.
+     * Only synchronize the selected value
+     * when the dropdown is closed.
      *
-     * requestAnimationFrame prevents the
-     * synchronous setState-in-effect warning.
+     * This prevents typing from being overwritten.
      */
     if (!open) {
       const nextQuery =
@@ -376,6 +472,14 @@ function SearchPicker({
   const trimmedQuery =
     query.trim();
 
+  /*
+   * IMPORTANT:
+   *
+   * No query = no options.
+   *
+   * This means focusing an empty field
+   * never displays the dropdown.
+   */
   const matches =
     trimmedQuery.length > 0
       ? options.filter(
@@ -394,15 +498,11 @@ function SearchPicker({
 
   const handleFocus = () => {
     /*
-     * IMPORTANT:
+     * DO NOT open here.
      *
-     * Do NOT clear the query here.
-     *
-     * If a value is already selected,
-     * clicking the field should allow the
-     * user to inspect it.
+     * The dropdown should only appear
+     * after the user types.
      */
-    setOpen(true);
   };
 
   /* ==========================================================
@@ -412,11 +512,23 @@ function SearchPicker({
   const handleChange = (
     event: ChangeEvent<HTMLInputElement>,
   ) => {
-    setQuery(
-      event.target.value,
-    );
+    const nextValue =
+      event.target.value;
 
-    setOpen(true);
+    setQuery(nextValue);
+
+    const trimmed =
+      nextValue.trim();
+
+    /*
+     * Open only when at least one
+     * character has been entered.
+     */
+    if (trimmed.length > 0) {
+      onOpen();
+    } else {
+      onClose();
+    }
   };
 
   /* ==========================================================
@@ -429,7 +541,8 @@ function SearchPicker({
     onChange(item.id);
 
     setQuery(item.name);
-    setOpen(false);
+
+    onClose();
   };
 
   /* ==========================================================
@@ -440,7 +553,8 @@ function SearchPicker({
     onClear();
 
     setQuery("");
-    setOpen(false);
+
+    onClose();
   };
 
   /* ==========================================================
@@ -449,11 +563,15 @@ function SearchPicker({
 
   return (
     <div
-      className={cn(
-        "relative min-w-0",
-        open && "z-50",
-      )}
+      className="
+        relative
+        min-w-0
+      "
     >
+      {/* ======================================================
+          LABEL
+      ====================================================== */}
+
       <Label
         className="
           mb-1
@@ -467,12 +585,17 @@ function SearchPicker({
         {label}
       </Label>
 
+      {/* ======================================================
+          INPUT
+      ====================================================== */}
+
       <div className="relative">
         <Input
           value={query}
           onFocus={handleFocus}
           onChange={handleChange}
           placeholder="Search"
+          autoComplete="off"
           className="
             h-9
             min-w-0
@@ -480,12 +603,11 @@ function SearchPicker({
             pr-2
             text-sm
           "
-          autoComplete="off"
         />
 
-        {/* ==================================================
+        {/* ====================================================
             DROPDOWN
-        ================================================== */}
+        ==================================================== */}
 
         {open &&
           trimmedQuery.length > 0 && (
@@ -493,20 +615,27 @@ function SearchPicker({
               className="
                 absolute
                 left-0
+                right-0
                 top-[calc(100%+4px)]
                 z-[100]
-                w-full
                 overflow-hidden
                 rounded-md
                 border
                 border-border
                 bg-popover
+                text-popover-foreground
                 shadow-lg
                 ring-1
                 ring-black/5
               "
             >
-              <div className="max-h-52 overflow-y-auto p-1">
+              <div
+                className="
+                  max-h-52
+                  overflow-y-auto
+                  p-1
+                "
+              >
                 {matches.length > 0 ? (
                   matches.map(
                     (item) => (
@@ -515,9 +644,13 @@ function SearchPicker({
                         type="button"
                         onMouseDown={(
                           event,
-                        ) =>
-                          event.preventDefault()
-                        }
+                        ) => {
+                          /*
+                           * Prevent the input from
+                           * losing focus before click.
+                           */
+                          event.preventDefault();
+                        }}
                         onClick={() =>
                           handleSelect(
                             item,
@@ -560,12 +693,18 @@ function SearchPicker({
           )}
       </div>
 
-      {/* ====================================================
+      {/* ======================================================
           CLEAR
-      ==================================================== */}
+      ====================================================== */}
 
       {value && (
-        <div className="flex justify-end pt-1">
+        <div
+          className="
+            flex
+            justify-end
+            pt-1
+          "
+        >
           <button
             type="button"
             onClick={handleClear}
@@ -586,4 +725,3 @@ function SearchPicker({
     </div>
   );
 }
-

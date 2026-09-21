@@ -891,15 +891,15 @@ export async function updateTeacher(
   ======================================================= */
 
   revalidatePath(
-    "/Admin/teachers/status",
+    "/admin/teachers/status",
   );
 
   revalidatePath(
-    "/Admin/branches",
+    "/admin/branches",
   );
 
   revalidatePath(
-    `/Admin/teachers/status/${teacherId}/edit`,
+    `/admin/teachers/status/${teacherId}/edit`,
   );
 
   /* =======================================================

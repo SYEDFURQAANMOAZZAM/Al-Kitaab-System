@@ -61,7 +61,7 @@ const DeleteBatch = async (
     };
   }
 
-  revalidatePath("/Admin/batches");
+  revalidatePath("/admin/batches");
 
   return {
     success: "Batch deleted.",
