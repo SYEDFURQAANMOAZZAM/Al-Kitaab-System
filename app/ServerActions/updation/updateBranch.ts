@@ -23,7 +23,7 @@ const UpdateBranch = async (branchId:string, _state: GroupActionState, formData:
     return { error: "Unable to update branch. Please try again." };
   }
 
-  revalidatePath("/Admin/branches");
+  revalidatePath("/admin/branches");
   return { success: "Branch updated." };
 }
 export default UpdateBranch

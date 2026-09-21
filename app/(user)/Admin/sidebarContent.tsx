@@ -55,7 +55,7 @@ export type SidebarItem =
 export const sidebarItems: SidebarItem[] = [
   {
     title: "Dashboard",
-    href: "/Admin/dashboard",
+    href: "/admin/dashboard",
     icon: "dashboard",
   },
 
@@ -65,12 +65,12 @@ export const sidebarItems: SidebarItem[] = [
     children: [
       {
         title: "Teacher Status",
-        href: "/Admin/teachers/status",
+        href: "/admin/teachers/status",
         icon: "teacher",
       },
       {
         title: "Add Teacher",
-        href: "/Admin/teachers/add",
+        href: "/admin/teachers/add",
         icon: "teacher",
       },
     ],
@@ -82,12 +82,12 @@ export const sidebarItems: SidebarItem[] = [
     children: [
       {
         title: "Student Stats",
-        href: "/Admin/students/stats",
+        href: "/admin/students/stats",
         icon: "student",
       },
       {
         title: "Add Student",
-        href: "/Admin/students/add",
+        href: "/admin/students/add",
         icon: "student",
       },
     ],
@@ -95,25 +95,25 @@ export const sidebarItems: SidebarItem[] = [
 
   {
     title: "Branch",
-    href: "/Admin/branches",
+    href: "/admin/branches",
     icon: "branch",
   },
 
   {
     title: "Subjects",
-    href: "/Admin/subjects",
+    href: "/admin/subjects",
     icon: "pattern",
   },
 
   {
     title: "Materials",
-    href: "/Admin/materials",
+    href: "/admin/materials",
     icon: "materials",
   },
 
   {
     title: "Settings",
-    href: "/Admin/settings",
+    href: "/admin/settings",
     icon: "settings",
   },
 ];

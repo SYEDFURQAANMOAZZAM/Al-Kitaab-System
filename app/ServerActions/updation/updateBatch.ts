@@ -23,7 +23,7 @@ const UpdateBatch = async (batchId:string, _state: GroupActionState, formData: F
     return { error: "Unable to update batch. Please try again." };
   }
 
-  revalidatePath("/Admin/branches");
+  revalidatePath("/admin/branches");
   return { success: "Batch updated." };
 }
 export default UpdateBatch

@@ -33,6 +33,7 @@ model User {
   student    Student?
   teacher    Teacher?
   attendance Attendance[]
+  
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

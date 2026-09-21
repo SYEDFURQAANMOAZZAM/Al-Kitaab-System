@@ -113,7 +113,7 @@ export default async function SubjectViewPage({
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
-            href="/Admin/subjects"
+            href="/admin/subjects"
             className="mb-5 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -139,7 +139,7 @@ export default async function SubjectViewPage({
 
         <div className="flex flex-wrap gap-2">
           <Link
-            href={`/Admin/subjects/${subject.id}/toc`}
+            href={`/admin/subjects/${subject.id}/toc`}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border bg-card px-4 text-sm font-medium shadow-sm transition-colors hover:bg-muted"
           >
             <ListTree className="h-4 w-4" />
@@ -147,14 +147,14 @@ export default async function SubjectViewPage({
           </Link>
 
           <Link
-            href={`/Admin/subjects/${subject.id}/bulktoc`}
+            href={`/admin/subjects/${subject.id}/bulktoc`}
             className="inline-flex h-10 items-center justify-center rounded-lg border bg-card px-4 text-sm font-medium shadow-sm transition-colors hover:bg-muted"
           >
             Bulk TOC
           </Link>
 
           <Link
-            href={`/Admin/subjects/${subject.id}/edit`}
+            href={`/admin/subjects/${subject.id}/edit`}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border bg-card px-4 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
           >
             <Pencil className="h-4 w-4" />

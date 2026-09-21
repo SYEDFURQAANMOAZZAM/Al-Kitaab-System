@@ -456,11 +456,11 @@ export async function registerTeacher(
   ======================================================= */
 
   revalidatePath(
-    "/Admin/teachers/status"
+    "/admin/teachers/status"
   );
 
   revalidatePath(
-    "/Admin/branches"
+    "/admin/branches"
   );
 
   return {

@@ -322,7 +322,7 @@ export function AddSubject({
         return;
       }
 
-      router.replace("/Admin/subjects");
+      router.replace("/admin/subjects");
     });
   }
 
@@ -964,7 +964,7 @@ export function AddSubject({
           <button
             type="button"
             onClick={() =>
-              router.replace("/Admin/subjects")
+              router.replace("/admin/subjects")
             }
             disabled={isPending}
             className="

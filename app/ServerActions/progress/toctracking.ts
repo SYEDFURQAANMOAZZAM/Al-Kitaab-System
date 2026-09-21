@@ -245,75 +245,107 @@ function getLeavesForLearning(
     return [];
   }
 
-  /* ----------------------------------------------------------
-     Find parts that actually contain a selection
-  ---------------------------------------------------------- */
+  /* ==========================================================
+     1. GET ALL SELECTED FROM / TO VALUES
+  ========================================================== */
 
-  const specifiedParts =
-    learning.parts
-      .filter((part) => {
-        const from =
-          getFromValue(part);
+  const selectedParts = learning.parts
+    .map((part) => ({
+      part,
+      from: getFromValue(part),
+      to: getToValue(part),
+    }))
+    .filter(({ from, to }) => Boolean(from || to))
+    .sort(
+      (a, b) =>
+        a.part.position - b.part.position,
+    );
 
-        const to =
-          getToValue(part);
-
-        return Boolean(from || to);
-      })
-      .sort(
-        (a, b) =>
-          a.position - b.position,
-      );
-
-  if (specifiedParts.length === 0) {
+  if (selectedParts.length === 0) {
     return [];
   }
 
-  /*
-   * Use the deepest selected part.
-   *
-   * Example:
-   *
-   * Para 1 -> 4
-   *
-   * deepest = Para
-   *
-   * Example:
-   *
-   * Para 1
-   * Surah 2
-   * Ruku 2 -> 11
-   * Ayat 10 -> 96
-   *
-   * deepest = Ayat
-   */
-  const deepestPart =
-    specifiedParts[
-      specifiedParts.length - 1
-    ];
+  /* ==========================================================
+     2. FIND DEEPEST FROM
+     
+     Example:
 
-  const from =
-    getFromValue(deepestPart);
+     Para  From: 1
+     Surah From: 2
+     Ruku  From: 3
 
-  const to =
-    getToValue(deepestPart);
+     Start = Ruku 3
+  ========================================================== */
+
+  const fromSelections = selectedParts.filter(
+    ({ from }) => Boolean(from),
+  );
+
+  const deepestFrom =
+    fromSelections.length > 0
+      ? fromSelections[fromSelections.length - 1].from
+      : undefined;
+
+  /* ==========================================================
+     3. FIND DEEPEST TO
+
+     Example:
+
+     Para  To: 4
+     Surah To: 5
+     Ruku  To: 6
+     Ayah  To: 9
+
+     End = Ayah 9
+
+     If only Para + Surah are selected:
+
+     Para  To: 4
+     Surah To: 5
+
+     End = Surah 5
+  ========================================================== */
+
+  const toSelections = selectedParts.filter(
+    ({ to }) => Boolean(to),
+  );
+
+  const deepestTo =
+    toSelections.length > 0
+      ? toSelections[toSelections.length - 1].to
+      : undefined;
+
+  /* ==========================================================
+     4. DETERMINE BOUNDARIES
+
+     Cases:
+
+     A) From + To
+        Start = deepest From
+        End   = deepest To
+
+     B) Only From
+        Start = From
+        End   = From
+
+     C) Only To
+        Start = To
+        End   = To
+  ========================================================== */
 
   const startNodeId =
-    from ?? to;
+    deepestFrom ?? deepestTo;
 
   const endNodeId =
-    to ?? from;
+    deepestTo ?? deepestFrom;
 
-  if (
-    !startNodeId ||
-    !endNodeId
-  ) {
+  if (!startNodeId || !endNodeId) {
     return [];
   }
 
-  /* ----------------------------------------------------------
-     Validate nodes
-  ---------------------------------------------------------- */
+  /* ==========================================================
+     5. VALIDATE NODES
+  ========================================================== */
 
   if (
     !itemMap.has(startNodeId) ||
@@ -322,15 +354,18 @@ function getLeavesForLearning(
     return [];
   }
 
-  /* ----------------------------------------------------------
-     Convert boundaries to actual leaves
-  ---------------------------------------------------------- */
+  /* ==========================================================
+     6. CONVERT START TO FIRST LEAF
+
+     Para From: 1
+     -> first leaf inside Para 1
+
+     Ruku From: 3
+     -> first leaf inside Ruku 3
+  ========================================================== */
 
   const startChildren =
     childrenMap.get(startNodeId) ?? [];
-
-  const endChildren =
-    childrenMap.get(endNodeId) ?? [];
 
   const startLeaf =
     startChildren.length === 0
@@ -340,6 +375,25 @@ function getLeavesForLearning(
           childrenMap,
         );
 
+  /* ==========================================================
+     7. CONVERT END TO LAST LEAF
+
+     Para To: 4
+     -> last leaf inside Para 4
+
+     Surah To: 5
+     -> last leaf inside Surah 5
+
+     Ruku To: 6
+     -> last leaf inside Ruku 6
+
+     Ayah To: 9
+     -> Ayah 9 itself
+  ========================================================== */
+
+  const endChildren =
+    childrenMap.get(endNodeId) ?? [];
+
   const endLeaf =
     endChildren.length === 0
       ? endNodeId
@@ -348,9 +402,9 @@ function getLeavesForLearning(
           childrenMap,
         );
 
-  /* ----------------------------------------------------------
-     Find leaf indexes
-  ---------------------------------------------------------- */
+  /* ==========================================================
+     8. FIND LEAF INDEXES
+  ========================================================== */
 
   const startIndex =
     leafIndex.get(startLeaf);
@@ -365,6 +419,17 @@ function getLeavesForLearning(
     return [];
   }
 
+  /* ==========================================================
+     9. SUPPORT BOTH DIRECTIONS
+
+     Normally:
+
+     startIndex <= endIndex
+
+     But if user selects a later From and earlier To,
+     still produce the range between them.
+  ========================================================== */
+
   const first = Math.min(
     startIndex,
     endIndex,
@@ -375,21 +440,14 @@ function getLeavesForLearning(
     endIndex,
   );
 
-  /* ----------------------------------------------------------
-     Return ONLY this Sabaq's leaves
-  ---------------------------------------------------------- */
+  /* ==========================================================
+     10. RETURN LEAVES
+  ========================================================== */
 
-  const result: string[] = [];
-
-  for (
-    let i = first;
-    i <= last;
-    i++
-  ) {
-    result.push(leafIds[i]);
-  }
-
-  return result;
+  return leafIds.slice(
+    first,
+    last + 1,
+  );
 }
 
 /* ============================================================

@@ -632,7 +632,7 @@ export default function TocEditor({
 
         <div className="mb-4">
           <Link
-            href={`/Admin/subjects/${subject.id}`}
+            href={`/admin/subjects/${subject.id}`}
             className="mb-3 inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-1 h-4 w-4" />
