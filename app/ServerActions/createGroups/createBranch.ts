@@ -25,7 +25,7 @@ const createBranch = async (_state: GroupActionState, formData: FormData): Promi
     return { error: "Unable to create branch. Please try again." };
   }
 
-  revalidatePath("/Admin/branches");
+  revalidatePath("/admin/branches");
   return { success: "Branch created." };
 }
 

@@ -7,9 +7,9 @@ import { authDebug } from "@/lib/auth/debug";
 // ---------------------------------------------------------
 
 const PROTECTED_ROUTES = [
-  "/Admin",
-  "/Teacher",
-  "/Student",
+  "/admin",
+  "/teacher",
+  "/student",
 ] as const;
 
 const AUTH_ROUTES = [
@@ -18,9 +18,9 @@ const AUTH_ROUTES = [
 ] as const;
 
 const ROUTE_ROLES = {
-  "/Admin": "ADMIN",
-  "/Teacher": "TEACHER",
-  "/Student": "STUDENT",
+  "/admin": "ADMIN",
+  "/teacher": "TEACHER",
+  "/student": "STUDENT",
 } as const;
 
 type Role = (typeof ROUTE_ROLES)[keyof typeof ROUTE_ROLES];
@@ -213,13 +213,13 @@ function getRequiredRole(
 function homeForRole(role: Role) {
   switch (role) {
     case "ADMIN":
-      return "/Admin";
+      return "/admin";
 
     case "TEACHER":
-      return "/Teacher";
+      return "/teacher";
 
     case "STUDENT":
-      return "/Student";
+      return "/student";
   }
 }
 

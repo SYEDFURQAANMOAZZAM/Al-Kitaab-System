@@ -235,7 +235,7 @@ export default function PerformanceClient({
 
                   <TableCell className="text-right">
                     <Link
-                      href={`/Teacher/batches/${batch.id}/students/${student.id}/performance`}
+                      href={`/teacher/batches/${batch.id}/students/${student.id}/performance`}
                       className="text-sm underline"
                     >
                       View

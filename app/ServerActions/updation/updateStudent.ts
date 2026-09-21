@@ -966,15 +966,15 @@ export async function updateStudent(
   ======================================================= */
 
   revalidatePath(
-    "/Admin/students/stats"
+    "/admin/students/stats"
   );
 
   revalidatePath(
-    "/Admin/branches"
+    "/admin/branches"
   );
 
   revalidatePath(
-    `/Admin/students/stats/${userId}/edit`
+    `/admin/students/stats/${userId}/edit`
   );
 
   /* =======================================================

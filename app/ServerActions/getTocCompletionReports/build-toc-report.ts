@@ -1,10 +1,10 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import {
-  requireRole,
-  requireRoleForAction,
-} from "@/lib/auth/require-role";
+
+// ============================================================
+// TYPES
+// ============================================================
 
 export type TocReportNode = {
   id: string;
@@ -47,6 +47,15 @@ export type StudentTocReport = {
   subjects: SubjectReport[];
 };
 
+type BuildTocReportOptions = {
+  studentIds: string[];
+  subjectIds?: string[];
+};
+
+// ============================================================
+// HELPERS
+// ============================================================
+
 function percentage(
   completed: number,
   total: number,
@@ -58,22 +67,35 @@ function percentage(
   );
 }
 
-export async function getTocCompletionReport(): Promise<
+// ============================================================
+// BUILD REPORT
+//
+// Internal shared function.
+// Authorization is handled by the three public actions.
+// ============================================================
+
+export async function buildTocReport({
+  studentIds,
+  subjectIds,
+}: BuildTocReportOptions): Promise<
   StudentTocReport[]
 > {
-  await requireRoleForAction([
-    "ADMIN",
-    "TEACHER",
-  ]);
+  if (studentIds.length === 0) {
+    return [];
+  }
 
-  await requireRole("TEACHER", "ADMIN");
-
-  // ---------------------------------------------------------
+  // ----------------------------------------------------------
   // 1. Students + assigned subjects + parts
-  // ---------------------------------------------------------
+  // ----------------------------------------------------------
 
   const students =
     await prisma.student.findMany({
+      where: {
+        id: {
+          in: studentIds,
+        },
+      },
+
       select: {
         id: true,
 
@@ -84,6 +106,16 @@ export async function getTocCompletionReport(): Promise<
         },
 
         studentSubjects: {
+          where:
+            subjectIds &&
+            subjectIds.length > 0
+              ? {
+                  subjectId: {
+                    in: subjectIds,
+                  },
+                }
+              : undefined,
+
           select: {
             id: true,
 
@@ -120,36 +152,50 @@ export async function getTocCompletionReport(): Promise<
     return [];
   }
 
-  // ---------------------------------------------------------
-  // 2. IDs
-  // ---------------------------------------------------------
+  // ----------------------------------------------------------
+  // 2. StudentSubject IDs
+  // ----------------------------------------------------------
 
   const studentSubjectIds =
     students.flatMap((student) =>
       student.studentSubjects.map(
-        (ss) => ss.id,
+        (studentSubject) =>
+          studentSubject.id,
       ),
     );
 
-  const subjectIds = [
+  if (studentSubjectIds.length === 0) {
+    return students.map((student) => ({
+      id: student.id,
+      name: student.user.name,
+      subjects: [],
+    }));
+  }
+
+  // ----------------------------------------------------------
+  // 3. Subject IDs
+  // ----------------------------------------------------------
+
+  const allSubjectIds = [
     ...new Set(
       students.flatMap((student) =>
         student.studentSubjects.map(
-          (ss) => ss.subject.id,
+          (studentSubject) =>
+            studentSubject.subject.id,
         ),
       ),
     ),
   ];
 
-  // ---------------------------------------------------------
-  // 3. ALL TOC ITEMS
-  // ---------------------------------------------------------
+  // ----------------------------------------------------------
+  // 4. TOC ITEMS
+  // ----------------------------------------------------------
 
   const tocItems =
     await prisma.subjectTocItem.findMany({
       where: {
         subjectId: {
-          in: subjectIds,
+          in: allSubjectIds,
         },
       },
 
@@ -167,9 +213,9 @@ export async function getTocCompletionReport(): Promise<
       },
     });
 
-  // ---------------------------------------------------------
-  // 4. Build immutable TOC structure
-  // ---------------------------------------------------------
+  // ----------------------------------------------------------
+  // 5. BUILD TOC TREE
+  // ----------------------------------------------------------
 
   type RawNode = {
     id: string;
@@ -181,16 +227,15 @@ export async function getTocCompletionReport(): Promise<
     children: RawNode[];
   };
 
-  const nodeMap = new Map<
-    string,
-    RawNode
-  >();
+  const nodeMap =
+    new Map<string, RawNode>();
 
   for (const item of tocItems) {
     nodeMap.set(item.id, {
       id: item.id,
       subjectId: item.subjectId,
-      subjectPartId: item.subjectPartId,
+      subjectPartId:
+        item.subjectPartId,
       parentId: item.parentId,
       name: item.name,
       position: item.position,
@@ -198,13 +243,12 @@ export async function getTocCompletionReport(): Promise<
     });
   }
 
-  const rootsByPart = new Map<
-    string,
-    RawNode[]
-  >();
+  const rootsByPart =
+    new Map<string, RawNode[]>();
 
   for (const item of tocItems) {
-    const node = nodeMap.get(item.id)!;
+    const node =
+      nodeMap.get(item.id)!;
 
     if (item.parentId) {
       const parent =
@@ -228,22 +272,23 @@ export async function getTocCompletionReport(): Promise<
     }
   }
 
-  // Sort every level
   for (const node of nodeMap.values()) {
     node.children.sort(
-      (a, b) => a.position - b.position,
+      (a, b) =>
+        a.position - b.position,
     );
   }
 
   for (const roots of rootsByPart.values()) {
     roots.sort(
-      (a, b) => a.position - b.position,
+      (a, b) =>
+        a.position - b.position,
     );
   }
 
-  // ---------------------------------------------------------
-  // 5. Get actual completion records
-  // ---------------------------------------------------------
+  // ----------------------------------------------------------
+  // 6. COMPLETION RECORDS
+  // ----------------------------------------------------------
 
   const completions =
     await prisma.tocCompletion.findMany({
@@ -264,9 +309,9 @@ export async function getTocCompletionReport(): Promise<
       },
     });
 
-  // ---------------------------------------------------------
-  // 6. Student -> completed TOC IDs
-  // ---------------------------------------------------------
+  // ----------------------------------------------------------
+  // 7. COMPLETED TOC MAP
+  // ----------------------------------------------------------
 
   const completedMap =
     new Map<string, Set<string>>();
@@ -276,24 +321,22 @@ export async function getTocCompletionReport(): Promise<
       completion.studentSubjectId,
       new Set(
         completion.leafTracks.map(
-          (track) => track.tocItemId,
+          (track) =>
+            track.tocItemId,
         ),
       ),
     );
   }
 
-  // ---------------------------------------------------------
-  // 7. Calculate ONE node
-  // ---------------------------------------------------------
+  // ----------------------------------------------------------
+  // 8. CALCULATE NODE
+  // ----------------------------------------------------------
 
   function calculateNode(
     node: RawNode,
     completedIds: Set<string>,
   ): TocReportNode {
-    // ---------------------------------------------
-    // Actual leaf
-    // ---------------------------------------------
-
+    // Leaf
     if (node.children.length === 0) {
       const completed =
         completedIds.has(node.id);
@@ -305,22 +348,17 @@ export async function getTocCompletionReport(): Promise<
 
         totalLeaves: 1,
 
-        completedLeaves: completed
-          ? 1
-          : 0,
+        completedLeaves:
+          completed ? 1 : 0,
 
-        percentage: completed
-          ? 100
-          : 0,
+        percentage:
+          completed ? 100 : 0,
 
         children: [],
       };
     }
 
-    // ---------------------------------------------
     // Parent
-    // ---------------------------------------------
-
     const children =
       node.children.map((child) =>
         calculateNode(
@@ -339,7 +377,8 @@ export async function getTocCompletionReport(): Promise<
     const completedLeaves =
       children.reduce(
         (sum, child) =>
-          sum + child.completedLeaves,
+          sum +
+          child.completedLeaves,
         0,
       );
 
@@ -361,9 +400,9 @@ export async function getTocCompletionReport(): Promise<
     };
   }
 
-  // ---------------------------------------------------------
-  // 8. Build report
-  // ---------------------------------------------------------
+  // ----------------------------------------------------------
+  // 9. BUILD FINAL REPORT
+  // ----------------------------------------------------------
 
   return students.map((student) => {
     const subjects =
@@ -375,17 +414,19 @@ export async function getTocCompletionReport(): Promise<
           const completedIds =
             completedMap.get(
               studentSubject.id,
-            ) ?? new Set<string>();
+            ) ??
+            new Set<string>();
 
-          // ---------------------------------------------
+          // -----------------------------------------------
           // Parts
-          // ---------------------------------------------
+          // -----------------------------------------------
 
           const parts =
             subject.parts.map((part) => {
               const roots =
-                rootsByPart.get(part.id) ??
-                [];
+                rootsByPart.get(
+                  part.id,
+                ) ?? [];
 
               const children =
                 roots.map((root) =>
@@ -429,14 +470,15 @@ export async function getTocCompletionReport(): Promise<
               };
             });
 
-          // ---------------------------------------------
+          // -----------------------------------------------
           // Subject
-          // ---------------------------------------------
+          // -----------------------------------------------
 
           const totalLeaves =
             parts.reduce(
               (sum, part) =>
-                sum + part.totalLeaves,
+                sum +
+                part.totalLeaves,
               0,
             );
 
@@ -473,3 +515,4 @@ export async function getTocCompletionReport(): Promise<
     };
   });
 }
+

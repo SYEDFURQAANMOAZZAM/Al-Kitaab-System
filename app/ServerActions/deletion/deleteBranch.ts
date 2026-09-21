@@ -61,7 +61,7 @@ const DeleteBranch = async (
     };
   }
 
-  revalidatePath("/Admin/branches");
+  revalidatePath("/admin/branches");
 
   return {
     success: "Branch deleted.",
