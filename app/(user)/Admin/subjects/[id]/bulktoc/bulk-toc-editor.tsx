@@ -131,7 +131,7 @@ export default function BulkTocEditor({
     setShowSuccess(false);
 
     router.replace(
-      `/Admin/subjects/${subject.id}/toc`,
+      `/admin/subjects/${subject.id}/toc`,
     );
   };
 
@@ -160,7 +160,7 @@ export default function BulkTocEditor({
 
         <div className="mb-5">
           <Link
-            href={`/Admin/subjects/${subject.id}`}
+            href={`/admin/subjects/${subject.id}`}
             className="mb-3 inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-1 h-4 w-4" />
@@ -189,7 +189,7 @@ export default function BulkTocEditor({
             </div>
 
             <Link
-              href={`/Admin/subjects/${subject.id}/toc`}
+              href={`/admin/subjects/${subject.id}/toc`}
               className="inline-flex h-9 items-center justify-center rounded-md border px-3 text-xs font-medium transition-colors hover:bg-muted"
             >
               Manual TOC
@@ -269,7 +269,7 @@ export default function BulkTocEditor({
 
               <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <Link
-                  href={`/Admin/subjects/${subject.id}`}
+                  href={`/admin/subjects/${subject.id}`}
                   className="inline-flex h-10 items-center justify-center rounded-lg border px-4 text-sm font-medium hover:bg-muted"
                 >
                   Cancel

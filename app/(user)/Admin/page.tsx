@@ -4,4 +4,4 @@ import { redirect } from 'next/navigation'
 export default async function Admin() {
   await AuthVerify("ADMIN")
 
-  return (redirect("/Admin/dashboard"))}
+  return (redirect("/admin/dashboard"))}

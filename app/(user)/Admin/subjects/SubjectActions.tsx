@@ -195,7 +195,7 @@ export function SubjectActions({
             {/* View */}
 
             <Link
-              href={`/Admin/subjects/${subjectId}`}
+              href={`/admin/subjects/${subjectId}`}
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-muted"
             >
@@ -207,7 +207,7 @@ export function SubjectActions({
             {/* Edit */}
 
             <Link
-              href={`/Admin/subjects/${subjectId}/edit`}
+              href={`/admin/subjects/${subjectId}/edit`}
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-muted"
             >

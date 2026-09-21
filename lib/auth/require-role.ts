@@ -84,12 +84,12 @@ export function homeForRole(
 ) {
   switch (role) {
     case "ADMIN":
-      return "/Admin";
+      return "/admin";
 
     case "TEACHER":
-      return "/Teacher";
+      return "/teacher";
 
     case "STUDENT":
-      return "/Student";
+      return "/student";
   }
 }

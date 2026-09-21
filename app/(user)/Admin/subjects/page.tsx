@@ -38,7 +38,7 @@ export default async function Page() {
         </div>
 
         <Link
-          href="/Admin/subjects/add"
+          href="/admin/subjects/add"
           className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
         >
           <span className="text-lg leading-none">+</span>

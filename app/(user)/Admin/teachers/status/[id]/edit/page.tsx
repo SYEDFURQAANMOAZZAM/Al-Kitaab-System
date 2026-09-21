@@ -14,7 +14,11 @@ type PageProps = {
 export default async function Page({ params }: PageProps) {
   const { id } = await params;
 
-  await AuthVerify("ADMIN");
+  const session = await AuthVerify("ADMIN", "TEACHER");
+
+  if (session.role !== "ADMIN" && session.role !== "TEACHER") {
+    notFound();
+  }
 
   const [teacher, branches] = await Promise.all([
     prisma.teacher.findUnique({
@@ -124,7 +128,7 @@ export default async function Page({ params }: PageProps) {
     <Suspense fallback={<div>Loading...</div>}>
       <TeacherForm
         mode="edit"
-        editorRole="ADMIN"
+        editorRole={session.role}
         action={boundUpdateTeacher}
         branches={branches}
         user={{

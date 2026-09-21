@@ -69,7 +69,7 @@ const createBatch = async (
     };
   }
 
-  revalidatePath("/Admin/branches");
+  revalidatePath("/admin/branches");
 
   return {
     success: "Batch created.",
