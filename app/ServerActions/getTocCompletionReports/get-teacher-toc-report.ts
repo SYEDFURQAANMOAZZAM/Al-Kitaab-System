@@ -29,11 +29,19 @@ export async function getTeacherTocReport({
   subjectIds = [],
   page = 1,
   search = "",
+  month,
 }: {
   batchIds?: string[];
   subjectIds?: string[];
   page?: number;
   search?: string;
+
+  /**
+   * YYYY-MM
+   *
+   * undefined = all-time
+   */
+  month?: string;
 }): Promise<TeacherTocReportResult> {
   // ---------------------------------------------------------
   // 1. Authenticate teacher
@@ -43,9 +51,6 @@ export async function getTeacherTocReport({
     await requireRoleForAction([
       "TEACHER",
     ]);
-
-  // session.id = User.id
-  // Teacher.id is a different ID.
 
   const teacher =
     await prisma.teacher.findUnique({
@@ -79,8 +84,6 @@ export async function getTeacherTocReport({
 
   // ---------------------------------------------------------
   // 2. Teacher's batches
-  //
-  // Empty batchIds = all teacher batches.
   // ---------------------------------------------------------
 
   const teacherAssignments =
@@ -110,8 +113,6 @@ export async function getTeacherTocReport({
 
   // ---------------------------------------------------------
   // 3. Teacher's subjects
-  //
-  // Empty subjectIds = all teacher subjects.
   // ---------------------------------------------------------
 
   const teacherSubjects =
@@ -157,6 +158,7 @@ export async function getTeacherTocReport({
       totalPages: 0,
 
       hasNextPage: false,
+
       hasPreviousPage:
         safePage > 1,
     };
@@ -164,12 +166,6 @@ export async function getTeacherTocReport({
 
   // ---------------------------------------------------------
   // 5. Find students
-  //
-  // Student must:
-  //
-  // - belong to one of teacher's allowed batches
-  // - have one of teacher's allowed subjects
-  // - match search if provided
   // ---------------------------------------------------------
 
   const where = {
@@ -212,7 +208,7 @@ export async function getTeacherTocReport({
     });
 
   // ---------------------------------------------------------
-  // 7. Get only 15 students
+  // 7. Students
   // ---------------------------------------------------------
 
   const students =
@@ -235,20 +231,26 @@ export async function getTeacherTocReport({
 
   const studentIds =
     students.map(
-      (student) => student.id,
+      (student) =>
+        student.id,
     );
 
   // ---------------------------------------------------------
   // 8. Build report
   //
-  // Only subjects assigned to this teacher.
+  // Month is passed to the shared builder.
+  // Teacher authorization remains unchanged.
   // ---------------------------------------------------------
 
   const data =
     await buildTocReport({
       studentIds,
+
       subjectIds:
         allowedSubjectIds,
+
+      month:
+        month?.trim() || undefined,
     });
 
   const totalPages =
@@ -273,4 +275,3 @@ export async function getTeacherTocReport({
       safePage > 1,
   };
 }
-

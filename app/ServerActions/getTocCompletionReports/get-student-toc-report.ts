@@ -7,7 +7,11 @@ import {
   buildTocReport,
 } from "./build-toc-report";
 
-export async function getStudentTocReport() {
+export async function getStudentTocReport({
+  month,
+}: {
+  month?: string;
+} = {}) {
   // ---------------------------------------------------------
   // 1. Authenticate student
   // ---------------------------------------------------------
@@ -18,7 +22,7 @@ export async function getStudentTocReport() {
     ]);
 
   // session.id = User.id
-  // Student.id is a different ID.
+  // Student.id is different.
 
   const student =
     await prisma.student.findUnique({
@@ -45,6 +49,8 @@ export async function getStudentTocReport() {
     studentIds: [
       student.id,
     ],
+
+    month:
+      month?.trim() || undefined,
   });
 }
-
