@@ -4,7 +4,12 @@ import { Collapsible } from "@base-ui/react/collapsible";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
@@ -47,7 +52,7 @@ import {
 } from "@/components/SubjectTocRangeFields";
 
 /* ============================================================
-   TYPES
+TYPES
 ============================================================ */
 
 type Student = {
@@ -79,23 +84,16 @@ type TrackingTerm = {
 type Subject = {
   id: string;
   name: string;
-
   parts: SubjectPart[];
-
   tocItems?: SubjectTocItem[];
-
   trackingTerms: TrackingTerm[];
 };
 
 type Learning = {
   id: string;
-
   subject: Subject | null;
-
   status: string;
-
   values: Record<string, string | TocRange>;
-
   saved: boolean;
 };
 
@@ -109,39 +107,26 @@ type ProgressFormProps = {
   students: Student[];
 };
 
-/* ============================================================
-   GLOBAL LEARNING TYPES
-============================================================ */
-
 type GlobalLearning = {
   id: string;
-
   subject: Subject | null;
-
   status: string;
-
   values: Record<string, string | TocRange>;
 };
 
 type GlobalLearningPayload = {
   id: string;
-
   subject: {
     id: string;
     name: string;
     parts: SubjectPart[];
   } | null;
-
   status: string;
-
-  values: Record<
-    string,
-    string | TocRange
-  >;
+  values: Record<string, string | TocRange>;
 };
 
 /* ============================================================
-   COMPONENT
+COMPONENT
 ============================================================ */
 
 export function ProgressForm({
@@ -171,10 +156,8 @@ export function ProgressForm({
   ========================================================== */
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
-
-  const [globalSubjects, setGlobalSubjects] = useState<
-    Subject[]
-  >([]);
+  const [globalSubjects, setGlobalSubjects] =
+    useState<Subject[]>([]);
 
   /* ==========================================================
      GLOBAL LEARNINGS
@@ -466,10 +449,6 @@ export function ProgressForm({
         }),
       );
 
-      /* --------------------------------------------
-         Only one subject
-      -------------------------------------------- */
-
       if (commonSubjects.length === 1) {
         updateLearningSubject(
           student.id,
@@ -479,10 +458,6 @@ export function ProgressForm({
 
         return;
       }
-
-      /* --------------------------------------------
-         Multiple subjects
-      -------------------------------------------- */
 
       setSubjectDialog({
         studentId: student.id,
@@ -571,9 +546,7 @@ export function ProgressForm({
         ...current[studentId],
 
         learnings:
-          current[
-            studentId
-          ].learnings.filter(
+          current[studentId].learnings.filter(
             (learning) =>
               learning.id !== learningId,
           ),
@@ -661,10 +634,6 @@ export function ProgressForm({
           [learningId]: true,
         }),
       );
-
-      /* --------------------------------------------
-         Only one subject
-      -------------------------------------------- */
 
       if (batchSubjects.length === 1) {
         updateGlobalLearningSubject(
@@ -971,7 +940,7 @@ export function ProgressForm({
   }, [batchId]);
 
   /* ==========================================================
-     RENDER
+     SEARCH
   ========================================================== */
 
   const searchTerm =
@@ -986,16 +955,20 @@ export function ProgressForm({
         .includes(searchTerm),
     );
 
+  /* ==========================================================
+     RENDER
+  ========================================================== */
+
   return (
     <>
-      <div className="space-y-4 px-3 sm:px-4 lg:px-6">
+      <div className="space-y-2 px-1.5 sm:px-2 lg:px-3">
 
         {/* ======================================================
             HEADER
         ====================================================== */}
 
         <div>
-          <h1 className="text-2xl font-semibold">
+          <h1 className="text-xl font-semibold sm:text-2xl">
             Mark Progress
           </h1>
 
@@ -1003,6 +976,7 @@ export function ProgressForm({
             {batchName}
           </p>
         </div>
+
 
         {/* ======================================================
             GLOBAL LEARNING
@@ -1013,28 +987,31 @@ export function ProgressForm({
 
             <Collapsible.Trigger
               className="
-                group flex w-full items-center
-                justify-between gap-3
-                px-4 py-3 text-left
-                outline-none transition-colors
+                group flex w-full
+                items-center justify-between
+                gap-2
+                px-2.5 py-2
+                text-left
+                outline-none
+                transition-colors
                 hover:bg-muted/50
                 focus-visible:bg-muted/50
-                sm:px-5 sm:py-3.5
+                sm:px-3 sm:py-2.5
               "
             >
               <div className="min-w-0">
-                <CardTitle className="text-base">
+                <CardTitle className="text-sm sm:text-base">
                   Global Learning
                 </CardTitle>
 
-                <p className="mt-0.5 truncate text-sm text-muted-foreground">
+                <p className="mt-0.5 truncate text-xs text-muted-foreground sm:text-sm">
                   Create learning once and assign it to selected students.
                 </p>
               </div>
 
               <ChevronDown
                 className="
-                  h-4 w-4 shrink-0
+                  size-4 shrink-0
                   text-muted-foreground
                   transition-transform duration-200
                   group-data-[panel-open]:rotate-180
@@ -1043,17 +1020,17 @@ export function ProgressForm({
             </Collapsible.Trigger>
 
             <Collapsible.Panel>
-              <CardContent className="space-y-3 border-t px-3 py-2 sm:px-4">
+              <CardContent className="space-y-2 border-t px-2 py-1.5 sm:px-3 sm:py-2">
 
                 {/* GLOBAL HEADER */}
 
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="font-medium">
+                    <p className="text-sm font-medium">
                       Global Learnings
                     </p>
 
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-[11px] text-muted-foreground">
                       {globalLearnings.length}{" "}
                       learning
                       {globalLearnings.length !==
@@ -1066,6 +1043,7 @@ export function ProgressForm({
                   <Button
                     type="button"
                     variant="outline"
+                    size="sm"
                     onClick={addGlobalLearning}
                     disabled={
                       loadingGlobalSubjects
@@ -1077,18 +1055,22 @@ export function ProgressForm({
                   </Button>
                 </div>
 
+
                 {/* GLOBAL LEARNINGS */}
 
-                {globalLearnings.length >
-                  0 && (
-                  <div className="mt-3">
+                {globalLearnings.length > 0 && (
+                  <div className="mt-2">
+
                     <button
                       type="button"
                       className="
                         group flex w-full
                         items-center justify-between
-                        gap-3 border-b px-0 py-2
-                        text-left transition-colors
+                        gap-2
+                        border-b
+                        px-0 py-1.5
+                        text-left
+                        transition-colors
                         hover:bg-muted/50
                       "
                       onClick={() =>
@@ -1099,11 +1081,11 @@ export function ProgressForm({
                       }
                     >
                       <div>
-                        <p className="font-medium">
+                        <p className="text-sm font-medium">
                           Learnings
                         </p>
 
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[11px] text-muted-foreground">
                           {
                             globalLearnings.length
                           }{" "}
@@ -1116,39 +1098,48 @@ export function ProgressForm({
                       </div>
 
                       {globalLearningsExpanded ? (
-                        <ChevronUp className="size-5" />
+                        <ChevronUp className="size-4" />
                       ) : (
-                        <ChevronDown className="size-5" />
+                        <ChevronDown className="size-4" />
                       )}
                     </button>
 
+
                     {globalLearningsExpanded && (
-                      <div className="space-y-2 py-2">
+                      <div className="space-y-1.5 py-1.5">
+
                         {globalLearnings.map(
-                          (
-                            learning,
-                          ) => {
+                          (learning) => {
                             const isExpanded =
                               expandedGlobalLearnings[
                                 learning.id
-                              ] ??
-                              false;
+                              ] ?? false;
 
                             return (
                               <div
                                 key={
                                   learning.id
                                 }
-                                className="overflow-visible rounded-lg border"
+                                className="
+                                  overflow-visible
+                                  rounded-lg
+                                  border
+                                  border-border/70
+                                  bg-background
+                                  shadow-sm
+                                "
                               >
+
+                                {/* LEARNING HEADER */}
+
                                 <button
                                   type="button"
                                   className="
                                     group flex w-full
-                                    items-center
-                                    justify-between
-                                    gap-3 bg-background
-                                    px-3 py-2.5
+                                    items-center justify-between
+                                    gap-2
+                                    bg-muted/30
+                                    px-2.5 py-2
                                     text-left
                                     hover:bg-muted/50
                                   "
@@ -1158,14 +1149,13 @@ export function ProgressForm({
                                         ...current,
                                         [learning.id]:
                                           !current[
-                                            learning
-                                              .id
+                                            learning.id
                                           ],
                                       }),
                                     )
                                   }
                                 >
-                                  <p className="font-medium">
+                                  <p className="truncate text-sm font-medium">
                                     {learning.subject
                                       ?.name ??
                                       "Choose subject"}{" "}
@@ -1176,28 +1166,58 @@ export function ProgressForm({
                                   </p>
 
                                   {isExpanded ? (
-                                    <ChevronUp className="size-5 shrink-0" />
+                                    <ChevronUp className="size-4 shrink-0" />
                                   ) : (
-                                    <ChevronDown className="size-5 shrink-0" />
+                                    <ChevronDown className="size-4 shrink-0" />
                                   )}
                                 </button>
 
-                                {isExpanded && (
-                                  <div className="space-y-3 px-3 py-2">
 
-                                    <div className="grid gap-2 md:grid-cols-2">
+                                {isExpanded && (
+                                  <div className="space-y-2 px-2 py-1.5">
+
+                                    {/* SUBJECT + STATUS */}
+
+                                    <div className="grid gap-1.5 md:grid-cols-2">
 
                                       {/* SUBJECT */}
 
-                                      <div className="space-y-1">
-                                        <Label>
+                                      <div
+                                        className="
+                                          rounded-lg
+                                          border border-blue-200/70
+                                          bg-blue-50/60
+                                          p-2
+                                          dark:border-blue-400/20
+                                          dark:bg-blue-400/[0.08]
+                                        "
+                                      >
+                                        <Label
+                                          className="
+                                            mb-1 block
+                                            text-xs font-semibold
+                                            text-blue-700
+                                            dark:text-blue-300
+                                          "
+                                        >
                                           Subject
                                         </Label>
 
                                         <Button
                                           type="button"
                                           variant="outline"
-                                          className="w-full justify-start"
+                                          size="sm"
+                                          className="
+                                            h-8 w-full
+                                            justify-start
+                                            border-blue-200
+                                            bg-background
+                                            px-2.5
+                                            text-xs
+                                            hover:bg-blue-50
+                                            dark:border-blue-400/30
+                                            dark:hover:bg-blue-400/10
+                                          "
                                           onClick={() =>
                                             setGlobalSubjectDialog(
                                               {
@@ -1213,10 +1233,27 @@ export function ProgressForm({
                                         </Button>
                                       </div>
 
+
                                       {/* STATUS */}
 
-                                      <div className="space-y-1">
-                                        <Label>
+                                      <div
+                                        className="
+                                          rounded-lg
+                                          border border-amber-200/70
+                                          bg-amber-50/60
+                                          p-2
+                                          dark:border-amber-400/20
+                                          dark:bg-amber-400/[0.08]
+                                        "
+                                      >
+                                        <Label
+                                          className="
+                                            mb-1 block
+                                            text-xs font-semibold
+                                            text-amber-700
+                                            dark:text-amber-300
+                                          "
+                                        >
                                           Status
                                         </Label>
 
@@ -1240,7 +1277,16 @@ export function ProgressForm({
                                               0
                                           }
                                         >
-                                          <SelectTrigger>
+                                          <SelectTrigger
+                                            className="
+                                              h-8
+                                              border-amber-200
+                                              bg-background
+                                              px-2.5
+                                              text-xs
+                                              dark:border-amber-400/30
+                                            "
+                                          >
                                             <SelectValue placeholder="Choose status" />
                                           </SelectTrigger>
 
@@ -1266,15 +1312,38 @@ export function ProgressForm({
                                           </SelectContent>
                                         </Select>
                                       </div>
+
                                     </div>
+
 
                                     {/* RANGES */}
 
                                     {learning.subject && (
-                                      <div className="space-y-2">
-                                        <p className="text-sm font-semibold">
-                                          Learning ranges
-                                        </p>
+                                      <div
+                                        className="
+                                          rounded-lg
+                                          border border-violet-200/70
+                                          bg-violet-50/50
+                                          p-2
+                                          dark:border-violet-400/20
+                                          dark:bg-violet-400/[0.07]
+                                        "
+                                      >
+                                        <div className="mb-1.5">
+                                          <p
+                                            className="
+                                              text-xs font-semibold
+                                              text-violet-700
+                                              dark:text-violet-300
+                                            "
+                                          >
+                                            Learning Ranges
+                                          </p>
+
+                                          <p className="text-[11px] text-violet-700/60 dark:text-violet-300/60">
+                                            Mark completed portions
+                                          </p>
+                                        </div>
 
                                         <SubjectTocRangeFields
                                           parts={
@@ -1305,11 +1374,21 @@ export function ProgressForm({
                                       </div>
                                     )}
 
+
+                                    {/* REMOVE */}
+
                                     <div className="flex justify-end">
                                       <Button
                                         type="button"
                                         variant="ghost"
-                                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                        size="sm"
+                                        className="
+                                          h-8
+                                          text-xs
+                                          text-destructive
+                                          hover:bg-destructive/10
+                                          hover:text-destructive
+                                        "
                                         onClick={() =>
                                           removeGlobalLearning(
                                             learning.id,
@@ -1319,20 +1398,25 @@ export function ProgressForm({
                                         Remove Learning
                                       </Button>
                                     </div>
+
                                   </div>
                                 )}
+
                               </div>
                             );
                           },
                         )}
+
                       </div>
                     )}
+
                   </div>
                 )}
 
+
                 {/* STUDENTS */}
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   <Button
                     type="button"
                     variant="outline"
@@ -1356,8 +1440,8 @@ export function ProgressForm({
                   </Button>
                 </div>
 
-                <div className="max-h-64 overflow-y-auto rounded-md border bg-background p-2">
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="max-h-64 overflow-y-auto rounded-md border bg-background p-1.5">
+                  <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
                     {students.map(
                       (student) => (
                         <label
@@ -1366,7 +1450,8 @@ export function ProgressForm({
                             flex cursor-pointer
                             items-center gap-2
                             rounded-md border
-                            bg-background p-3
+                            bg-background
+                            p-2
                             text-sm
                             hover:bg-muted
                           "
@@ -1393,11 +1478,13 @@ export function ProgressForm({
                   </div>
                 </div>
 
+
                 {/* ASSIGN */}
 
                 <div className="flex justify-end">
                   <Button
                     type="button"
+                    size="sm"
                     onClick={async () => {
                       try {
                         const learnings =
@@ -1433,7 +1520,7 @@ export function ProgressForm({
                                   studentId
                                 ]
                                   ?.learnings ??
-                                [];
+                                  [];
 
                               updated[
                                 studentId
@@ -1491,10 +1578,13 @@ export function ProgressForm({
                     Assign Learning
                   </Button>
                 </div>
+
               </CardContent>
             </Collapsible.Panel>
+
           </Card>
         </Collapsible.Root>
+
 
         {/* ======================================================
             STUDENT PROGRESS
@@ -1502,7 +1592,7 @@ export function ProgressForm({
 
         {progressLoading ? (
           <Card>
-            <CardContent className="py-10 text-center">
+            <CardContent className="py-8 text-center">
               <p className="text-sm text-muted-foreground">
                 Loading progress...
               </p>
@@ -1511,20 +1601,21 @@ export function ProgressForm({
         ) : (
           <Card className="border-0 bg-transparent shadow-none">
 
-            <CardHeader className="px-0 pb-5">
-              <div className="flex flex-col gap-4 px-2 md:flex-row md:items-start md:justify-between">
+            <CardHeader className="px-0 pb-3">
+              <div className="flex flex-col gap-2 px-1.5 md:flex-row md:items-start md:justify-between">
+
                 <div className="min-w-0">
-                  <CardTitle className="text-base sm:text-lg">
+                  <CardTitle className="text-sm sm:text-lg">
                     Student Progress
                   </CardTitle>
 
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
                     Mark progress for individual students.
                   </p>
                 </div>
 
-                <div className="relative w-full md:w-72 lg:w-80">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <div className="relative w-full md:w-64 lg:w-72">
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 
                   <input
                     type="search"
@@ -1538,21 +1629,26 @@ export function ProgressForm({
                     }
                     placeholder="Search students..."
                     className="
-                      h-10 w-full rounded-lg
+                      h-9 w-full
+                      rounded-lg
                       border border-input
-                      bg-background pl-9 pr-3
-                      text-sm outline-none
+                      bg-background
+                      pl-8 pr-3
+                      text-sm
+                      outline-none
                       placeholder:text-muted-foreground
                       focus:border-ring
-                      focus:ring-2 focus:ring-ring
+                      focus:ring-2
+                      focus:ring-ring
                     "
                   />
                 </div>
+
               </div>
 
               {studentProgressSearch.trim() && (
-                <div className="px-2 pt-1">
-                  <p className="text-xs text-muted-foreground">
+                <div className="px-1.5 pt-1">
+                  <p className="text-[11px] text-muted-foreground">
                     {
                       filteredStudents.length
                     }{" "}
@@ -1565,20 +1661,22 @@ export function ProgressForm({
                   </p>
                 </div>
               )}
+
             </CardHeader>
 
-            <CardContent className="space-y-2 p-0">
+
+            <CardContent className="space-y-1.5 p-0">
 
               {students.length === 0 ? (
-                <div className="rounded-lg border p-8 text-center">
+                <div className="rounded-lg border p-6 text-center">
                   <p className="text-sm text-muted-foreground">
                     No students are enrolled in this batch.
                   </p>
                 </div>
               ) : filteredStudents.length ===
                 0 ? (
-                <div className="rounded-lg border p-8 text-center">
-                  <Search className="mx-auto mb-3 size-5 text-muted-foreground" />
+                <div className="rounded-lg border p-6 text-center">
+                  <Search className="mx-auto mb-2 size-5 text-muted-foreground" />
 
                   <p className="text-sm font-medium">
                     No students found
@@ -1605,23 +1703,38 @@ export function ProgressForm({
                       <div
                         key={student.id}
                       >
-                        <div className="rounded-md border border-border/70 bg-muted/20 p-3">
+
+                        {/* STUDENT CARD */}
+
+                        <div
+                          className="
+                            rounded-lg
+                            border
+                            border-border/70
+                            bg-muted/20
+                            p-2
+                            sm:p-2.5
+                          "
+                        >
 
                           {/* STUDENT HEADER */}
 
                           <div className="flex items-start justify-between gap-2">
+
                             <div className="min-w-0">
-                              <p className="truncate font-medium">
+                              <p className="truncate text-sm font-medium">
                                 {student.name}
                               </p>
 
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-[11px] text-muted-foreground">
                                 {
-                                  data.learnings
+                                  data
+                                    .learnings
                                     .length
                                 }{" "}
                                 learning
-                                {data.learnings
+                                {data
+                                  .learnings
                                   .length !==
                                 1
                                   ? "s"
@@ -1632,6 +1745,8 @@ export function ProgressForm({
                             <Button
                               type="button"
                               variant="outline"
+                              size="sm"
+                              className="h-8 shrink-0 text-xs"
                               onClick={() =>
                                 addLearning(
                                   student,
@@ -1647,21 +1762,34 @@ export function ProgressForm({
                                 ? "Loading..."
                                 : "Add Learning"}
                             </Button>
+
                           </div>
+
 
                           {/* LEARNINGS */}
 
                           {data.learnings
                             .length > 0 && (
-                            <div className="mt-3 rounded-md bg-background/70 px-2 py-2">
+                            <div
+                              className="
+                                mt-2
+                                rounded-lg
+                                border border-border/50
+                                bg-muted/20
+                                px-1.5 py-1.5
+                                sm:px-2 sm:py-2
+                              "
+                            >
 
                               <button
                                 type="button"
                                 className="
                                   group flex w-full
                                   items-center
-                                  justify-between gap-3
-                                  border-b px-0 py-2
+                                  justify-between
+                                  gap-2
+                                  border-b
+                                  px-0 py-1.5
                                   text-left
                                   hover:bg-muted/50
                                 "
@@ -1672,11 +1800,11 @@ export function ProgressForm({
                                 }
                               >
                                 <div>
-                                  <p className="font-medium">
+                                  <p className="text-sm font-medium">
                                     Learnings
                                   </p>
 
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-[11px] text-muted-foreground">
                                     {
                                       data
                                         .learnings
@@ -1693,14 +1821,16 @@ export function ProgressForm({
                                 </div>
 
                                 {isLearningsExpanded ? (
-                                  <ChevronUp className="size-5" />
+                                  <ChevronUp className="size-4" />
                                 ) : (
-                                  <ChevronDown className="size-5" />
+                                  <ChevronDown className="size-4" />
                                 )}
                               </button>
 
+
                               {isLearningsExpanded && (
-                                <div className="space-y-2 py-2">
+                                <div className="space-y-1.5 py-1.5">
+
                                   {data.learnings.map(
                                     (
                                       learning,
@@ -1711,24 +1841,34 @@ export function ProgressForm({
                                       const isExpanded =
                                         expandedLearnings[
                                           key
-                                        ] ??
-                                        false;
+                                        ] ?? false;
 
                                       return (
                                         <div
                                           key={
                                             learning.id
                                           }
-                                          className="overflow-visible rounded-lg border"
+                                          className="
+                                            overflow-visible
+                                            rounded-lg
+                                            border
+                                            border-border/70
+                                            bg-background
+                                            shadow-sm
+                                          "
                                         >
+
+                                          {/* LEARNING HEADER */}
+
                                           <button
                                             type="button"
                                             className="
                                               group flex w-full
                                               items-center
                                               justify-between
-                                              gap-3 bg-background
-                                              px-3 py-2.5
+                                              gap-2
+                                              bg-muted/30
+                                              px-2.5 py-2
                                               text-left
                                               hover:bg-muted/50
                                             "
@@ -1739,16 +1879,29 @@ export function ProgressForm({
                                               )
                                             }
                                           >
-                                            <div className="min-w-0">
-                                              <div className="flex items-center gap-2">
-                                                {learning.saved && (
-                                                  <span className="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium text-primary">
-                                                    ✓ Saved
-                                                  </span>
-                                                )}
-                                              </div>
 
-                                              <p className="font-medium">
+                                            <div className="min-w-0">
+
+                                              {learning.saved && (
+                                                <span
+                                                  className="
+                                                    mb-1
+                                                    inline-flex
+                                                    rounded-full
+                                                    border
+                                                    border-primary/20
+                                                    bg-primary/5
+                                                    px-1.5 py-0.5
+                                                    text-[10px]
+                                                    font-medium
+                                                    text-primary
+                                                  "
+                                                >
+                                                  ✓ Saved
+                                                </span>
+                                              )}
+
+                                              <p className="truncate text-sm font-medium">
                                                 {learning
                                                   .subject
                                                   ?.name ??
@@ -1758,31 +1911,67 @@ export function ProgressForm({
                                                   "no status"}
                                                 )
                                               </p>
+
                                             </div>
 
                                             {isExpanded ? (
-                                              <ChevronUp className="size-5 shrink-0" />
+                                              <ChevronUp className="size-4 shrink-0" />
                                             ) : (
-                                              <ChevronDown className="size-5 shrink-0" />
+                                              <ChevronDown className="size-4 shrink-0" />
                                             )}
+
                                           </button>
 
+
                                           {isExpanded && (
-                                            <div className="space-y-3 px-3 py-2">
+                                            <div className="space-y-2 px-2 py-1.5">
 
-                                              {/* SUBJECT + STATUS */}
+                                              {/* ==================================================
+                                                  SUBJECT + STATUS
+                                              ================================================== */}
 
-                                              <div className="grid gap-2 md:grid-cols-2">
+                                              <div className="grid gap-1.5 md:grid-cols-2">
 
-                                                <div className="space-y-1">
-                                                  <Label>
+                                                {/* SUBJECT */}
+
+                                                <div
+                                                  className="
+                                                    rounded-lg
+                                                    border
+                                                    border-blue-200/70
+                                                    bg-blue-50/60
+                                                    p-2
+                                                    dark:border-blue-400/20
+                                                    dark:bg-blue-400/[0.08]
+                                                  "
+                                                >
+
+                                                  <Label
+                                                    className="
+                                                      mb-1 block
+                                                      text-xs font-semibold
+                                                      text-blue-700
+                                                      dark:text-blue-300
+                                                    "
+                                                  >
                                                     Subject
                                                   </Label>
 
                                                   <Button
                                                     type="button"
                                                     variant="outline"
-                                                    className="w-full justify-start"
+                                                    size="sm"
+                                                    className="
+                                                      h-8 w-full
+                                                      justify-start
+                                                      border-blue-200
+                                                      bg-background
+                                                      px-2.5
+                                                      text-xs
+                                                      hover:bg-blue-50
+                                                      dark:border-blue-400/30
+                                                      dark:hover:bg-blue-400/10
+                                                    "
                                                     onClick={async () => {
                                                       setLoadingSubjects(
                                                         student.id,
@@ -1819,10 +2008,32 @@ export function ProgressForm({
                                                       ?.name ??
                                                       "Choose Subject"}
                                                   </Button>
+
                                                 </div>
 
-                                                <div className="space-y-1">
-                                                  <Label>
+
+                                                {/* STATUS */}
+
+                                                <div
+                                                  className="
+                                                    rounded-lg
+                                                    border
+                                                    border-amber-200/70
+                                                    bg-amber-50/60
+                                                    p-2
+                                                    dark:border-amber-400/20
+                                                    dark:bg-amber-400/[0.08]
+                                                  "
+                                                >
+
+                                                  <Label
+                                                    className="
+                                                      mb-1 block
+                                                      text-xs font-semibold
+                                                      text-amber-700
+                                                      dark:text-amber-300
+                                                    "
+                                                  >
                                                     Status
                                                   </Label>
 
@@ -1848,7 +2059,16 @@ export function ProgressForm({
                                                         0
                                                     }
                                                   >
-                                                    <SelectTrigger>
+                                                    <SelectTrigger
+                                                      className="
+                                                        h-8
+                                                        border-amber-200
+                                                        bg-background
+                                                        px-2.5
+                                                        text-xs
+                                                        dark:border-amber-400/30
+                                                      "
+                                                    >
                                                       <SelectValue placeholder="Choose status" />
                                                     </SelectTrigger>
 
@@ -1873,16 +2093,44 @@ export function ProgressForm({
                                                       )}
                                                     </SelectContent>
                                                   </Select>
+
                                                 </div>
+
                                               </div>
 
-                                              {/* RANGES */}
+
+                                              {/* ==================================================
+                                                  LEARNING RANGES
+                                              ================================================== */}
 
                                               {learning.subject && (
-                                                <div className="space-y-2">
-                                                  <p className="text-sm font-semibold">
-                                                    Learning ranges
-                                                  </p>
+                                                <div
+                                                  className="
+                                                    rounded-lg
+                                                    border
+                                                    border-violet-200/70
+                                                    bg-violet-50/50
+                                                    p-2
+                                                    dark:border-violet-400/20
+                                                    dark:bg-violet-400/[0.07]
+                                                  "
+                                                >
+
+                                                  <div className="mb-1.5">
+                                                    <p
+                                                      className="
+                                                        text-xs font-semibold
+                                                        text-violet-700
+                                                        dark:text-violet-300
+                                                      "
+                                                    >
+                                                      Learning Ranges
+                                                    </p>
+
+                                                    <p className="text-[11px] text-violet-700/60 dark:text-violet-300/60">
+                                                      Mark completed portions
+                                                    </p>
+                                                  </div>
 
                                                   <SubjectTocRangeFields
                                                     parts={
@@ -1911,8 +2159,10 @@ export function ProgressForm({
                                                       )
                                                     }
                                                   />
+
                                                 </div>
                                               )}
+
 
                                               {/* REMOVE */}
 
@@ -1920,7 +2170,14 @@ export function ProgressForm({
                                                 <Button
                                                   type="button"
                                                   variant="ghost"
-                                                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                  size="sm"
+                                                  className="
+                                                    h-8
+                                                    text-xs
+                                                    text-destructive
+                                                    hover:bg-destructive/10
+                                                    hover:text-destructive
+                                                  "
                                                   onClick={() =>
                                                     removeLearning(
                                                       student.id,
@@ -1931,189 +2188,211 @@ export function ProgressForm({
                                                   Remove Learning
                                                 </Button>
                                               </div>
+
                                             </div>
                                           )}
+
                                         </div>
                                       );
                                     },
                                   )}
+
                                 </div>
                               )}
+
                             </div>
                           )}
 
+
                           {/* SUBMIT */}
 
-                          <div className="mt-4 flex justify-end">
+                          <div className="mt-2 flex justify-end">
                             <Button
                               type="button"
+                              size="sm"
+                              className="h-8 text-xs"
                               onClick={() =>
                                 submitStudent(
                                   student,
                                 )
                               }
                               disabled={
-                                data.learnings.length ===
+                                data.learnings
+                                  .length ===
                                 0
                               }
                             >
                               Submit
                             </Button>
                           </div>
+
                         </div>
 
-                        <Separator className="my-4" />
+                        <Separator className="my-3" />
+
                       </div>
                     );
                   },
                 )
               )}
+
             </CardContent>
           </Card>
         )}
+
+
+        {/* ========================================================
+            GLOBAL SUBJECT DIALOG
+        ======================================================== */}
+
+        <Dialog
+          open={
+            globalSubjectDialog !==
+            null
+          }
+          onOpenChange={(open) => {
+            if (!open) {
+              setGlobalSubjectDialog(
+                null,
+              );
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                Choose Subject
+              </DialogTitle>
+
+              <DialogDescription>
+                Choose the subject for this learning.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-2">
+              {globalSubjects.map(
+                (subject) => (
+                  <Button
+                    key={subject.id}
+                    type="button"
+                    variant="outline"
+                    className="
+                      h-auto w-full
+                      justify-start
+                      py-2.5
+                    "
+                    onClick={() => {
+                      if (
+                        !globalSubjectDialog
+                      ) {
+                        return;
+                      }
+
+                      updateGlobalLearningSubject(
+                        globalSubjectDialog.learningId,
+                        subject,
+                      );
+
+                      setGlobalSubjectDialog(
+                        null,
+                      );
+                    }}
+                  >
+                    <div className="text-left">
+                      <p className="text-sm font-medium">
+                        {subject.name}
+                      </p>
+
+                      <p className="text-[11px] text-muted-foreground">
+                        {subject.parts
+                          .map(
+                            (part) =>
+                              part.name,
+                          )
+                          .join(" → ")}
+                      </p>
+                    </div>
+                  </Button>
+                ),
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+
+        {/* ========================================================
+            STUDENT SUBJECT DIALOG
+        ======================================================== */}
+
+        <Dialog
+          open={subjectDialog !== null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSubjectDialog(null);
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                Choose Subject
+              </DialogTitle>
+
+              <DialogDescription>
+                Choose the subject for this learning.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-2">
+              {subjects.map(
+                (subject) => (
+                  <Button
+                    key={subject.id}
+                    type="button"
+                    variant="outline"
+                    className="
+                      h-auto w-full
+                      justify-start
+                      py-2.5
+                    "
+                    onClick={() => {
+                      if (!subjectDialog) {
+                        return;
+                      }
+
+                      updateLearningSubject(
+                        subjectDialog.studentId,
+                        subjectDialog.learningId,
+                        subject,
+                      );
+
+                      setSubjectDialog(
+                        null,
+                      );
+                    }}
+                  >
+                    <div className="text-left">
+                      <p className="text-sm font-medium">
+                        {subject.name}
+                      </p>
+
+                      <p className="text-[11px] text-muted-foreground">
+                        {subject.parts
+                          .map(
+                            (part) =>
+                              part.name,
+                          )
+                          .join(" → ")}
+                      </p>
+                    </div>
+                  </Button>
+                ),
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
       </div>
-
-      {/* ========================================================
-          GLOBAL SUBJECT DIALOG
-      ======================================================== */}
-
-      <Dialog
-        open={
-          globalSubjectDialog !==
-          null
-        }
-        onOpenChange={(open) => {
-          if (!open) {
-            setGlobalSubjectDialog(
-              null,
-            );
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              Choose Subject
-            </DialogTitle>
-
-            <DialogDescription>
-              Choose the subject for this learning.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-2">
-            {globalSubjects.map(
-              (subject) => (
-                <Button
-                  key={subject.id}
-                  type="button"
-                  variant="outline"
-                  className="h-auto w-full justify-start py-3"
-                  onClick={() => {
-                    if (
-                      !globalSubjectDialog
-                    ) {
-                      return;
-                    }
-
-                    updateGlobalLearningSubject(
-                      globalSubjectDialog.learningId,
-                      subject,
-                    );
-
-                    setGlobalSubjectDialog(
-                      null,
-                    );
-                  }}
-                >
-                  <div className="text-left">
-                    <p className="font-medium">
-                      {subject.name}
-                    </p>
-
-                    <p className="text-xs text-muted-foreground">
-                      {subject.parts
-                        .map(
-                          (part) =>
-                            part.name,
-                        )
-                        .join(" → ")}
-                    </p>
-                  </div>
-                </Button>
-              ),
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* ========================================================
-          STUDENT SUBJECT DIALOG
-      ======================================================== */}
-
-      <Dialog
-        open={subjectDialog !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setSubjectDialog(null);
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              Choose Subject
-            </DialogTitle>
-
-            <DialogDescription>
-              Choose the subject for this learning.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-2">
-            {subjects.map(
-              (subject) => (
-                <Button
-                  key={subject.id}
-                  type="button"
-                  variant="outline"
-                  className="h-auto w-full justify-start py-3"
-                  onClick={() => {
-                    if (!subjectDialog) {
-                      return;
-                    }
-
-                    updateLearningSubject(
-                      subjectDialog.studentId,
-                      subjectDialog.learningId,
-                      subject,
-                    );
-
-                    setSubjectDialog(
-                      null,
-                    );
-                  }}
-                >
-                  <div className="text-left">
-                    <p className="font-medium">
-                      {subject.name}
-                    </p>
-
-                    <p className="text-xs text-muted-foreground">
-                      {subject.parts
-                        .map(
-                          (part) =>
-                            part.name,
-                        )
-                        .join(" → ")}
-                    </p>
-                  </div>
-                </Button>
-              ),
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

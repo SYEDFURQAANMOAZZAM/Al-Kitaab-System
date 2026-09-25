@@ -182,11 +182,10 @@ function SidebarItems({
 
     items.forEach((item) => {
       if (isGroup(item)) {
-        initial[item.title] =
-          isItemActive(
-            item,
-            pathname,
-          );
+        initial[item.title] = isItemActive(
+          item,
+          pathname,
+        );
       }
     });
 
@@ -220,18 +219,13 @@ function SidebarItems({
             openGroups[item.title] ?? false;
 
           const groupActive =
-            isItemActive(
-              item,
-              pathname,
-            );
+            isItemActive(item, pathname);
 
           return (
             <SidebarMenuItem key={key}>
               <SidebarMenuButton
                 onClick={() =>
-                  toggleGroup(
-                    item.title,
-                  )
+                  toggleGroup(item.title)
                 }
                 className={`h-10 rounded-lg text-[15px] ${
                   groupActive
@@ -244,15 +238,11 @@ function SidebarItems({
                   strokeWidth={1.75}
                 />
 
-                <span>
-                  {item.title}
-                </span>
+                <span>{item.title}</span>
 
                 <ChevronDown
                   className={`ml-auto h-4 w-4 text-muted-foreground transition-transform ${
-                    open
-                      ? "rotate-180"
-                      : ""
+                    open ? "rotate-180" : ""
                   }`}
                 />
               </SidebarMenuButton>
@@ -269,9 +259,7 @@ function SidebarItems({
                     items={item.children}
                     pathname={pathname}
                     level={level + 1}
-                    onNavigate={
-                      onNavigate
-                    }
+                    onNavigate={onNavigate}
                   />
                 </SidebarMenuSub>
               )}
@@ -293,9 +281,7 @@ function SidebarItems({
 
         if (level > 0) {
           return (
-            <SidebarMenuSubItem
-              key={key}
-            >
+            <SidebarMenuSubItem key={key}>
               <SidebarMenuSubButton
                 render={
                   <Link
@@ -315,9 +301,7 @@ function SidebarItems({
                   strokeWidth={1.75}
                 />
 
-                <span>
-                  {item.title}
-                </span>
+                <span>{item.title}</span>
               </SidebarMenuSubButton>
             </SidebarMenuSubItem>
           );
@@ -344,9 +328,7 @@ function SidebarItems({
                 strokeWidth={1.75}
               />
 
-              <span>
-                {item.title}
-              </span>
+              <span>{item.title}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         );
@@ -387,10 +369,10 @@ export default function AppSidebar({
       className="border-r-0 shadow-sm"
     >
       {/* =================================================
-          HEADER
+          FIXED HEADER
       ================================================= */}
 
-      <SidebarHeader className="border-b px-4 py-4">
+      <SidebarHeader className="shrink-0 border-b bg-background px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <BookOpenCheck
@@ -422,28 +404,28 @@ export default function AppSidebar({
       </SidebarHeader>
 
       {/* =================================================
-          CONTENT
+          SCROLLABLE CONTENT
+          
+          ONLY THIS SECTION SCROLLS.
       ================================================= */}
 
-      <SidebarContent className="px-2 py-3">
+      <SidebarContent className="min-h-0 flex-1 px-2 py-3">
         <SidebarGroup className="p-0">
           <SidebarMenu className="gap-0.5">
             <SidebarItems
               items={sidebarItems}
               pathname={pathname}
-              onNavigate={
-                handleNavigate
-              }
+              onNavigate={handleNavigate}
             />
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
 
       {/* =================================================
-          FOOTER
+          FIXED FOOTER
       ================================================= */}
 
-      <SidebarFooter className="gap-0 border-t px-4 py-3">
+      <SidebarFooter className="shrink-0 gap-0 border-t bg-background px-4 py-3">
         {/* Language + theme */}
 
         <div className="flex items-center justify-between py-2">
