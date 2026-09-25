@@ -1,10 +1,12 @@
 
 import TocCompletionClient from "./toc-completion-client";
+import { requireRole } from "@/lib/auth/require-role";
 
 export default async function subjectCompletionPage() {
 
+  await requireRole("ADMIN");
   return (
-    <div className="space-y-6 p-4 sm:p-6">
+    <div className="space-y-6 p-2 sm:p-1">
       <div>
         <h1 className="text-xl font-semibold">
           Subjects Completion

@@ -5,8 +5,9 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import {sidebarItems} from "./sidebarContent";
+import { sidebarItems } from "./sidebarContent";
 import { requireRole } from "@/lib/auth/require-role";
+
 export default async function AdminLayout({
   children,
 }: {
@@ -16,14 +17,23 @@ export default async function AdminLayout({
 
   return (
     <SidebarProvider>
-      <AppSidebar sidebarItems={sidebarItems}/>
-      <SidebarInset>
+      <AppSidebar sidebarItems={sidebarItems} />
+
+      <SidebarInset className="min-h-svh">
+        {/* Mobile top bar */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 md:hidden">
-          <SidebarTrigger className="-ml-1 lg:hidden" />
-          <Separator orientation="vertical" className="mr-2 h-4 lg:hidden" />
+          <SidebarTrigger className="-ml-1" />
+
+          <Separator
+            orientation="vertical"
+            className="mr-2 h-4"
+          />
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        {/* Main page */}
+        <main className="min-h-0 flex-1 p-6">
+          {children}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );
