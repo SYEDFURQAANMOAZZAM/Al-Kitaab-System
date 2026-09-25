@@ -26,9 +26,17 @@ export type PaginatedTocReport = {
 export async function getAdminTocReport({
   page = 1,
   search = "",
+  month,
 }: {
   page?: number;
   search?: string;
+
+  /**
+   * YYYY-MM
+   *
+   * undefined = all-time
+   */
+  month?: string;
 } = {}): Promise<PaginatedTocReport> {
   await requireRoleForAction([
     "ADMIN",
@@ -56,15 +64,17 @@ export async function getAdminTocReport({
       }
     : undefined;
 
+  // ----------------------------------------------------------
   // Count
-  const totalStudents =
-    await prisma.student.count({
-      where,
-    });
+  // ----------------------------------------------------------
 
-  // Get only 15 students
-  const students =
-    await prisma.student.findMany({
+  const [totalStudents, students] =
+  await Promise.all([
+    prisma.student.count({
+      where,
+    }),
+
+    prisma.student.findMany({
       where,
 
       select: {
@@ -79,16 +89,25 @@ export async function getAdminTocReport({
 
       skip,
       take: PAGE_SIZE,
-    });
+    }),
+  ]);
 
   const studentIds =
     students.map(
-      (student) => student.id,
+      (student) =>
+        student.id,
     );
+
+  // ----------------------------------------------------------
+  // Build report
+  // ----------------------------------------------------------
 
   const data =
     await buildTocReport({
       studentIds,
+
+      month:
+        month?.trim() || undefined,
     });
 
   const totalPages =
