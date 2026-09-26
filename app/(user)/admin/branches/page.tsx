@@ -9,7 +9,7 @@ import { Building2 } from "lucide-react";
 import getBranchesAndBatches from "@/app/ServerActions/getGroups/getBranchesAndBatches";
 
 const Page = async () => {
-  const user=await requireRole("ADMIN","TEACHER");
+  const user = await requireRole("ADMIN", "TEACHER");
   const isAdmin = user.role === "ADMIN";
   const branches = await getBranchesAndBatches();
 
@@ -19,21 +19,25 @@ const Page = async () => {
           PAGE HEADER
       ===================================================== */}
 
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          Branches & Batches
-        </h1>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            Branches & Batches
+          </h1>
 
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage branches, batches, teachers, and students.
-        </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage branches, batches, teachers, and students.
+          </p>
+        </div>
+
+        {/* CREATE BRANCH */}
+
+        {isAdmin && (
+          <div className="shrink-0">
+            <CreateBranch />
+          </div>
+        )}
       </div>
-
-      {/* =====================================================
-          CREATE BRANCH
-      ===================================================== */}
-
-      {isAdmin&&<CreateBranch />}
 
       {/* =====================================================
           EMPTY STATE
@@ -149,41 +153,34 @@ const Page = async () => {
                     >
                       <span>
                         {branch.batches.length}{" "}
-                        {branch.batches.length === 1
-                          ? "Batch"
-                          : "Batches"}
+                        {branch.batches.length === 1 ? "Batch" : "Batches"}
                       </span>
 
                       <span>•</span>
 
-                      <span>
-                        {totalStudents} Students
-                      </span>
+                      <span>{totalStudents} Students</span>
 
                       <span>•</span>
 
-                      <span>
-                        {totalTeachers} Teachers
-                      </span>
+                      <span>{totalTeachers} Teachers</span>
                     </div>
                   </div>
 
                   {/* Branch Action */}
 
                   <div className="relative h-9 w-9 shrink-0">
-                    {isAdmin&&<BranchAction
-                      branchName={branch.name}
-                      branchId={branch.id}
-                      branchBatches={branch.batches.length}
-                    />}
+                    {isAdmin && (
+                      <BranchAction
+                        branchName={branch.name}
+                        branchId={branch.id}
+                        branchBatches={branch.batches.length}
+                      />
+                    )}
                   </div>
                 </div>
 
                 {/* =================================================
                     BATCH AREA
-
-                    Slightly inset from branch header so it is
-                    visually clear that these belong to branch.
                 ================================================= */}
 
                 <div className="px-2 pb-2 pt-1 sm:px-3 sm:pb-3">
@@ -205,6 +202,7 @@ const Page = async () => {
                           `}
                         >
                           {/* Batch name + BatchAction */}
+
                           <div className="flex w-full items-start">
                             <div className="min-w-0 flex-1">
                               <div className="truncate text-xs font-medium text-foreground sm:text-sm">
@@ -212,26 +210,34 @@ const Page = async () => {
                               </div>
 
                               <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground sm:text-xs">
-                                <span>{batch._count.teachers} Teachers</span>
+                                <span>
+                                  {batch._count.teachers} Teachers
+                                </span>
 
                                 <span>•</span>
 
-                                <span>{batch._count.students} Students</span>
+                                <span>
+                                  {batch._count.students} Students
+                                </span>
                               </div>
                             </div>
 
-                            {/* ONLY BatchAction — far right */}
+                            {/* Batch Action */}
+
                             <div className="relative h-8 w-8 shrink-0">
-                              {isAdmin&&<BatchAction
-                                batchId={batch.id}
-                                batchName={batch.name}
-                                batchStudents={batch._count.students}
-                                batchTeachers={batch._count.teachers}
-                              />}
+                              {isAdmin && (
+                                <BatchAction
+                                  batchId={batch.id}
+                                  batchName={batch.name}
+                                  batchStudents={batch._count.students}
+                                  batchTeachers={batch._count.teachers}
+                                />
+                              )}
                             </div>
                           </div>
 
-                          {/* Buttons — next line */}
+                          {/* Buttons */}
+
                           <div className="mt-2 flex items-center gap-2">
                             <Link
                               href={`/admin/branches/${batch.id}/attendance`}
@@ -301,12 +307,10 @@ const Page = async () => {
                     </div>
                   )}
 
-                  {/* =================================================
-                      CREATE BATCH
-                  ================================================= */}
+                  {/* CREATE BATCH */}
 
                   <div className="px-1 pt-2">
-                    {isAdmin&&<CreateBatch branchId={branch.id} />}
+                    {isAdmin && <CreateBatch branchId={branch.id} />}
                   </div>
                 </div>
               </section>
