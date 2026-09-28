@@ -38,6 +38,7 @@ export const getCurrentUser = cache(async () => {
         id: true,
         email: true,
         name: true,
+        phone:true,
         role: true,
       },
     });

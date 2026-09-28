@@ -3,7 +3,7 @@ import { Suspense } from "react";
 
 import AuthVerify from "@/app/ServerActions/auth/authVerify";
 import { prisma } from "@/lib/prisma";
-import { updateTeacher } from "@/app/ServerActions/updation/updateTeacher";
+import { updateTeacher } from "@/app/ServerActions/teacherOperations/updateTeacher";
 
 import TeacherForm from "@/components/teacherForm";
 

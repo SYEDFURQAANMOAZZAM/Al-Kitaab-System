@@ -511,13 +511,167 @@ export type FormStateRegister = {
 };
 
 /* =========================================================
-   LOGIN STATE
+   ADMIN SCHEMAS
 ========================================================= */
 
-export type FormStateLogin = {
+/* ---------------------------------------------------------
+   CREATE ADMIN
+--------------------------------------------------------- */
+
+export const CreateSchemaAdmin = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(3, {
+        error: "Name must be at least 3 characters long.",
+      })
+      .regex(/^[A-Za-z ]+$/, {
+        error:
+          "Name must not contain numbers or special characters.",
+      }),
+
+    email: z
+      .string()
+      .trim()
+      .min(1, {
+        error: "Email is required.",
+      })
+      .email({
+        error: "Please enter a valid email.",
+      }),
+
+    phone: z
+      .string()
+      .trim()
+      .regex(/^[6-9]\d{9}$/, {
+        error: "Enter a valid 10-digit phone number.",
+      }),
+
+    password: z
+      .string()
+      .min(8, {
+        error:
+          "Password must be at least 8 characters.",
+      })
+      .regex(/[A-Z]/, {
+        error:
+          "Contain at least one uppercase letter.",
+      })
+      .regex(/[a-z]/, {
+        error:
+          "Contain at least one lowercase letter.",
+      })
+      .regex(/[0-9]/, {
+        error:
+          "Contain at least one number.",
+      })
+      .regex(/[^a-zA-Z0-9]/, {
+        error:
+          "Contain at least one special character.",
+      }),
+
+    confirmPassword: z
+      .string()
+      .min(1, {
+        error: "Confirm your password.",
+      }),
+  })
+  .refine(
+    (data) =>
+      data.password === data.confirmPassword,
+    {
+      path: ["confirmPassword"],
+      message: "Passwords do not match.",
+    }
+  );
+
+
+/* ---------------------------------------------------------
+   EDIT ADMIN
+--------------------------------------------------------- */
+
+export const EditSchemaAdmin = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(3, {
+        error: "Name must be at least 3 characters long.",
+      })
+      .regex(/^[A-Za-z ]+$/, {
+        error:
+          "Name must not contain numbers or special characters.",
+      }),
+
+    email: z
+      .string()
+      .trim()
+      .min(1, {
+        error: "Email is required.",
+      })
+      .email({
+        error: "Please enter a valid email.",
+      }),
+
+    phone: z
+      .string()
+      .trim()
+      .regex(/^[6-9]\d{9}$/, {
+        error: "Enter a valid 10-digit phone number.",
+      }),
+
+    password: z
+      .string()
+      .min(8, {
+        error:
+          "Password must be at least 8 characters.",
+      })
+      .regex(/[A-Z]/, {
+        error:
+          "Contain at least one uppercase letter.",
+      })
+      .regex(/[a-z]/, {
+        error:
+          "Contain at least one lowercase letter.",
+      })
+      .regex(/[0-9]/, {
+        error:
+          "Contain at least one number.",
+      })
+      .regex(/[^a-zA-Z0-9]/, {
+        error:
+          "Contain at least one special character.",
+      })
+      .or(z.literal("")),
+
+    confirmPassword: z
+      .string()
+      .or(z.literal("")),
+  })
+  .refine(
+    (data) =>
+      data.password === data.confirmPassword,
+    {
+      path: ["confirmPassword"],
+      message: "Passwords do not match.",
+    }
+  );
+
+  /* =========================================================
+   ADMIN FORM STATE
+========================================================= */
+
+export type FormStateAdmin = {
+  success?: boolean;
+
   errors?: {
-    email?: string[];
+    name?: string[];
+    email?: string;
+    phone?: string;
     password?: string[];
+    confirmPassword?: string[];
+    userId?: string[];
   };
 
   message?: string;

@@ -15,7 +15,7 @@ import {
   ChartNoAxesColumnIncreasing,
 } from "lucide-react";
 
-import { deleteTeacherAction } from "./actions/teacherActions";
+import { deleteTeacher } from "@/app/ServerActions/teacherOperations/deleteTeacher";
 
 export default function TeacherActions({
   teacherId,
@@ -39,7 +39,7 @@ export default function TeacherActions({
   function handleDelete() {
     startDeleteTransition(async () => {
       const result =
-        await deleteTeacherAction(
+        await deleteTeacher(
           teacherId
         );
 

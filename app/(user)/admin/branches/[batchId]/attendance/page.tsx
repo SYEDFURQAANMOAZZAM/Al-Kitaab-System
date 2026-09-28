@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/require-role";
 import { AttendanceForm } from "@/components/AttendanceForm";
-import { getAttendanceForDate } from "@/app/ServerActions/attendance/createAttendance";
+import { getAttendanceForDate } from "@/app/ServerActions/attendanceOperations/actions/attendance.actions";
 
 function getTodayDate() {
   const now = new Date();

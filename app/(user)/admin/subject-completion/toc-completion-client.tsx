@@ -15,13 +15,12 @@ import { Select } from "@base-ui/react/select";
 import type {
   StudentTocReport,
   TocReportNode,
-} from "@/app/ServerActions/getTocCompletionReports/build-toc-report";
+} from "@/app/ServerActions/getTocCompletionReports/types/tocReport.types";
 
 import {
   getAdminTocReport,
-  type PaginatedTocReport,
-} from "@/app/ServerActions/getTocCompletionReports/get-admin-toc-report";
-
+} from "@/app/ServerActions/getTocCompletionReports/actions/get-admin-toc-report";
+import { PaginatedTocReport } from "@/app/ServerActions/getTocCompletionReports/types/tocReport.types"
 /* ==========================================================================
    COMPLETION STYLES
    ========================================================================== */

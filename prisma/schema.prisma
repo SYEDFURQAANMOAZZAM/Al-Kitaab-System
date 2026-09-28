@@ -48,6 +48,7 @@ model Student {
   studentSubjects StudentSubject[]
   progress        Progress[]
   enrollments     StudentEnrollment[]
+  attendanceSummaries StudentAttendanceSummary[]
 }
 
 model StudentSubject {
@@ -71,6 +72,7 @@ model Teacher {
   user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   assignments     TeacherAssignment[]
   teacherSubjects TeacherSubject[]
+  attendanceSummaries TeacherAttendanceSummary[]
 }
 
 model TeacherSubject {
@@ -96,11 +98,18 @@ model Batch {
   name     String
   branchId String
 
-  branch   Branch               @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
   holiday  Holiday[]
   subjects BatchSubject[]
   students StudentEnrollment[]
   teachers TeacherAssignment[]
+
+  attendance Attendance[]
+  progress   Progress[]
+
+  studentAttendanceSummaries StudentAttendanceSummary[]
+  teacherAttendanceSummaries TeacherAttendanceSummary[]
 
   @@unique([branchId, name])
 }
@@ -117,9 +126,9 @@ model BatchSubject {
 }
 
 model StudentEnrollment {
-  id        String @id @default(cuid())
-  studentId String
-  batchId   String
+  id           String @id @default(cuid())
+  studentId    String
+  batchId      String
 
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   batch   Batch   @relation(fields: [batchId], references: [id], onDelete: Cascade)
@@ -129,15 +138,48 @@ model StudentEnrollment {
 }
 
 model TeacherAssignment {
-  id        String @id @default(cuid())
-  teacherId String
-  batchId   String
-
+  id           String @id @default(cuid())
+  teacherId    String
+  batchId      String
   teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   batch   Batch   @relation(fields: [batchId], references: [id], onDelete: Cascade)
 
   @@unique([teacherId, batchId])
   @@index([batchId])
+}
+
+model StudentAttendanceSummary {
+  id           String @id @default(cuid())
+  studentId    String
+  batchId      String
+  year         Int
+  month        Int
+
+  eligibleDays Int @default(0)
+  presentDays  Int @default(0)
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  batch   Batch   @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, batchId, year, month])
+  @@index([batchId, year, month])
+}
+
+model TeacherAttendanceSummary {
+  id           String @id @default(cuid())
+  teacherId    String
+  batchId      String
+  year         Int
+  month        Int
+
+  eligibleDays Int @default(0)
+  presentDays  Int @default(0)
+
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  batch   Batch   @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, batchId, year, month])
+  @@index([batchId, year, month])
 }
 
 model Holiday {
@@ -154,13 +196,14 @@ model Holiday {
 model Attendance {
   id        String   @id @default(cuid())
   userId    String
+  batchId   String
+  batchname String?
   attended  Attend
   remarks   String?
-  batchId   String?
-  batchname String
   date      DateTime @db.Date
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  batch Batch @relation(fields: [batchId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -173,13 +216,14 @@ model Attendance {
 model Progress {
   id        String   @id @default(cuid())
   studentId String
-  batchId   String?
-  batchname String
+  batchId   String
+  batchname String?
   date      DateTime @db.Date
   remarks   String?
   learnings Json?
 
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  batch   Batch @relation(fields: [batchId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -187,7 +231,6 @@ model Progress {
   @@unique([studentId, date, batchId])
   @@index([batchId, date])
 }
-
 model Subject {
   id              String                  @id @default(cuid())
   name            String

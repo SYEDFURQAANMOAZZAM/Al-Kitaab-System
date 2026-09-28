@@ -37,14 +37,13 @@ import {
 
 import {
   submitProgress,
-  type ProgressLearning,
-} from "@/app/ServerActions/progress/progress";
+} from "@/app/ServerActions/progressOperations/actions/submitProgress";
+import {ProgressLearning} from "@/app/ServerActions/progressOperations/types/submitProgress.types"
+import { saveGlobalLearnings } from "@/app/ServerActions/progressOperations/actions/saveGlobalLearnings";
 
-import { saveGlobalLearnings } from "@/app/ServerActions/progress/saveGlobalLearnings";
-
-import { getCommonSubjects } from "@/app/ServerActions/progress/getCommonSubjects";
-import { getBatchSubjects } from "@/app/ServerActions/progress/getBatchSubjects";
-import { getTodayProgress } from "@/app/ServerActions/progress/get-today-progress";
+import { getCommonSubjects } from "@/app/ServerActions/progressOperations/actions/getCommonSubjects";
+import { getBatchSubjects } from "@/app/ServerActions/progressOperations/actions/getBatchSubjects";
+import { getTodayProgress } from "@/app/ServerActions/progressOperations/actions/get-today-progress";
 
 import {
   SubjectTocRangeFields,
@@ -396,10 +395,10 @@ export function ProgressForm({
 
     try {
       const commonSubjects =
-        await getCommonSubjects(
-          student.id,
-          batchId,
-        );
+      await getCommonSubjects({
+        studentId: student.id,
+        batchId,
+      });
 
       if (commonSubjects.length === 0) {
         alert(
@@ -597,7 +596,7 @@ export function ProgressForm({
 
     try {
       const batchSubjects =
-        await getBatchSubjects(batchId);
+        await getBatchSubjects({batchId});
 
       if (batchSubjects.length === 0) {
         alert(
@@ -1979,10 +1978,10 @@ export function ProgressForm({
 
                                                       try {
                                                         const commonSubjects =
-                                                          await getCommonSubjects(
-                                                            student.id,
+                                                          await getCommonSubjects({
+                                                            studentId: student.id,
                                                             batchId,
-                                                          );
+                                                          });
 
                                                         setSubjects(
                                                           commonSubjects,

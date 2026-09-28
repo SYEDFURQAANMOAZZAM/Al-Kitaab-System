@@ -19,7 +19,7 @@ export default async function AdminLayout({
     <SidebarProvider>
       <AppSidebar sidebarItems={sidebarItems} />
 
-      <SidebarInset className="min-h-svh">
+      <SidebarInset className="min-h-svh min-w-0">
         {/* Mobile top bar */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 md:hidden">
           <SidebarTrigger className="-ml-1" />
@@ -31,7 +31,7 @@ export default async function AdminLayout({
         </header>
 
         {/* Main page */}
-        <main className="min-h-0 flex-1 p-6">
+        <main className="min-h-0 min-w-0 flex-1 p-6">
           {children}
         </main>
       </SidebarInset>

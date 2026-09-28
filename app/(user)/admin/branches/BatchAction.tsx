@@ -1,9 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import UpdateBatch, {
-  GroupActionState,
-} from "@/app/ServerActions/updation/updateBatch";
+import UpdateBatch from "@/app/ServerActions/batchOperations/actions/updateBatch";
+import {GroupActionState} from "@/app/ServerActions/batchOperations/types/batch.types"
 import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { MoreVertical } from "lucide-react";
-import DeleteBatch from "@/app/ServerActions/deletion/deleteBatch";
+import DeleteBatch from "@/app/ServerActions/batchOperations/actions/deleteBatch";
 
 export default function BatchAction({
   batchName,

@@ -6,7 +6,7 @@ import { Checkbox } from "@base-ui/react/checkbox";
 import { Dialog } from "@base-ui/react/dialog";
 import { Copy, Loader2 } from "lucide-react";
 
-import { saveAttendance } from "@/app/ServerActions/attendance/createAttendance";
+import { saveAttendance } from "@/app/ServerActions/attendanceOperations/actions/attendance.actions";
 
 /* =========================================================
 TYPES
