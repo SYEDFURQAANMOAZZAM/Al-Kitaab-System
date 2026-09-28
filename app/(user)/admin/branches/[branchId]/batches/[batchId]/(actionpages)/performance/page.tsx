@@ -15,6 +15,7 @@ import BatchStudentProgress from "@/components/BatchPerformance/BatchStudentProg
 
 type Props = {
   params: Promise<{
+    branchId:string;
     batchId: string;
   }>;
 
@@ -63,7 +64,7 @@ export default async function BatchPerformancePage({
 }: Props) {
   await requireRole("ADMIN");
 
-  const { batchId } = await params;
+  const { branchId,batchId } = await params;
 
   const search = await searchParams;
 

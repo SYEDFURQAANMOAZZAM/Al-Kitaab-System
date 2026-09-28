@@ -273,12 +273,7 @@ export function AddSubject({
       return;
     }
 
-    if (selectedBatchIds.length === 0) {
-      setError(
-        "Select at least one batch."
-      );
-      return;
-    }
+    
 
     startTransition(async () => {
       const input = {

@@ -1,28 +1,7 @@
+
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-
-import createBatch from "@/app/ServerActions/batchOperations/actions/createBatch";
-
-import type { GroupActionState } from "@/app/ServerActions/batchOperations/types/batch.types";
-
-import { ButtonShadcn } from "@/components/button";
-
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-
-const initialState: GroupActionState = undefined;
+import { useRouter } from "next/navigation";
 
 type CreateBatchProps = {
   branchId: string;
@@ -31,117 +10,41 @@ type CreateBatchProps = {
 export default function CreateBatch({
   branchId,
 }: CreateBatchProps) {
-  const [open, setOpen] = useState(false);
+  const router = useRouter();
 
-  const [state, action, pending] = useActionState(
-    createBatch.bind(null, branchId),
-    initialState
-  );
-
-  useEffect(() => {
-    if (state?.success) {
-      setOpen(false);
-    }
-  }, [state?.success]);
+  function handleCreate() {
+    router.push(`/admin/branches/${branchId}/batches/new`);
+  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      {/* =====================================================
-          OPEN DIALOG BUTTON
-      ===================================================== */}
-
-      <DialogTrigger
-        render={
-          <ButtonShadcn variant="outline">
-            Add Batch
-          </ButtonShadcn>
-        }
-      />
-
-      {/* =====================================================
-          DIALOG
-      ===================================================== */}
-
-      <DialogContent className="sm:max-w-md">
-        <form action={action}>
-          <DialogHeader>
-            <DialogTitle>Create Batch</DialogTitle>
-
-            <DialogDescription>
-              Enter a name for the new batch.
-            </DialogDescription>
-          </DialogHeader>
-
-          {/* =================================================
-              INPUT
-          ================================================= */}
-
-          <div className="mt-5 space-y-2">
-            <Label htmlFor={`batchname-${branchId}`}>
-              Batch Name
-            </Label>
-
-            <Input
-              id={`batchname-${branchId}`}
-              name="batchname"
-              placeholder="Enter Batch Name"
-              disabled={pending}
-              autoFocus
-            />
-          </div>
-
-          {/* =================================================
-              ERROR
-          ================================================= */}
-
-          {state?.error && (
-            <p
-              className="mt-2 text-sm text-destructive"
-              role="alert"
-            >
-              {state.error}
-            </p>
-          )}
-
-          {/* =================================================
-              SUCCESS
-          ================================================= */}
-
-          {state?.success && (
-            <p
-              className="mt-2 text-sm text-primary"
-              role="status"
-            >
-              {state.success}
-            </p>
-          )}
-
-          {/* =================================================
-              FOOTER
-          ================================================= */}
-
-          <DialogFooter className="mt-6">
-            <DialogClose
-              render={
-                <ButtonShadcn
-                  type="button"
-                  variant="outline"
-                  disabled={pending}
-                />
-              }
-            >
-              Cancel
-            </DialogClose>
-
-            <ButtonShadcn
-              type="submit"
-              disabled={pending}
-            >
-              {pending ? "Adding..." : "Add Batch"}
-            </ButtonShadcn>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <button
+      type="button"
+      onClick={handleCreate}
+      className="
+        inline-flex
+        h-9
+        items-center
+        justify-center
+        rounded-md
+        border
+        border-border
+        bg-background
+        px-4
+        text-sm
+        font-medium
+        text-foreground
+        shadow-sm
+        transition-colors
+        hover:bg-accent
+        hover:text-accent-foreground
+        focus-visible:outline-none
+        focus-visible:ring-2
+        focus-visible:ring-ring
+        disabled:pointer-events-none
+        disabled:opacity-50
+      "
+    >
+      Add Batch
+    </button>
   );
 }

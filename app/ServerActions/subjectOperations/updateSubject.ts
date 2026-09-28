@@ -24,8 +24,7 @@ const UpdateSubjectSchema = z.object({
     .min(1, "Add at least one subject part"),
 
   batchIds: z
-    .array(z.string().min(1))
-    .min(1, "Select at least one batch"),
+    .array(z.string().min(1)),
 
   trackingTerms: z
     .array(TrackingTermSchema)

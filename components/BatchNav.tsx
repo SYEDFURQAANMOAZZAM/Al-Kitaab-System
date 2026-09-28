@@ -9,22 +9,24 @@ import {
 } from "@/components/ui/tabs";
 
 type BatchNavProps = {
+  branchId: string;
   batchId: string;
-  basePath: string;
   className?: string;
 };
 
 export function BatchNav({
+  branchId,
   batchId,
-  basePath,
   className,
 }: BatchNavProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const progressPath = `${basePath}/${batchId}/progress`;
-  const attendancePath = `${basePath}/${batchId}/attendance`;
-  const performancePath = `${basePath}/${batchId}/performance`;
+  const basePath = `/admin/branches/${branchId}/batches/${batchId}`;
+
+  const progressPath = `${basePath}/progress`;
+  const attendancePath = `${basePath}/attendance`;
+  const performancePath = `${basePath}/performance`;
 
   const activeTab = pathname.startsWith(attendancePath)
     ? "attendance"

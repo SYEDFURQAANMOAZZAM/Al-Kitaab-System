@@ -1,14 +1,31 @@
 import { Prisma } from "@/generated/prisma/client";
+
 import {
   findBranch,
+  findSubjectsByIds,
   createBatch,
   updateBatch,
-  deleteBatch,
+  deleteBatch
 } from "../queries/batch.queries";
+
+function uniqueSubjectIds(subjectIds: string[]) {
+  return [...new Set(subjectIds)];
+}
+
+async function validateSubjects(subjectIds: string[]) {
+  if (subjectIds.length === 0) {
+    return true;
+  }
+
+  const subjects = await findSubjectsByIds(subjectIds);
+
+  return subjects.length === subjectIds.length;
+}
 
 export async function createBatchService(
   branchId: string,
-  name: string
+  name: string,
+  subjectIds: string[]
 ) {
   const branch = await findBranch(branchId);
 
@@ -18,14 +35,26 @@ export async function createBatchService(
     };
   }
 
+  const uniqueIds = uniqueSubjectIds(subjectIds);
+
+  const validSubjects =
+    await validateSubjects(uniqueIds);
+
+  if (!validSubjects) {
+    return {
+      error: "One or more selected subjects do not exist.",
+    };
+  }
+
   try {
     await createBatch(
       branchId,
-      name.trim()
+      name.trim(),
+      uniqueIds
     );
 
     return {
-      success: "Batch created.",
+      success: "Batch created successfully.",
     };
   } catch (error) {
     if (
@@ -39,30 +68,39 @@ export async function createBatchService(
       };
     }
 
-    console.error(
-      "Unable to create batch",
-      error
-    );
+    console.error("Unable to create batch", error);
 
     return {
-      error:
-        "Unable to create batch. Please try again.",
+      error: "Unable to create batch. Please try again.",
     };
   }
 }
 
 export async function updateBatchService(
   batchId: string,
-  name: string
+  name: string,
+  subjectIds: string[]
 ) {
+  const uniqueIds = uniqueSubjectIds(subjectIds);
+
+  const validSubjects =
+    await validateSubjects(uniqueIds);
+
+  if (!validSubjects) {
+    return {
+      error: "One or more selected subjects do not exist.",
+    };
+  }
+
   try {
     await updateBatch(
       batchId,
-      name.trim()
+      name.trim(),
+      uniqueIds
     );
 
     return {
-      success: "Batch updated.",
+      success: "Batch updated successfully.",
     };
   } catch (error) {
     if (
@@ -72,7 +110,7 @@ export async function updateBatchService(
       if (error.code === "P2002") {
         return {
           error:
-            "A batch with this name already exists.",
+            "A batch with this name already exists in this branch.",
         };
       }
 
@@ -83,14 +121,10 @@ export async function updateBatchService(
       }
     }
 
-    console.error(
-      "Unable to update batch",
-      error
-    );
+    console.error("Unable to update batch", error);
 
     return {
-      error:
-        "Unable to update batch. Please try again.",
+      error: "Unable to update batch. Please try again.",
     };
   }
 }

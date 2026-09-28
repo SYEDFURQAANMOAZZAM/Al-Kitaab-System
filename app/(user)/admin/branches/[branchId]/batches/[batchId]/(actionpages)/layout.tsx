@@ -5,15 +5,18 @@ export default async function BatchLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ batchId: string }>;
+  params: Promise<{
+    branchId: string;
+    batchId: string;
+  }>;
 }) {
-  const { batchId } = await params;
+  const { branchId, batchId } = await params;
 
   return (
     <div className="space-y-6">
       <BatchNav
+        branchId={branchId}
         batchId={batchId}
-        basePath="/admin/branches"
         className="sticky top-0 z-50 bg-background"
       />
 
@@ -21,4 +24,3 @@ export default async function BatchLayout({
     </div>
   );
 }
-

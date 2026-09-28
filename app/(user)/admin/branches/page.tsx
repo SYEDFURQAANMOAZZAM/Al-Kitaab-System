@@ -2,6 +2,7 @@ import CreateBatch from "./CreateBatch";
 import CreateBranch from "./CreateBranch";
 import BranchAction from "./BranchAction";
 import BatchAction from "./BatchAction";
+
 import { requireRole } from "@/lib/auth/require-role";
 import Link from "next/link";
 import { Building2 } from "lucide-react";
@@ -11,14 +12,12 @@ import getBranchesAndBatches from "@/app/ServerActions/branchOperations/actions/
 const Page = async () => {
   const user = await requireRole("ADMIN", "TEACHER");
   const isAdmin = user.role === "ADMIN";
+
   const branches = await getBranchesAndBatches();
 
   return (
     <div className="w-full space-y-5 sm:px-1 md:px-3 lg:px-4">
-      {/* =====================================================
-          PAGE HEADER
-      ===================================================== */}
-
+      {/* PAGE HEADER */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
@@ -31,7 +30,6 @@ const Page = async () => {
         </div>
 
         {/* CREATE BRANCH */}
-
         {isAdmin && (
           <div className="shrink-0">
             <CreateBranch />
@@ -39,10 +37,7 @@ const Page = async () => {
         )}
       </div>
 
-      {/* =====================================================
-          EMPTY STATE
-      ===================================================== */}
-
+      {/* EMPTY STATE */}
       {branches.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border px-6 py-14 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-accent">
@@ -58,10 +53,7 @@ const Page = async () => {
           </p>
         </div>
       ) : (
-        /* =====================================================
-           BRANCHES
-        ===================================================== */
-
+        /* BRANCHES */
         <div className="space-y-4">
           {branches.map((branch) => {
             const totalStudents = branch.batches.reduce(
@@ -85,10 +77,7 @@ const Page = async () => {
                   ring-border/70
                 "
               >
-                {/* =================================================
-                    BRANCH HEADER
-                ================================================= */}
-
+                {/* BRANCH HEADER */}
                 <div
                   className="
                     flex
@@ -104,7 +93,6 @@ const Page = async () => {
                   "
                 >
                   {/* Branch icon */}
-
                   <div
                     className="
                       flex
@@ -124,7 +112,6 @@ const Page = async () => {
                   </div>
 
                   {/* Branch information */}
-
                   <div className="min-w-0 flex-1">
                     <h2
                       className="
@@ -166,8 +153,7 @@ const Page = async () => {
                     </div>
                   </div>
 
-                  {/* Branch Action */}
-
+                  {/* BRANCH ACTION */}
                   <div className="relative h-9 w-9 shrink-0">
                     {isAdmin && (
                       <BranchAction
@@ -179,10 +165,7 @@ const Page = async () => {
                   </div>
                 </div>
 
-                {/* =================================================
-                    BATCH AREA
-                ================================================= */}
-
+                {/* BATCH AREA */}
                 <div className="px-2 pb-2 pt-1 sm:px-3 sm:pb-3">
                   {branch.batches.length > 0 ? (
                     <div
@@ -201,8 +184,7 @@ const Page = async () => {
                             ${index !== 0 ? "border-t border-border/50" : ""}
                           `}
                         >
-                          {/* Batch name + BatchAction */}
-
+                          {/* BATCH NAME + ACTION */}
                           <div className="flex w-full items-start">
                             <div className="min-w-0 flex-1">
                               <div className="truncate text-xs font-medium text-foreground sm:text-sm">
@@ -222,11 +204,11 @@ const Page = async () => {
                               </div>
                             </div>
 
-                            {/* Batch Action */}
-
+                            {/* BATCH ACTION */}
                             <div className="relative h-8 w-8 shrink-0">
                               {isAdmin && (
                                 <BatchAction
+                                  branchId={branch.id}
                                   batchId={batch.id}
                                   batchName={batch.name}
                                   batchStudents={batch._count.students}
@@ -236,11 +218,10 @@ const Page = async () => {
                             </div>
                           </div>
 
-                          {/* Buttons */}
-
+                          {/* ATTENDANCE + PERFORMANCE */}
                           <div className="mt-2 flex items-center gap-2">
                             <Link
-                              href={`/admin/branches/${batch.id}/attendance`}
+                              href={`/admin/branches/${branch.id}/batches/${batch.id}/attendance`}
                               className="
                                 inline-flex
                                 h-8
@@ -264,7 +245,7 @@ const Page = async () => {
                             </Link>
 
                             <Link
-                              href={`/admin/branches/${batch.id}/performance`}
+                              href={`/admin/branches/${branch.id}/batches/${batch.id}/performance`}
                               className="
                                 inline-flex
                                 h-8
@@ -308,7 +289,6 @@ const Page = async () => {
                   )}
 
                   {/* CREATE BATCH */}
-
                   <div className="px-1 pt-2">
                     {isAdmin && <CreateBatch branchId={branch.id} />}
                   </div>
