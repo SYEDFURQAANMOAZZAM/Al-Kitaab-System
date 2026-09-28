@@ -1,9 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import UpdateBranch, {
-  GroupActionState,
-} from "@/app/ServerActions/updation/updateBranch";
+import UpdateBranch from "@/app/ServerActions/branchOperations/actions/updateBranch";
+import {GroupActionState} from "@/app/ServerActions/branchOperations/types/branch.types";
 import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,7 +29,7 @@ import {
 
 import { MoreVertical } from "lucide-react";
 
-import DeleteBranch from "@/app/ServerActions/deletion/deleteBranch";
+import DeleteBranch from "@/app/ServerActions/branchOperations/actions/deleteBranch";
 
 export default function BranchAction({
   branchName,

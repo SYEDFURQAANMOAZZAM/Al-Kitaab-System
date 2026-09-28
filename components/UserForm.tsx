@@ -9,7 +9,7 @@ import {
 import {
   STUDENT_FIELD_PERMISSIONS,
   type EditorRole,
-} from "@/app/ServerActions/auth/student-permissions";
+} from "@/app/ServerActions/studentOperations/student-permissions";
 import {
   useForm,
   type DefaultValues,

@@ -27,7 +27,7 @@ import {
 import {
   TEACHER_FIELD_PERMISSIONS,
   type EditorRole,
-} from "@/app/ServerActions/auth/teacher-permissions";
+} from "@/app/ServerActions/teacherOperations/teacher-permissions";
 
 import { PasswordInput } from "@/components/passwordInput";
 import BatchSelector from "@/components/BatchSelector";

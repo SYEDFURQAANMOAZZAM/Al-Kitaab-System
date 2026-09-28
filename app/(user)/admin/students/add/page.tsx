@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Suspense } from "react";
 
 import UserForm from "@/components/UserForm";
-import { createStudent } from "@/app/ServerActions/registeration/registerStudent";
+import { createStudent } from "@/app/ServerActions/studentOperations/registerStudent";
 
 export default async function Page() {
   await AuthVerify("ADMIN","TEACHER");

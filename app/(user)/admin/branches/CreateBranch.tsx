@@ -2,9 +2,8 @@
 
 import { useActionState, useEffect, useState } from "react";
 
-import createBranch, {
-  type GroupActionState,
-} from "@/app/ServerActions/createGroups/createBranch";
+import createBranch from "@/app/ServerActions/branchOperations/actions/createBranch";
+import {GroupActionState} from "@/app/ServerActions/branchOperations/types/branch.types"
 
 import { ButtonShadcn } from "@/components/button";
 

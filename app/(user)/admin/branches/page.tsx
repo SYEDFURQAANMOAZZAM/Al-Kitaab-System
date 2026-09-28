@@ -6,7 +6,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import Link from "next/link";
 import { Building2 } from "lucide-react";
 
-import getBranchesAndBatches from "@/app/ServerActions/getGroups/getBranchesAndBatches";
+import getBranchesAndBatches from "@/app/ServerActions/branchOperations/actions/getBranchesAndBatches";
 
 const Page = async () => {
   const user = await requireRole("ADMIN", "TEACHER");

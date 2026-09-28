@@ -58,6 +58,11 @@ export const sidebarItems: SidebarItem[] = [
     href: "/admin/dashboard",
     icon: "dashboard",
   },
+  {
+  title: "Manage Admins",
+  href: "/admin/admins",
+  icon: "shield",
+},
 
   {
     title: "Teacher",
@@ -115,10 +120,16 @@ export const sidebarItems: SidebarItem[] = [
     href: "/admin/materials",
     icon: "materials",
   },
+  {
+  title: "My Profile",
+  href: "/admin/profile",
+  icon: "profile",
+},
 
   {
     title: "Settings",
     href: "/admin/settings",
     icon: "settings",
   },
+  
 ];

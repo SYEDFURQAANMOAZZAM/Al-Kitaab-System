@@ -2,9 +2,9 @@
 
 import { useActionState, useEffect, useState } from "react";
 
-import createBatch from "@/app/ServerActions/createGroups/createBatch";
+import createBatch from "@/app/ServerActions/batchOperations/actions/createBatch";
 
-import type { GroupActionState } from "@/app/ServerActions/createGroups/createBranch";
+import type { GroupActionState } from "@/app/ServerActions/batchOperations/types/batch.types";
 
 import { ButtonShadcn } from "@/components/button";
 
