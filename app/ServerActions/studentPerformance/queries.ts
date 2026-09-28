@@ -8,110 +8,44 @@ import type {
 /* DATE HELPERS                                                               */
 /* -------------------------------------------------------------------------- */
 
-function getMonthStart(
-  year: number,
-  month: number
-) {
-  return new Date(
-    Date.UTC(
-      year,
-      month - 1,
-      1
-    )
-  );
+function getMonthStart(year: number, month: number) {
+  return new Date(Date.UTC(year, month - 1, 1));
 }
 
-/**
- * Returns the exclusive upper limit for real dates.
- *
- * Past month:
- *   first day of next month
- *
- * Current month:
- *   tomorrow
- *
- * Future month:
- *   null
- */
 function getRealDateLimit(
   year: number,
   month: number
 ): Date | null {
   const now = new Date();
+  const currentYear = now.getUTCFullYear();
+  const currentMonth = now.getUTCMonth() + 1;
 
-  const currentYear =
-    now.getUTCFullYear();
-
-  const currentMonth =
-    now.getUTCMonth() + 1;
-
-  /*
-   * Future month.
-   */
+  // Future month
   if (
     year > currentYear ||
-    (
-      year === currentYear &&
-      month > currentMonth
-    )
+    (year === currentYear && month > currentMonth)
   ) {
     return null;
   }
 
-  /*
-   * Current month.
-   *
-   * Tomorrow is exclusive,
-   * therefore today is included.
-   */
-  if (
-    year === currentYear &&
-    month === currentMonth
-  ) {
+  // Current month: include today
+  if (year === currentYear && month === currentMonth) {
     return new Date(
-      Date.UTC(
-        year,
-        month - 1,
-        now.getUTCDate() + 1
-      )
+      Date.UTC(year, month - 1, now.getUTCDate() + 1)
     );
   }
 
-  /*
-   * Past month.
-   */
-  return new Date(
-    Date.UTC(
-      year,
-      month,
-      1
-    )
-  );
+  // Past month
+  return new Date(Date.UTC(year, month, 1));
 }
 
-/**
- * Generate every real calendar date.
- */
-function getRealDates(
-  start: Date,
-  end: Date
-): string[] {
+function getRealDates(start: Date, end: Date): string[] {
   const dates: string[] = [];
-
-  const current = new Date(
-    start
-  );
+  const current = new Date(start);
 
   while (current < end) {
-    dates.push(
-      current
-        .toISOString()
-        .slice(0, 10)
-    );
-
-    current.setUTCDate(
-      current.getUTCDate() + 1
-    );
+    dates.push(current.toISOString().slice(0, 10));
+    current.setUTCDate(current.getUTCDate() + 1);
   }
 
   return dates;
@@ -126,121 +60,42 @@ export async function getStudentPerformance(
   year: number,
   month: number
 ): Promise<StudentPerformanceData> {
-  const start =
-    getMonthStart(
-      year,
-      month
-    );
-
-  const realDateLimit =
-    getRealDateLimit(
-      year,
-      month
-    );
+  const start = getMonthStart(year, month);
+  const realDateLimit = getRealDateLimit(year, month);
 
   /* ------------------------------------------------------------------------ */
   /* STUDENT                                                                   */
   /* ------------------------------------------------------------------------ */
 
-  const student =
-    await prisma.student.findUnique({
-      where: {
-        id: studentId,
-      },
-
-      select: {
-        id: true,
-        userId: true,
-
-        user: {
-          select: {
-            name: true,
-          },
-        },
-
-        enrollments: {
-          select: {
-            batch: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
+  const student = await prisma.student.findUnique({
+    where: {
+      id: studentId,
+    },
+    select: {
+      id: true,
+      userId: true,
+      user: {
+        select: {
+          name: true,
         },
       },
-    });
+    },
+  });
 
   if (!student) {
-    throw new Error(
-      "Student not found."
-    );
+    throw new Error("Student not found.");
   }
 
-  /* ------------------------------------------------------------------------ */
-  /* BATCHES                                                                   */
-  /* ------------------------------------------------------------------------ */
+  const studentInfo = {
+    id: student.id,
+    name: student.user.name,
+  };
 
-  const batches =
-    student.enrollments
-      .map(({ batch }) => ({
-        id: batch.id,
-        name: batch.name,
-      }))
-      .sort((a, b) =>
-        a.name.localeCompare(
-          b.name
-        )
-      );
-
-  /* ------------------------------------------------------------------------ */
-  /* FUTURE MONTH                                                              */
-  /* ------------------------------------------------------------------------ */
-
-  /*
-   * Future month has no real dates yet.
-   */
+  // No attendance data exists yet for a future month.
   if (!realDateLimit) {
     return {
-      student: {
-        id: student.id,
-        name: student.user.name,
-      },
-
-      batches,
-
-      attendance: [],
-    };
-  }
-
-  /* ------------------------------------------------------------------------ */
-  /* REAL DATES                                                                */
-  /* ------------------------------------------------------------------------ */
-
-  const dates =
-    getRealDates(
-      start,
-      realDateLimit
-    );
-
-  const batchIds =
-    batches.map(
-      (batch) => batch.id
-    );
-
-  /* ------------------------------------------------------------------------ */
-  /* NO BATCHES                                                                */
-  /* ------------------------------------------------------------------------ */
-
-  if (!batchIds.length) {
-    return {
-      student: {
-        id: student.id,
-        name: student.user.name,
-      },
-
+      student: studentInfo,
       batches: [],
-
       attendance: [],
     };
   }
@@ -249,147 +104,114 @@ export async function getStudentPerformance(
   /* ATTENDANCE                                                                */
   /* ------------------------------------------------------------------------ */
 
-  const attendance =
-    await prisma.attendance.findMany({
-      where: {
-        userId: student.userId,
-
-        batchId: {
-          in: batchIds,
-        },
-
-        date: {
-          gte: start,
-          lt: realDateLimit,
+  const attendance = await prisma.attendance.findMany({
+    where: {
+      userId: student.userId,
+      date: {
+        gte: start,
+        lt: realDateLimit,
+      },
+    },
+    select: {
+      batchId: true,
+      batchname: true,
+      date: true,
+      attended: true,
+      batch: {
+        select: {
+          name: true,
         },
       },
-
-      select: {
-        batchId: true,
-        date: true,
-        attended: true,
-      },
-
-      orderBy: [
-        {
-          batchId: "asc",
-        },
-
-        {
-          date: "asc",
-        },
-      ],
-    });
+    },
+    orderBy: [
+      { batchId: "asc" },
+      { date: "asc" },
+    ],
+  });
 
   /* ------------------------------------------------------------------------ */
-  /* ATTENDANCE LOOKUP                                                         */
+  /* REAL DATES                                                                */
   /* ------------------------------------------------------------------------ */
 
-  const attendanceByBatch =
-    new Map<
-      string,
-      Map<
-        string,
-        "PRESENT" | "ABSENT" | "LEAVE"
-      >
-    >();
+  const dates = getRealDates(start, realDateLimit);
+
+  /* ------------------------------------------------------------------------ */
+  /* GROUP ATTENDANCE BY BATCH                                                 */
+  /* ------------------------------------------------------------------------ */
+
+  const batchMap = new Map<
+    string,
+    {
+      batchId: string;
+      batchName: string;
+      presentDays: number;
+      leaveDays: number;
+      absentDays: number;
+      records: {
+        date: string;
+        status: "PRESENT" | "ABSENT" | "LEAVE" | null;
+      }[];
+    }
+  >();
 
   for (const record of attendance) {
-    const date =
-      record.date
-        .toISOString()
-        .slice(0, 10);
+    let batch = batchMap.get(record.batchId);
 
-    let batchAttendance =
-      attendanceByBatch.get(
-        record.batchId
-      );
+    if (!batch) {
+      batch = {
+        batchId: record.batchId,
+        batchName:
+          record.batchname ?? record.batch.name,
+        presentDays: 0,
+        leaveDays: 0,
+        absentDays: 0,
+        records: [],
+      };
 
-    if (!batchAttendance) {
-      batchAttendance =
-        new Map();
-
-      attendanceByBatch.set(
-        record.batchId,
-        batchAttendance
-      );
+      batchMap.set(record.batchId, batch);
     }
 
-    batchAttendance.set(
+    const date = record.date.toISOString().slice(0, 10);
+
+    batch.records.push({
       date,
-      record.attended
-    );
+      status: record.attended,
+    });
+
+    if (record.attended === "PRESENT") {
+      batch.presentDays++;
+    } else if (record.attended === "LEAVE") {
+      batch.leaveDays++;
+    } else if (record.attended === "ABSENT") {
+      batch.absentDays++;
+    }
   }
 
   /* ------------------------------------------------------------------------ */
-  /* BUILD ATTENDANCE PER BATCH                                               */
+  /* BUILD ATTENDANCE PER BATCH                                                */
   /* ------------------------------------------------------------------------ */
 
-  const batchAttendance =
-    batches.map((batch) => {
-      const attendanceMap =
-        attendanceByBatch.get(
-          batch.id
-        ) ?? new Map();
-
-      let presentDays = 0;
-      let leaveDays = 0;
-      let absentDays = 0;
-
-      /*
-       * IMPORTANT:
-       *
-       * We iterate over EVERY real date.
-       *
-       * Missing attendance = null
-       * which the UI will display as "-".
-       */
-      const records =
-        dates.map((date) => {
-          const status =
-            attendanceMap.get(
-              date
-            ) ?? null;
-
-          if (
-            status === "PRESENT"
-          ) {
-            presentDays++;
-          }
-
-          if (
-            status === "LEAVE"
-          ) {
-            leaveDays++;
-          }
-
-          if (
-            status === "ABSENT"
-          ) {
-            absentDays++;
-          }
-
-          return {
-            date,
-            status,
-          };
-        });
+  const batches = Array.from(batchMap.values())
+    .sort((a, b) => a.batchName.localeCompare(b.batchName))
+    .map((batch) => {
+      const attendanceByDate = new Map(
+        batch.records.map((record) => [
+          record.date,
+          record.status,
+        ])
+      );
 
       return {
-        batchId: batch.id,
-        batchName: batch.name,
-
-        /*
-         * Total real calendar days,
-         * NOT number of attendance records.
-         */
+        batchId: batch.batchId,
+        batchName: batch.batchName,
         totalDays: dates.length,
-
-        presentDays,
-        leaveDays,
-        absentDays,
-
-        records,
+        presentDays: batch.presentDays,
+        leaveDays: batch.leaveDays,
+        absentDays: batch.absentDays,
+        records: dates.map((date) => ({
+          date,
+          status: attendanceByDate.get(date) ?? null,
+        })),
       };
     });
 
@@ -398,14 +220,11 @@ export async function getStudentPerformance(
   /* ------------------------------------------------------------------------ */
 
   return {
-    student: {
-      id: student.id,
-      name: student.user.name,
-    },
-
-    batches,
-
-    attendance:
-      batchAttendance,
+    student: studentInfo,
+    batches: batches.map((batch) => ({
+      id: batch.batchId,
+      name: batch.batchName,
+    })),
+    attendance: batches,
   };
 }

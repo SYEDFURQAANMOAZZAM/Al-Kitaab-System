@@ -1,10 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+
 import { requireRoleForAction } from "@/lib/auth/require-role";
 
 import { createBatchService } from "../service/batch.service";
-import { GroupActionState } from "../types/batch.types";
+import type { GroupActionState } from "../types/batch.types";
 
 const createBatch = async (
   branchId: string,
@@ -13,28 +14,36 @@ const createBatch = async (
 ): Promise<GroupActionState> => {
   await requireRoleForAction(["ADMIN"]);
 
-  const batchname = formData.get("batchname");
+  const batchName = formData.get("batchName");
 
   if (
-    typeof batchname !== "string" ||
-    !batchname.trim()
+    typeof batchName !== "string" ||
+    !batchName.trim()
   ) {
     return {
       error: "Batch name is required.",
     };
   }
 
-  const result =
-    await createBatchService(
-      branchId,
-      batchname
+  const subjectIds = formData
+    .getAll("subjectIds")
+    .filter(
+      (id): id is string =>
+        typeof id === "string" && id.trim().length > 0
     );
+
+  const result = await createBatchService(
+    branchId,
+    batchName,
+    subjectIds
+  );
 
   if (result.error) {
     return result;
   }
 
   revalidatePath("/admin/branches");
+  revalidatePath(`/admin/branches/${branchId}`);
 
   return result;
 };

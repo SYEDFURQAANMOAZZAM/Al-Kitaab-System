@@ -1,10 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+
 import { requireRoleForAction } from "@/lib/auth/require-role";
 
 import { updateBatchService } from "../service/batch.service";
-import { GroupActionState } from "../types/batch.types";
+import type { GroupActionState } from "../types/batch.types";
 
 const updateBatch = async (
   batchId: string,
@@ -13,22 +14,29 @@ const updateBatch = async (
 ): Promise<GroupActionState> => {
   await requireRoleForAction(["ADMIN"]);
 
-  const batchname = formData.get("batchName");
+  const batchName = formData.get("batchName");
 
   if (
-    typeof batchname !== "string" ||
-    !batchname.trim()
+    typeof batchName !== "string" ||
+    !batchName.trim()
   ) {
     return {
       error: "Batch name is required.",
     };
   }
 
-  const result =
-    await updateBatchService(
-      batchId,
-      batchname
+  const subjectIds = formData
+    .getAll("subjectIds")
+    .filter(
+      (id): id is string =>
+        typeof id === "string" && id.trim().length > 0
     );
+
+  const result = await updateBatchService(
+    batchId,
+    batchName,
+    subjectIds
+  );
 
   if (result.error) {
     return result;

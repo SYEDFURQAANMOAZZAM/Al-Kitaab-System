@@ -18,11 +18,14 @@ function getTodayDate() {
 export default async function Page({
   params,
 }: {
-  params: Promise<{ batchId: string }>;
+  params: Promise<{
+    branchId: string;
+    batchId: string;
+  }>;
 }) {
   await requireRole("TEACHER", "ADMIN");
 
-  const { batchId } = await params;
+  const { branchId, batchId } = await params;
 
   const batch = await prisma.batch.findUnique({
     where: {
