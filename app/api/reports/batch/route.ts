@@ -11,15 +11,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  console.log("[Batch API] Request received");
-
   try {
-    console.log("[Batch API] Checking authentication");
-
-    const user = await requireRoleForAction([
-      "ADMIN",
-      "TEACHER",
-    ]);
+    const user = await requireRoleForAction(["ADMIN", "TEACHER"]);
 
     console.log("[Batch API] Authenticated:", user.id);
 
@@ -29,9 +22,16 @@ export async function GET(request: NextRequest) {
     const year = Number(searchParams.get("year"));
     const month = Number(searchParams.get("month"));
 
-    if (!batchId || !year || !month) {
+    if (
+      !batchId?.trim() ||
+      !Number.isInteger(year) ||
+      year < 2000 ||
+      !Number.isInteger(month) ||
+      month < 1 ||
+      month > 12
+    ) {
       return NextResponse.json(
-        { error: "Invalid parameters" },
+        { error: "Invalid batchId, year, or month" },
         { status: 400 }
       );
     }
@@ -54,10 +54,7 @@ export async function GET(request: NextRequest) {
       month,
     });
 
-    console.log(
-      "[Batch API] Progress fetched:",
-      progress.length
-    );
+    console.log("[Batch API] Progress fetched:", progress.length);
 
     console.log("[Batch API] Generating PDF");
 
@@ -71,10 +68,11 @@ export async function GET(request: NextRequest) {
     console.log("[Batch API] PDF generated");
 
     return new NextResponse(new Uint8Array(pdf), {
+      status: 200,
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": 'attachment; filename="batch-report.pdf"',
-        "Cache-Control": "no-store",
+        "Cache-Control": "no-store, max-age=0",
       },
     });
   } catch (error) {
@@ -85,7 +83,7 @@ export async function GET(request: NextRequest) {
         error:
           error instanceof Error
             ? error.message
-            : "Unknown error",
+            : "Failed to generate batch report",
       },
       { status: 500 }
     );

@@ -1,9 +1,12 @@
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 
 export async function generateStudentReportPdf(
   html: string
 ): Promise<Uint8Array> {
   const browser = await puppeteer.launch({
+    args: chromium.args,
+    executablePath: await chromium.executablePath(),
     headless: true,
   });
 
@@ -29,6 +32,7 @@ export async function generateStudentReportPdf(
         <div style="
           width: 100%;
           text-align: center;
+          font-family: Arial, sans-serif;
           font-size: 8px;
           color: #6b7280;
         ">
@@ -45,7 +49,7 @@ export async function generateStudentReportPdf(
       },
     });
 
-    return pdf;
+    return new Uint8Array(pdf);
   } finally {
     await browser.close();
   }
