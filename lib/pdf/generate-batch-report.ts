@@ -1,5 +1,5 @@
 import puppeteer from "puppeteer-core";
-import chromium from "@sparticuz/chromium";
+import { getBrowserConfig } from "./browser-config";
 
 import { createBatchReportHtml } from "./batch-report-template";
 
@@ -23,11 +23,12 @@ export async function generateBatchReportPdf(
 ): Promise<Uint8Array> {
   const html = createBatchReportHtml(input);
 
-  const browser = await puppeteer.launch({
-    args: chromium.args,
-    executablePath: await chromium.executablePath(),
-    headless: true,
-  });
+  const config = await getBrowserConfig();
+
+const browser = await puppeteer.launch({
+  ...config,
+  headless: true,
+});
 
   try {
     const page = await browser.newPage();
