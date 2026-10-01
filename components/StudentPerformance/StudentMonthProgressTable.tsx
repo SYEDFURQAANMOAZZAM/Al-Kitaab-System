@@ -1,6 +1,8 @@
+
 "use client";
 
 import * as React from "react";
+
 import { ChevronDown, Loader2 } from "lucide-react";
 
 import { fetchStudentMonthProgress } from "@/app/ServerActions/getProgress/actions";
@@ -90,7 +92,27 @@ function LearningContent({
                   <span className="font-medium text-foreground">
                     {group.status}:
                   </span>{" "}
-                  {formatted}
+
+                  {typeof formatted === "string" ? (
+                    <span>{formatted}</span>
+                  ) : (
+                    <>
+                      <span>{formatted.fromText}</span>
+
+                      {formatted.fromText && formatted.toText && (
+                        <>
+                          {" "}
+                          <span className="font-semibold text-foreground">
+                            to
+                          </span>{" "}
+                        </>
+                      )}
+
+                      <span className="font-medium text-foreground">
+                        {formatted.toText}
+                      </span>
+                    </>
+                  )}
                 </div>
               );
             })}
@@ -102,13 +124,15 @@ function LearningContent({
 }
 
 /* -------------------------------------------------------------------------- */
-/* BATCH PROGRESS                                                             */
+/* DAILY PROGRESS                                                             */
 /* -------------------------------------------------------------------------- */
 
-function BatchProgressCell({
+function DailyProgressCell({
   progresses,
+  batches,
 }: {
   progresses: ProgressRecord[];
+  batches: Props["batches"];
 }) {
   if (!progresses.length) {
     return (
@@ -119,15 +143,29 @@ function BatchProgressCell({
   }
 
   return (
-    <div className="min-w-0 space-y-3">
-      {progresses.map((progress) => (
-        <div
-          key={progress.id}
-          className="min-w-0"
-        >
-          <LearningContent progress={progress} />
-        </div>
-      ))}
+    <div className="min-w-0">
+      {progresses.map((progress, index) => {
+        const batch = batches.find(
+          (b) => b.id === progress.batchId
+        );
+
+        return (
+          <div
+            key={progress.id}
+            className={`min-w-0 py-3 first:pt-0 last:pb-0 ${
+              index !== progresses.length - 1
+                ? "border-b border-border/50"
+                : ""
+            }`}
+          >
+            <div className="mb-2 text-xs font-semibold text-muted-foreground">
+              {batch?.name ?? "Batch"}
+            </div>
+
+            <LearningContent progress={progress} />
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -143,8 +181,6 @@ function MobileProgressCard({
   day: StudentMonthProgressDay;
   batches: Props["batches"];
 }) {
-  const progresses = day.progresses;
-
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card">
       {/* DATE */}
@@ -155,31 +191,13 @@ function MobileProgressCard({
         </span>
       </div>
 
-      {/* BATCHES */}
+      {/* DAILY PROGRESS */}
 
-      <div className="divide-y divide-border">
-        {batches.map((batch) => {
-          const batchProgress = progresses.filter(
-            (progress) => progress.batchId === batch.id
-          );
-
-          return (
-            <div
-              key={batch.id}
-              className="min-w-0 space-y-2 px-3 py-3"
-            >
-              <div className="text-sm font-semibold text-foreground">
-                {batch.name}
-              </div>
-
-              <div className="min-w-0">
-                <BatchProgressCell
-                  progresses={batchProgress}
-                />
-              </div>
-            </div>
-          );
-        })}
+      <div className="min-w-0 px-3 py-3">
+        <DailyProgressCell
+          progresses={day.progresses}
+          batches={batches}
+        />
       </div>
     </div>
   );
@@ -188,7 +206,6 @@ function MobileProgressCard({
 /* -------------------------------------------------------------------------- */
 /* DESKTOP TABLE                                                              */
 /* -------------------------------------------------------------------------- */
-
 
 function DesktopProgressTable({
   days,
@@ -199,8 +216,6 @@ function DesktopProgressTable({
 }) {
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
-  const isScrollable = batches.length > 3;
-
   const drag = React.useRef({
     active: false,
     startX: 0,
@@ -210,7 +225,7 @@ function DesktopProgressTable({
   const handleMouseDown = (
     e: React.MouseEvent<HTMLDivElement>,
   ) => {
-    if (e.button !== 0 || !isScrollable) return;
+    if (e.button !== 0) return;
 
     const container = scrollRef.current;
     if (!container) return;
@@ -245,7 +260,7 @@ function DesktopProgressTable({
     drag.current.active = false;
 
     if (container) {
-      container.style.cursor = isScrollable ? "grab" : "";
+      container.style.cursor = "";
       container.style.userSelect = "";
     }
   };
@@ -259,31 +274,12 @@ function DesktopProgressTable({
         onMouseUp={stopDragging}
         onMouseLeave={stopDragging}
         onDragStart={(e) => e.preventDefault()}
-        className={`w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain ${
-          isScrollable ? "cursor-grab" : ""
-        }`}
+        className="w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain"
       >
-        <table
-          className={`table-fixed border-separate border-spacing-0 text-sm ${
-            isScrollable ? "w-max" : "w-full"
-          }`}
-          style={{
-            width: isScrollable
-              ? `${130 + batches.length * 280}px`
-              : "100%",
-          }}
-        >
+        <table className="w-full table-fixed border-separate border-spacing-0 text-sm">
           <colgroup>
-            <col style={{ width: "130px" }} />
-
-            {batches.map((batch) => (
-              <col
-                key={batch.id}
-                style={{
-                  width: isScrollable ? "280px" : undefined,
-                }}
-              />
-            ))}
+            <col style={{ width: "150px" }} />
+            <col />
           </colgroup>
 
           <thead>
@@ -292,16 +288,9 @@ function DesktopProgressTable({
                 Date
               </th>
 
-              {batches.map((batch) => (
-                <th
-                  key={batch.id}
-                  className="sticky top-0 z-20 border-b border-r border-border bg-muted px-3 py-3 text-left font-medium text-foreground last:border-r-0 sm:px-4"
-                >
-                  <span className="block break-words [overflow-wrap:anywhere]">
-                    {batch.name}
-                  </span>
-                </th>
-              ))}
+              <th className="sticky top-0 z-20 border-b border-border bg-muted px-3 py-3 text-left font-medium text-foreground sm:px-4">
+                Daily Progress
+              </th>
             </tr>
           </thead>
 
@@ -315,25 +304,14 @@ function DesktopProgressTable({
                   {formatDate(day.date)}
                 </td>
 
-                {batches.map((batch) => {
-                  const batchProgress = day.progresses.filter(
-                    (progress) =>
-                      progress.batchId === batch.id,
-                  );
-
-                  return (
-                    <td
-                      key={`${dateKey(day.date)}-${batch.id}`}
-                      className="min-w-0 border-b border-r border-border px-3 py-3 align-top last:border-r-0 sm:px-4"
-                    >
-                      <div className="min-w-0 max-w-full break-words [overflow-wrap:anywhere]">
-                        <BatchProgressCell
-                          progresses={batchProgress}
-                        />
-                      </div>
-                    </td>
-                  );
-                })}
+                <td className="min-w-0 border-b border-border px-3 py-3 align-top sm:px-4">
+                  <div className="min-w-0 max-w-full break-words [overflow-wrap:anywhere]">
+                    <DailyProgressCell
+                      progresses={day.progresses}
+                      batches={batches}
+                    />
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>

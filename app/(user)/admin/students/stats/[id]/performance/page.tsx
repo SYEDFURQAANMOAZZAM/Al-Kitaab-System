@@ -35,7 +35,7 @@ export default async function StudentPerformancePage({
   params,
   searchParams,
 }: Props) {
-  await requireRole("ADMIN");
+  await requireRole("ADMIN","TEACHER","STUDENT");
 
   const { id } = await params;
   const search = await searchParams;
@@ -68,6 +68,10 @@ export default async function StudentPerformancePage({
         <div className="flex min-w-0 flex-col gap-4">
           <StudentPerformanceHeader
             studentName={performance.student.name}
+            isAdmin={true}
+            studentId={id}
+            year={year}
+            month={month}
           />
 
           <div className="flex w-full justify-end">

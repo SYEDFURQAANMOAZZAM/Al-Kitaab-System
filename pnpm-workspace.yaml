@@ -2,6 +2,7 @@ allowBuilds:
   '@prisma/engines': true
   esbuild: false
   prisma: true
+  puppeteer: false
   sharp: true
   unrs-resolver: true
 ignoredBuiltDependencies:

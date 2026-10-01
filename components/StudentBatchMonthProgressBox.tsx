@@ -102,7 +102,27 @@ function LearningContent({
                   <span className="font-medium text-foreground">
                     {group.status}:
                   </span>{" "}
-                  {formatted}
+
+                  {typeof formatted === "string" ? (
+                    <span>{formatted}</span>
+                  ) : (
+                    <>
+                      <span>{formatted.fromText}</span>
+
+                      {formatted.fromText && formatted.toText && (
+                        <>
+                          {" "}
+                          <span className="font-semibold text-foreground">
+                            to
+                          </span>{" "}
+                        </>
+                      )}
+
+                      <span className="font-medium text-foreground">
+                        {formatted.toText}
+                      </span>
+                    </>
+                  )}
                 </div>
               );
             })}

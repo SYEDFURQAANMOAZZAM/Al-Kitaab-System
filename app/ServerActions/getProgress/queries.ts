@@ -109,54 +109,34 @@ export async function queryBatchStudentsMonthProgress({
 }: GetBatchStudentsMonthProgressInput) {
   const { start, end } = getMonthRange(year, month);
 
-  return prisma.studentEnrollment.findMany({
+  return prisma.progress.findMany({
     where: {
       batchId,
-    },
-
-    orderBy: {
-      student: {
-        user: {
-          name: "asc",
-        },
+      date: {
+        gte: start,
+        lt: end,
       },
     },
-
+    orderBy: {
+      date: "asc",
+    },
     select: {
+      id: true,
+      studentId: true,
+      batchId: true,
+      batchname: true,
+      date: true,
+      remarks: true,
+      learnings: true,
+      createdAt: true,
+      updatedAt: true,
       student: {
         select: {
           id: true,
           userId: true,
-
           user: {
             select: {
               name: true,
-            },
-          },
-
-          progress: {
-            where: {
-              batchId,
-              date: {
-                gte: start,
-                lt: end,
-              },
-            },
-
-            orderBy: {
-              date: "asc",
-            },
-
-            select: {
-              id: true,
-              studentId: true,
-              batchId: true,
-              batchname: true,
-              date: true,
-              remarks: true,
-              learnings: true,
-              createdAt: true,
-              updatedAt: true,
             },
           },
         },

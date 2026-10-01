@@ -9,10 +9,18 @@ import { Button } from "@/components/ui/button";
 
 type Props = {
   studentName: string;
+  isAdmin: boolean;
+  studentId: string;
+  year: number;
+  month: number;
 };
 
 export default function StudentPerformanceHeader({
   studentName,
+  isAdmin,
+  studentId,
+  year,
+  month,
 }: Props) {
   return (
     <header className="flex min-w-0 flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-center sm:justify-between">
@@ -31,7 +39,16 @@ export default function StudentPerformanceHeader({
           type="button"
           variant="outline"
           className="gap-2"
-          onClick={() => window.print()}
+          onClick={() => {
+            const params = new URLSearchParams({
+              studentId,
+              year: String(year),
+              month: String(month),
+            });
+
+            window.location.href =
+              `/api/reports/student?${params.toString()}`;
+          }}
         >
           <Download className="size-4" />
 
@@ -44,21 +61,23 @@ export default function StudentPerformanceHeader({
           </span>
         </Button>
 
-        <Button
-          type="button"
-          variant="destructive"
-          className="gap-2"
-        >
-          <Trash2 className="size-4" />
+        {isAdmin && (
+          <Button
+            type="button"
+            variant="destructive"
+            className="gap-2"
+          >
+            <Trash2 className="size-4" />
 
-          <span className="hidden sm:inline">
-            Delete Data
-          </span>
+            <span className="hidden sm:inline">
+              Delete Data
+            </span>
 
-          <span className="sm:hidden">
-            Delete
-          </span>
-        </Button>
+            <span className="sm:hidden">
+              Delete
+            </span>
+          </Button>
+        )}
       </div>
     </header>
   );

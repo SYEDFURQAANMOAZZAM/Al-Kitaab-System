@@ -44,7 +44,6 @@ export async function fetchBatchStudentsMonthProgress(
   await requireRoleForAction([
     "ADMIN",
     "TEACHER",
-    "STUDENT",
   ]);
 
   return getBatchStudentsMonthProgress(input);

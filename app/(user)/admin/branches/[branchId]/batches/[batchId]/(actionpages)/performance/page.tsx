@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth/require-role";
 
 import {
-  getBatchPerformance,
+  getLiveBatchPerformance,
 } from "@/app/ServerActions/batchPerformance/queries";
 
 import BatchPerformanceHeader from "@/components/BatchPerformance/BatchPerformanceHeader";
@@ -15,10 +15,9 @@ import BatchStudentProgress from "@/components/BatchPerformance/BatchStudentProg
 
 type Props = {
   params: Promise<{
-    branchId:string;
+    branchId: string;
     batchId: string;
   }>;
-
   searchParams: Promise<{
     year?: string;
     month?: string;
@@ -34,49 +33,37 @@ function getCurrentMonth() {
   };
 }
 
-function getDaysInMonth(
-  year: number,
-  month: number
-) {
+function getDaysInMonth(year: number, month: number) {
   const count = new Date(
     Date.UTC(year, month, 0)
   ).getUTCDate();
 
-  return Array.from(
-    { length: count },
-    (_, index) => {
-      const date = new Date(
-        Date.UTC(
-          year,
-          month - 1,
-          index + 1
-        )
-      );
+  return Array.from({ length: count }, (_, index) => {
+    const date = new Date(
+      Date.UTC(year, month - 1, index + 1)
+    );
 
-      return date.toISOString().slice(0, 10);
-    }
-  );
+    return date.toISOString().slice(0, 10);
+  });
 }
 
 export default async function BatchPerformancePage({
   params,
   searchParams,
 }: Props) {
-  await requireRole("ADMIN");
+  await requireRole("ADMIN", "TEACHER");
 
-  const { branchId,batchId } = await params;
-
+  const { branchId, batchId } = await params;
   const search = await searchParams;
 
   const current = getCurrentMonth();
 
-  const year =
-    Number(search.year) || current.year;
-
-  const month =
-    Number(search.month) || current.month;
+  const year = Number(search.year) || current.year;
+  const month = Number(search.month) || current.month;
 
   if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
     month < 1 ||
     month > 12 ||
     year < 2000 ||
@@ -85,23 +72,18 @@ export default async function BatchPerformancePage({
     notFound();
   }
 
-  const performance =
-    await getBatchPerformance(
-      batchId,
-      year,
-      month
-    );
-
-  const days = getDaysInMonth(
+  const performance = await getLiveBatchPerformance(
+    batchId,
     year,
     month
   );
 
-  const students =
-    performance.students.map((student) => ({
-      id: student.id,
-      name: student.name,
-    }));
+  const days = getDaysInMonth(year, month);
+
+  const students = performance.students.map((student) => ({
+    id: student.id,
+    name: student.name,
+  }));
 
   return (
     <main className="mx-auto min-w-0 w-full max-w-[1800px] overflow-x-hidden p-2 sm:p-3">
@@ -111,6 +93,9 @@ export default async function BatchPerformancePage({
         <div className="flex min-w-0 flex-col gap-4">
           <BatchPerformanceHeader
             batchName={performance.batch.name}
+            batchId={batchId}
+            year={year}
+            month={month}
           />
 
           <div className="flex w-full justify-end">

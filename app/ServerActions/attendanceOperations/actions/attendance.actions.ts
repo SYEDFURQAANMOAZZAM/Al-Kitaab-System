@@ -22,7 +22,6 @@ export async function getAttendanceForDate(
   batchId: string,
   dateString: string
 ): Promise<GetAttendanceResult> {
-  await requireRole("TEACHER", "ADMIN");
 
   await requireRoleForAction([
     "TEACHER",
@@ -40,7 +39,6 @@ export async function saveAttendance(
   dateString: string,
   attendance: AttendanceInput[]
 ): Promise<SaveAttendanceResult> {
-  await requireRole("TEACHER", "ADMIN");
 
   await requireRoleForAction([
     "TEACHER",
