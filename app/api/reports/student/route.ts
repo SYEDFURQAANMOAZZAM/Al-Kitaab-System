@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from "next/server";
 
 import { getStudentPerformance } from "@/app/ServerActions/studentPerformance/queries";
@@ -18,7 +17,7 @@ export async function GET(request: NextRequest) {
   const year = Number(searchParams.get("year"));
 
   if (
-    !studentId ||
+    !studentId?.trim() ||
     !Number.isInteger(month) ||
     !Number.isInteger(year) ||
     month < 1 ||
@@ -55,13 +54,12 @@ export async function GET(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition":
-          `attachment; filename="student-report-${year}-${String(month).padStart(2, "0")}.pdf"`,
-        "Cache-Control": "no-store",
+        "Content-Disposition": `attachment; filename="student-report-${year}-${String(month).padStart(2, "0")}.pdf"`,
+        "Cache-Control": "no-store, max-age=0",
       },
     });
   } catch (error) {
-    console.error("Student report generation failed:", error);
+    console.error("[Student Report API] Generation failed:", error);
 
     return NextResponse.json(
       { error: "Failed to generate student report." },
