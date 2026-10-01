@@ -1,3 +1,4 @@
+
 "use client";
 
 import { FileDown, Trash2 } from "lucide-react";
@@ -5,16 +6,32 @@ import { FileDown, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Props = {
+  teacherId: string;
   teacherName: string;
-  onExportPdf?: () => void;
+  month: number;
+  year: number;
   onDelete?: () => void;
 };
 
 export default function TeacherPerformanceHeader({
+  teacherId,
   teacherName,
-  onExportPdf,
+  month,
+  year,
   onDelete,
 }: Props) {
+  function handleExportPdf() {
+    const params = new URLSearchParams({
+      teacherId,
+      month: String(month),
+      year: String(year),
+    });
+
+    window.location.assign(
+      `/api/reports/teacher?${params.toString()}`
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
@@ -31,8 +48,7 @@ export default function TeacherPerformanceHeader({
         <Button
           variant="outline"
           size="sm"
-          onClick={onExportPdf}
-          disabled={!onExportPdf}
+          onClick={handleExportPdf}
         >
           <FileDown className="mr-2 size-4" />
           Export PDF

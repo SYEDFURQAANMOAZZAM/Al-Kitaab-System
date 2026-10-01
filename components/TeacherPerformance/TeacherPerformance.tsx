@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -38,15 +39,35 @@ export default function TeacherPerformance({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  function updatePeriod(nextMonth: number, nextYear: number) {
-    const params = new URLSearchParams(searchParams.toString());
+  function updatePeriod(
+    nextMonth: number,
+    nextYear: number
+  ) {
+    const params = new URLSearchParams(
+      searchParams.toString()
+    );
 
     params.set("month", String(nextMonth));
     params.set("year", String(nextYear));
 
-    router.replace(`${pathname}?${params.toString()}`, {
-      scroll: false,
+    router.replace(
+      `${pathname}?${params.toString()}`,
+      {
+        scroll: false,
+      }
+    );
+  }
+
+  function exportTeacherPdf() {
+    const params = new URLSearchParams({
+      teacherId: data.teacherId,
+      month: String(month),
+      year: String(year),
     });
+
+    window.location.assign(
+      `/api/reports/teacher?${params.toString()}`
+    );
   }
 
   const summary = [
@@ -85,8 +106,10 @@ export default function TeacherPerformance({
   return (
     <main className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5 p-3 sm:gap-6 sm:p-5 lg:p-6">
       <TeacherPerformanceHeader
+        teacherId={data.teacherId}
         teacherName={data.teacherName}
-        onExportPdf={onExportPdf}
+        month={month}
+        year={year}
         onDelete={onDelete}
       />
 
@@ -111,13 +134,16 @@ export default function TeacherPerformance({
               className="flex min-w-0 items-center gap-3 rounded-xl border border-border bg-card p-3 sm:p-4"
             >
               <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-                <Icon className={`size-4 ${item.style}`} />
+                <Icon
+                  className={`size-4 ${item.style}`}
+                />
               </div>
 
               <div className="min-w-0">
                 <p className="truncate text-xs text-muted-foreground">
                   {item.label}
                 </p>
+
                 <p className="mt-1 text-xl font-semibold tabular-nums tracking-tight">
                   {item.value}
                 </p>
