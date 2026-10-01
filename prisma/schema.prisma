@@ -209,7 +209,7 @@ model Attendance {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, date, batchId])
-  @@index([batchId])
+  @@index([batchId, date])
   @@index([userId, date])
 }
 

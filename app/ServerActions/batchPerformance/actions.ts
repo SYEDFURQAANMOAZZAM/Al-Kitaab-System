@@ -9,7 +9,7 @@ export async function fetchBatchPerformance(
   year: number,
   month: number
 ) {
-  await requireRoleForAction(["ADMIN"]);
+  await requireRoleForAction(["ADMIN","TEACHER"]);
 
   return getBatchPerformance(
     batchId,

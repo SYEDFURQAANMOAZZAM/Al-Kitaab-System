@@ -115,34 +115,48 @@ export async function getStudentMonthProgress(
 export async function getBatchStudentsMonthProgress(
   input: GetBatchStudentsMonthProgressInput
 ): Promise<BatchStudentMonthProgress[]> {
-  const students =
-    await queryBatchStudentsMonthProgress(input);
+  const progresses = await queryBatchStudentsMonthProgress(input);
 
-  const days = getDaysInMonth(
-    input.year,
-    input.month
-  );
+  const days = getDaysInMonth(input.year, input.month);
 
-  return students.map(({ student }) => {
-    const progressByDate = new Map(
-      student.progress.map((progress) => [
-        dateKey(progress.date),
-        progress,
-      ])
-    );
-
-    return {
+  const studentsMap = new Map<
+    string,
+    {
       student: {
-        id: student.id,
-        userId: student.userId,
-        name: student.user.name,
-      },
+        id: string;
+        userId: string;
+        name: string;
+      };
+      progressByDate: Map<string, (typeof progresses)[number]>;
+    }
+  >();
 
+  for (const progress of progresses) {
+    let entry = studentsMap.get(progress.studentId);
+
+    if (!entry) {
+      entry = {
+        student: {
+          id: progress.student.id,
+          userId: progress.student.userId,
+          name: progress.student.user.name,
+        },
+        progressByDate: new Map(),
+      };
+
+      studentsMap.set(progress.studentId, entry);
+    }
+
+    entry.progressByDate.set(dateKey(progress.date), progress);
+  }
+
+  return Array.from(studentsMap.values())
+    .sort((a, b) => a.student.name.localeCompare(b.student.name))
+    .map(({ student, progressByDate }) => ({
+      student,
       days: days.map((date) => ({
         date,
-        progress:
-          progressByDate.get(dateKey(date)) ?? null,
+        progress: progressByDate.get(dateKey(date)) ?? null,
       })),
-    };
-  });
+    }));
 }

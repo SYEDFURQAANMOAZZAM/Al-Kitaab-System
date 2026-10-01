@@ -180,7 +180,10 @@ function getEndpointPart(
 
 export function formatLearning(
   learning: Learning
-): string {
+): { fromText: string; toText: string } | string {
+  if (!learning.parts || !learning.parts.length) {
+    return "";
+  }
   const parts = [...(learning.parts ?? [])].sort(
     (a, b) => (a.position ?? 0) - (b.position ?? 0)
   );
@@ -220,7 +223,7 @@ export function formatLearning(
   const toText = toParts.join(" ");
 
   if (fromText && toText) {
-    return `${fromText} - ${toText}`;
+    return { fromText, toText };
   }
 
   return fromText || toText;

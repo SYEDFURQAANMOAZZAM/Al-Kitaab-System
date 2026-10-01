@@ -1,7 +1,5 @@
 "use client";
 
-import * as React from "react";
-
 import {
   Download,
   Trash2,
@@ -11,13 +9,29 @@ import { Button } from "@/components/ui/button";
 
 type Props = {
   batchName: string;
+  batchId: string;
+  year: number;
+  month: number;
 };
 
 export default function BatchPerformanceHeader({
   batchName,
+  batchId,
+  year,
+  month,
 }: Props) {
   const handleExportPdf = () => {
-    window.print();
+    const params = new URLSearchParams({
+      batchId,
+      year: String(year),
+      month: String(month),
+    });
+
+    window.open(
+      `/api/reports/batch?${params.toString()}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
   };
 
   return (
@@ -40,9 +54,11 @@ export default function BatchPerformanceHeader({
           onClick={handleExportPdf}
         >
           <Download className="size-4" />
+
           <span className="hidden sm:inline">
             Export PDF
           </span>
+
           <span className="sm:hidden">
             Export
           </span>
@@ -54,9 +70,11 @@ export default function BatchPerformanceHeader({
           className="gap-2"
         >
           <Trash2 className="size-4" />
+
           <span className="hidden sm:inline">
             Delete Data
           </span>
+
           <span className="sm:hidden">
             Delete
           </span>

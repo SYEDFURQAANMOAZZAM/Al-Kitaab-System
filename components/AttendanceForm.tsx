@@ -55,13 +55,28 @@ HELPERS
 ========================================================= */
 
 function formatDateForInput(date: Date): string {
-  return date.toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const year = parts.find((part) => part.type === "year")!.value;
+  const month = parts.find((part) => part.type === "month")!.value;
+  const day = parts.find((part) => part.type === "day")!.value;
+
+  return `${year}-${month}-${day}`;
 }
 
 function formatDisplayDate(dateString: string): string {
-  const date = new Date(`${dateString}T00:00:00`);
+  const [year, month, day] = dateString.split("-").map(Number);
+
+  // Use UTC noon to avoid the date shifting across time zones.
+  const date = new Date(Date.UTC(year, month - 1, day, 12));
 
   return date.toLocaleDateString("en-IN", {
+    timeZone: "Asia/Kolkata",
     day: "numeric",
     month: "short",
     year: "numeric",

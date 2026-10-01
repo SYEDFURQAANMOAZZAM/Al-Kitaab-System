@@ -1,11 +1,8 @@
+
 "use client";
 
 import * as React from "react";
-import {
-  Check,
-  CircleX,
-  Clock3,
-} from "lucide-react";
+import { Check, CircleX, Clock3 } from "lucide-react";
 
 import type {
   StudentBatchAttendance,
@@ -15,80 +12,61 @@ type Props = {
   attendance: StudentBatchAttendance[];
 };
 
-type AttendanceStatusType =
-  | "PRESENT"
-  | "ABSENT"
-  | "LEAVE"
-  | null;
-
-/* -------------------------------------------------------------------------- */
-/* DATE                                                                       */
-/* -------------------------------------------------------------------------- */
+type AttendanceStatusType = "PRESENT" | "ABSENT" | "LEAVE" | null;
 
 function formatDate(date: string) {
-  return new Date(`${date}T00:00:00Z`).toLocaleDateString(
-    "en-US",
-    {
-      weekday: "short",
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      timeZone: "UTC",
-    },
-  );
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString("en-US", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }
 
-/* -------------------------------------------------------------------------- */
-/* STATUS                                                                     */
-/* -------------------------------------------------------------------------- */
+function getDay(date: string) {
+  return new Date(`${date}T00:00:00Z`).getUTCDate();
+}
 
-function Status({
-  status,
-}: {
-  status: AttendanceStatusType;
-}) {
+function Status({ status }: { status: AttendanceStatusType }) {
   if (!status) {
-    return (
-      <span className="text-muted-foreground">
-        -
-      </span>
-    );
+    return <span className="text-xs text-muted-foreground">-</span>;
   }
 
-  const styles = {
-    PRESENT:
-      "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-    LEAVE:
-      "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-    ABSENT:
-      "bg-destructive/10 text-destructive",
-  };
-
-  const labels = {
-    PRESENT: "Present",
-    LEAVE: "Leave",
-    ABSENT: "Absent",
-  };
-
-  const Icon = {
-    PRESENT: Check,
-    LEAVE: Clock3,
-    ABSENT: CircleX,
+  const config = {
+    PRESENT: {
+      label: "Present",
+      short: "P",
+      Icon: Check,
+      style: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    },
+    LEAVE: {
+      label: "Leave",
+      short: "L",
+      Icon: Clock3,
+      style: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    },
+    ABSENT: {
+      label: "Absent",
+      short: "A",
+      Icon: CircleX,
+      style: "bg-destructive/10 text-destructive",
+    },
   }[status];
+
+  const { Icon, label, short, style } = config;
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${styles[status]}`}
+      title={label}
+      aria-label={label}
+      className={`inline-flex items-center justify-center gap-1 rounded-md px-1.5 py-1 text-xs font-semibold ${style}`}
     >
       <Icon className="size-3.5 shrink-0" />
-      {labels[status]}
+      <span>{short}</span>
     </span>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/* MAIN                                                                       */
-/* -------------------------------------------------------------------------- */
 
 export default function StudentAttendanceTables({
   attendance,
@@ -101,14 +79,15 @@ export default function StudentAttendanceTables({
     ),
   ).sort();
 
-  const attendanceMaps = attendance.map((batch) => {
-    return new Map(
-      batch.records.map((record) => [
-        record.date,
-        record.status,
-      ]),
-    );
-  });
+  const attendanceMaps = attendance.map(
+    (batch) =>
+      new Map(
+        batch.records.map((record) => [
+          record.date,
+          record.status,
+        ]),
+      ),
+  );
 
   const totalPresent = attendance.reduce(
     (sum, batch) => sum + batch.presentDays,
@@ -125,15 +104,9 @@ export default function StudentAttendanceTables({
     0,
   );
 
-  const totalRecords =
-    totalPresent + totalLeaves + totalAbsent;
-
-  /* ------------------------------------------------------------------------ */
-  /* DESKTOP SCROLL                                                           */
-  /* ------------------------------------------------------------------------ */
+  const totalRecords = totalPresent + totalLeaves + totalAbsent;
 
   const scrollRef = React.useRef<HTMLDivElement>(null);
-
   const isScrollable = attendance.length > 4;
 
   const drag = React.useRef({
@@ -170,14 +143,11 @@ export default function StudentAttendanceTables({
     e.preventDefault();
 
     const deltaX = e.clientX - drag.current.startX;
-
-    container.scrollLeft =
-      drag.current.scrollLeft - deltaX;
+    container.scrollLeft = drag.current.scrollLeft - deltaX;
   };
 
   const stopDragging = () => {
     const container = scrollRef.current;
-
     drag.current.active = false;
 
     if (container) {
@@ -186,22 +156,14 @@ export default function StudentAttendanceTables({
     }
   };
 
-  /* ------------------------------------------------------------------------ */
-  /* COLUMN WIDTH                                                             */
-  /* ------------------------------------------------------------------------ */
-
-  const columnWidth = isScrollable ? "180px" : `${100 / (attendance.length + 1)}%`;
-
   return (
     <section className="w-full min-w-0 space-y-4">
-      {/* SECTION HEADER */}
-
+      {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-foreground">
             Attendance
           </h2>
-
           <p className="mt-1 text-sm text-muted-foreground">
             Attendance for each enrolled batch.
           </p>
@@ -212,11 +174,9 @@ export default function StudentAttendanceTables({
             <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-600 dark:text-emerald-400">
               {totalPresent} Present
             </span>
-
             <span className="rounded-full bg-amber-500/10 px-2.5 py-1 font-medium text-amber-600 dark:text-amber-400">
               {totalLeaves} Leaves
             </span>
-
             <span className="rounded-full bg-destructive/10 px-2.5 py-1 font-medium text-destructive">
               {totalAbsent} Absent
             </span>
@@ -224,60 +184,37 @@ export default function StudentAttendanceTables({
         )}
       </div>
 
-      {/* NO DATA */}
-
       {dates.length === 0 || attendance.length === 0 ? (
         <div className="rounded-xl border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
           No data for this month.
         </div>
       ) : (
-        <>
-          {/* ---------------------------------------------------------------- */}
-          {/* MOBILE: DATE CARDS                                               */}
-          {/* ---------------------------------------------------------------- */}
+        <div className="space-y-3">
+          {/* Batch reference */}
+          <div className="rounded-xl border border-border bg-card p-3">
+            <p className="mb-2 text-xs font-semibold text-muted-foreground">
+              BATCH REFERENCE
+            </p>
 
-          <div className="space-y-3 md:hidden">
-            {dates.map((date) => (
-              <div
-                key={date}
-                className="overflow-hidden rounded-xl border border-border bg-card"
-              >
-                <div className="border-b border-border bg-muted/40 px-3 py-2.5">
-                  <span className="text-sm font-semibold text-foreground">
-                    {formatDate(date)}
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              {attendance.map((batch, index) => (
+                <div
+                  key={batch.batchId}
+                  className="flex min-w-0 items-center gap-2 text-xs"
+                >
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted font-semibold text-foreground">
+                    B{index + 1}
+                  </span>
+                  <span className="max-w-[180px] truncate text-foreground">
+                    {batch.batchName}
                   </span>
                 </div>
-
-                <div className="divide-y divide-border">
-                  {attendance.map((batch, index) => {
-                    const status =
-                      attendanceMaps[index].get(date) ?? null;
-
-                    return (
-                      <div
-                        key={batch.batchId}
-                        className="flex min-w-0 items-center justify-between gap-3 px-3 py-3"
-                      >
-                        <span className="min-w-0 truncate text-sm text-foreground">
-                          {batch.batchName}
-                        </span>
-
-                        <div className="shrink-0">
-                          <Status status={status} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
-          {/* ---------------------------------------------------------------- */}
-          {/* TABLET / DESKTOP                                                 */}
-          {/* ---------------------------------------------------------------- */}
-
-          <div className="hidden w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-card md:block">
+          {/* Same compact table on mobile and desktop */}
+          <div className="w-full min-w-0 overflow-hidden rounded-xl border border-border bg-card">
             <div
               ref={scrollRef}
               onMouseDown={handleMouseDown}
@@ -285,36 +222,30 @@ export default function StudentAttendanceTables({
               onMouseUp={stopDragging}
               onMouseLeave={stopDragging}
               onDragStart={(e) => e.preventDefault()}
-              className={`w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain ${
+              className={`w-full max-w-full overflow-x-auto overscroll-x-contain ${
                 isScrollable ? "cursor-grab" : ""
               }`}
             >
               <table
-                className="table-fixed border-separate border-spacing-0 text-sm"
+                className="w-full table-fixed border-separate border-spacing-0 text-center text-xs sm:text-sm"
                 style={{
-                  width: isScrollable
-                    ? `${(attendance.length + 1) * 180}px`
-                    : "100%",
+                  minWidth: `${64 + attendance.length * 76}px`,
                 }}
               >
                 <colgroup>
-                  <col style={{ width: columnWidth }} />
-
+                  <col style={{ width: "64px" }} />
                   {attendance.map((batch) => (
-                    <col
-                      key={batch.batchId}
-                      style={{ width: columnWidth }}
-                    />
+                    <col key={batch.batchId} style={{ width: "76px" }} />
                   ))}
                 </colgroup>
 
                 <thead>
                   <tr className="bg-muted/50">
-                    <th className="sticky left-0 top-0 z-30 border-b border-r border-border bg-muted/50 px-3 py-3 text-left font-semibold text-foreground">
-                      Date
+                    <th className="sticky left-0 top-0 z-30 border-b border-r border-border bg-muted/90 px-2 py-2.5 font-semibold text-foreground">
+                      Day
                     </th>
 
-                    {attendance.map((batch) => {
+                    {attendance.map((batch, index) => {
                       const count =
                         batch.presentDays +
                         batch.leaveDays +
@@ -323,16 +254,14 @@ export default function StudentAttendanceTables({
                       return (
                         <th
                           key={batch.batchId}
-                          className="sticky top-0 z-20 border-b border-r border-border bg-muted/50 px-3 py-3 text-left align-top font-semibold text-foreground last:border-r-0"
+                          title={batch.batchName}
+                          className="sticky top-0 z-20 border-b border-r border-border bg-muted/90 px-1 py-2.5 font-semibold text-foreground last:border-r-0"
                         >
-                          <div className="break-words [overflow-wrap:anywhere]">
-                            {batch.batchName}
-                          </div>
-
-                          <div className="mt-1 text-xs font-normal text-muted-foreground">
+                          <div>B{index + 1}</div>
+                          <div className="mt-1 text-[10px] font-normal text-muted-foreground sm:text-xs">
                             {count > 0
                               ? `${batch.presentDays}P · ${batch.leaveDays}L · ${batch.absentDays}A`
-                              : "No attendance"}
+                              : "—"}
                           </div>
                         </th>
                       );
@@ -346,22 +275,28 @@ export default function StudentAttendanceTables({
                       key={date}
                       className="hover:bg-muted/20"
                     >
-                      <td className="sticky left-0 z-10 border-b border-r border-border bg-card px-3 py-3 align-top font-medium text-foreground">
-                        <span className="block break-words [overflow-wrap:anywhere]">
-                          {formatDate(date)}
-                        </span>
+                      <td
+                        title={formatDate(date)}
+                        className="sticky left-0 z-10 border-b border-r border-border bg-card px-2 py-2.5 font-semibold text-foreground"
+                      >
+                        {getDay(date)}
                       </td>
 
                       {attendance.map((batch, index) => {
                         const status =
-                          attendanceMaps[index].get(date) ?? null;
+                          (attendanceMaps[index].get(
+                            date,
+                          ) as AttendanceStatusType | undefined) ??
+                          null;
 
                         return (
                           <td
                             key={batch.batchId}
-                            className="border-b border-r border-border px-3 py-3 align-top last:border-r-0"
+                            className="border-b border-r border-border px-1 py-2 last:border-r-0"
                           >
-                            <Status status={status} />
+                            <div className="flex justify-center">
+                              <Status status={status} />
+                            </div>
                           </td>
                         );
                       })}
@@ -371,7 +306,38 @@ export default function StudentAttendanceTables({
               </table>
             </div>
           </div>
-        </>
+
+          {/* Legend */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-1 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="flex size-5 items-center justify-center rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <Check className="size-3.5" />
+              </span>
+              Present
+            </span>
+
+            <span className="flex items-center gap-1.5">
+              <span className="flex size-5 items-center justify-center rounded bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <Clock3 className="size-3.5" />
+              </span>
+              Leave
+            </span>
+
+            <span className="flex items-center gap-1.5">
+              <span className="flex size-5 items-center justify-center rounded bg-destructive/10 text-destructive">
+                <CircleX className="size-3.5" />
+              </span>
+              Absent
+            </span>
+
+            <span className="flex items-center gap-1.5">
+              <span className="flex size-5 items-center justify-center rounded border border-border text-muted-foreground">
+                -
+              </span>
+              No record
+            </span>
+          </div>
+        </div>
       )}
     </section>
   );
