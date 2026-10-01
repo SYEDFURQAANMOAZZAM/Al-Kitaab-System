@@ -1,0 +1,58 @@
+
+import puppeteer from "puppeteer-core";
+import { getBrowserConfig } from "./browser-config";
+
+export async function generateTeacherReportPdf(
+  html: string
+): Promise<Uint8Array> {
+  const config = await getBrowserConfig();
+
+  const browser = await puppeteer.launch({
+    ...config,
+    headless: true,
+  });
+
+  try {
+    const page = await browser.newPage();
+
+    await page.setContent(html, {
+      waitUntil: "load",
+    });
+
+    await page.emulateMediaType("print");
+
+    const pdf = await page.pdf({
+      format: "A4",
+      landscape: true,
+      printBackground: true,
+      preferCSSPageSize: true,
+      displayHeaderFooter: true,
+
+      headerTemplate: "<div></div>",
+
+      footerTemplate: `
+        <div style="
+          width: 100%;
+          text-align: center;
+          font-family: Arial, sans-serif;
+          font-size: 8px;
+          color: #6b7280;
+        ">
+          Page <span class="pageNumber"></span>
+          of <span class="totalPages"></span>
+        </div>
+      `,
+
+      margin: {
+        top: "10mm",
+        bottom: "15mm",
+        left: "10mm",
+        right: "10mm",
+      },
+    });
+
+    return new Uint8Array(pdf);
+  } finally {
+    await browser.close();
+  }
+}

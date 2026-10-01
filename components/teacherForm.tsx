@@ -11,13 +11,12 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import {
-  BookOpen,
   User,
   Mail,
   Phone,
   GraduationCap,
 } from "lucide-react";
-
+import Image from "next/image";
 import {
   CreateSchemaTeacher,
   EditSchemaTeacher,
@@ -471,24 +470,40 @@ export default function TeacherForm({
 
         {/* HEADER */}
 
-        <div className="mb-8 flex flex-col items-center text-center sm:mb-10">
-          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary shadow-lg sm:h-20 sm:w-20">
-            <BookOpen className="h-8 w-8 text-primary-foreground sm:h-10 sm:w-10" />
-          </div>
+      <div className="mb-8 flex flex-col items-center text-center sm:mb-10">
+        {/* Light theme logo */}
+        <Image
+          src="/lightThemeLogo.jpeg"
+          alt="AlKitaab Academy"
+          width={900}
+          height={900}
+          priority
+          className="mb-5 block h-24 w-24 object-contain dark:hidden sm:h-28 sm:w-28"
+        />
 
-          <h1 className="text-2xl font-bold text-card-foreground sm:text-3xl">
-            {pageTitle}
-          </h1>
+        {/* Dark theme logo */}
+        <Image
+          src="/darkThemeLogo.png"
+          alt="AlKitaab Academy"
+          width={900}
+          height={900}
+          priority
+          className="mb-5 hidden h-24 w-24 object-contain dark:block sm:h-28 sm:w-28"
+        />
 
-          <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-            {pageDescription}
-          </p>
+        <h1 className="text-2xl font-bold text-card-foreground sm:text-3xl">
+          {pageTitle}
+        </h1>
 
-          <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-foreground ring-1 ring-border">
-            <GraduationCap className="h-3.5 w-3.5" />
-            Role: Teacher
-          </span>
-        </div>
+        <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+          {pageDescription}
+        </p>
+
+        <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-foreground ring-1 ring-border">
+          <GraduationCap className="h-3.5 w-3.5" />
+          Role: Teacher
+        </span>
+      </div>
 
         <form
           action={formAction}

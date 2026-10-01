@@ -19,6 +19,8 @@ import {
   Phone,
 } from "lucide-react";
 
+import Image from "next/image";
+
 import {
   CreateSchemaAdmin,
   EditSchemaAdmin,
@@ -206,9 +208,25 @@ export default function AdminForm({
 
         <div className="mb-8 flex flex-col items-center text-center sm:mb-10">
 
-          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary shadow-lg sm:h-20 sm:w-20">
-            <ShieldCheck className="h-8 w-8 text-primary-foreground sm:h-10 sm:w-10" />
-          </div>
+          {/* Light theme logo */}
+          <Image
+            src="/lightThemeLogo.jpeg"
+            alt="AlKitaab Academy"
+            width={900}
+            height={900}
+            priority
+            className="mb-5 block h-24 w-24 object-contain dark:hidden sm:h-28 sm:w-28"
+          />
+
+          {/* Dark theme logo */}
+          <Image
+            src="/darkThemeLogo.png"
+            alt="AlKitaab Academy"
+            width={900}
+            height={900}
+            priority
+            className="mb-5 hidden h-24 w-24 object-contain dark:block sm:h-28 sm:w-28"
+          />
 
           <h1 className="text-2xl font-bold text-card-foreground sm:text-3xl">
             {pageTitle}

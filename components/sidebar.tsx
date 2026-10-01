@@ -3,9 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
+import Image from "next/image";
 import {
-  BookOpenCheck,
   ChevronDown,
   Languages,
   X,
@@ -375,22 +374,35 @@ export default function AppSidebar({
       <SidebarHeader className="shrink-0 border-b bg-background px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <BookOpenCheck
-              className="h-6 w-6"
-              strokeWidth={2}
+            {/* Light theme logo */}
+            <Image
+              src="/lightThemeLogo.jpeg"
+              alt="AlKitaab Academy"
+              width={40}
+              height={40}
+              priority
+              className="block h-9 w-9 object-contain dark:hidden"
+            />
+
+            {/* Dark theme logo */}
+            <Image
+              src="/darkThemeLogo.png"
+              alt="AlKitaab Academy"
+              width={40}
+              height={40}
+              priority
+              className="hidden h-9 w-9 object-contain dark:block"
             />
 
             <span className="text-lg font-bold tracking-tight">
-              Madrasa
+              Al-Kitaab Academy
             </span>
           </div>
 
           {isMobile && (
             <button
               type="button"
-              onClick={() =>
-                setOpenMobile(false)
-              }
+              onClick={() => setOpenMobile(false)}
               aria-label="Close sidebar"
               className="text-foreground/70 hover:text-foreground"
             >

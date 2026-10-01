@@ -302,6 +302,10 @@ export function createStudentReportHtml(
 
   });
 
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const logoUrl = `${appUrl}/lightThemeLogo.jpeg`;
+
   const batchHeaders = attendance
 
     .map(
@@ -309,6 +313,7 @@ export function createStudentReportHtml(
       (batch, index) => `
 
         <th>
+
           <div class="batch-title">
 
             ${escapeHtml(batch.batchName)}
@@ -495,6 +500,70 @@ export function createStudentReportHtml(
 
           }
 
+          /* Dedicated A4 cover page */
+          .cover-page {
+            width: 190mm;
+            height: 277mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            page-break-after: always;
+            break-after: page;
+            overflow: hidden;
+          }
+          .cover-logo {
+            display: block;
+            width: 65mm;
+            height: 65mm;
+            object-fit: contain;
+            margin: 0 0 12mm;
+          }
+          .cover-academy {
+            margin: 0;
+            font-size: 30pt;
+            line-height: 1.2;
+            font-weight: 800;
+            color: #111827;
+            letter-spacing: 0.3px;
+          }
+          .cover-divider {
+            width: 35mm;
+            height: 1mm;
+            margin: 8mm 0;
+            border-radius: 2mm;
+            background: #374151;
+          }
+          .cover-report-title {
+            margin: 0;
+            font-size: 20pt;
+            line-height: 1.3;
+            font-weight: 700;
+            color: #1f2937;
+          }
+          .cover-month {
+            margin-top: 3mm;
+            font-size: 13pt;
+            font-weight: 500;
+            color: #6b7280;
+          }
+          .report-content {
+            width: 190mm;
+            max-width: 190mm;
+          }
+          .report-header {
+            width: 100%;
+            margin-bottom: 5mm;
+          }
+          .report-student-name {
+            margin: 0;
+            font-size: 28pt;
+            line-height: 1.2;
+            font-weight: 800;
+            color: #111827;
+            overflow-wrap: anywhere;
+          }
           header {
 
             width: 100%;
@@ -676,6 +745,7 @@ export function createStudentReportHtml(
             width: 8mm;
 
           }
+
 .batch-title {
 
             margin-top: 1mm;
@@ -687,6 +757,7 @@ export function createStudentReportHtml(
             line-height: 1.25;
 
             overflow-wrap: anywhere;
+
             min-width: 28mm;
 
           }
@@ -766,8 +837,11 @@ export function createStudentReportHtml(
           }
 
           .progress-section {
+
             break-before: page;
+
             page-break-before: always;
+
           }
 
           /* Progress table */
@@ -813,6 +887,7 @@ export function createStudentReportHtml(
           .progress-table .progress-date {
 
             width: 32mm;
+
             font-size: 9pt;
 
           }
@@ -1020,22 +1095,22 @@ export function createStudentReportHtml(
       </head>
 
       <body>
+        <section class="cover-page">
+          <img class="cover-logo" src="${escapeHtml(logoUrl)}" alt="Al-Kitaab Academy Logo" />
+          <h1 class="cover-academy">Al-Kitaab Academy</h1>
+          <div class="cover-divider"></div>
+          <h2 class="cover-report-title">Student Report</h2>
+          <div class="cover-month">${escapeHtml(monthName)}</div>
+        </section>
 
-        <header>
-
-          <h1>${escapeHtml(student.name)}</h1>
-
-          <div class="subtitle">
-
-            Student Performance Report ·
-
-            ${escapeHtml(monthName)}
-
-          </div>
-
-        </header>
-
-        <div class="summary">
+        <main class="report-content">
+          <header class="report-header">
+            <h1 class="report-student-name">${escapeHtml(student.name)}</h1>
+            <div class="subtitle">
+              Student Performance Report · ${escapeHtml(monthName)}
+            </div>
+          </header>
+          <div class="summary">
 
           <div class="summary-card">
 
@@ -1182,7 +1257,7 @@ export function createStudentReportHtml(
           }
 
         </section>
-
+        </main>
       </body>
 
     </html>
