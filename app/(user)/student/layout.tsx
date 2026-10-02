@@ -25,7 +25,7 @@ export default async function StudentLayout({
           <h1>Maktab</h1>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-6 max-[430px]:p-2">
           {children}
         </main>
       </SidebarInset>

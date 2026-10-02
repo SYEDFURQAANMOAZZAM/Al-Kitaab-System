@@ -1,5 +1,41 @@
 import * as z from "zod";
 
+//Phone numbers validations
+const phoneSchema = z
+  .string()
+  .trim()
+  .refine(
+    (value) => {
+      // Allow digits, spaces, +, - and parentheses
+      if (!/^[\d\s()+-]+$/.test(value)) return false;
+
+      // Remove formatting characters
+      const compact = value.replace(/[\s()-]/g, "");
+
+      // + is allowed only at the beginning
+      if (!/^\+?\d+$/.test(compact)) return false;
+
+      const digits = compact.startsWith("+")
+        ? compact.slice(1)
+        : compact;
+
+      // International numbers: 7–15 digits
+      // E.164 numbers with + must not start with 0
+      if (digits.length < 7 || digits.length > 15) {
+        return false;
+      }
+
+      if (compact.startsWith("+") && digits.startsWith("0")) {
+        return false;
+      }
+
+      return true;
+    },
+    {
+      error: "Enter a valid international phone number.",
+    }
+  );
+
 /* =========================================================
    STUDENT SCHEMAS
 ========================================================= */
@@ -33,22 +69,9 @@ export const CreateSchemaStudent = z
           "Please enter a valid email.",
       }),
 
-    phone: z
-      .string()
-      .trim()
-      .regex(/^[6-9]\d{9}$/, {
-        error:
-          "Enter a valid 10-digit phone number.",
-      }),
+    phone: phoneSchema,
 
-    phone2: z
-      .string()
-      .trim()
-      .regex(/^[6-9]\d{9}$/, {
-        error:
-          "Enter a valid 10-digit phone number.",
-      })
-      .or(z.literal("")),
+    phone2: phoneSchema.or(z.literal("")),
 
     fatherName: z
       .string()
@@ -151,22 +174,9 @@ export const EditSchemaStudent = z
           "Please enter a valid email.",
       }),
 
-    phone: z
-      .string()
-      .trim()
-      .regex(/^[6-9]\d{9}$/, {
-        error:
-          "Enter a valid 10-digit phone number.",
-      }),
+    phone: phoneSchema,
 
-    phone2: z
-      .string()
-      .trim()
-      .regex(/^[6-9]\d{9}$/, {
-        error:
-          "Enter a valid 10-digit phone number.",
-      })
-      .or(z.literal("")),
+    phone2: phoneSchema.or(z.literal("")),
 
     fatherName: z
       .string()
@@ -271,13 +281,7 @@ export const CreateSchemaTeacher = z
           "Please enter a valid email.",
       }),
 
-    phone: z
-      .string()
-      .trim()
-      .regex(/^[6-9]\d{9}$/, {
-        error:
-          "Enter a valid 10-digit phone number.",
-      }),
+    phone: phoneSchema,
 
     branchIds: z
       .array(z.string().min(1))
@@ -367,13 +371,7 @@ export const EditSchemaTeacher = z
           "Please enter a valid email.",
       }),
 
-    phone: z
-      .string()
-      .trim()
-      .regex(/^[6-9]\d{9}$/, {
-        error:
-          "Enter a valid 10-digit phone number.",
-      }),
+    phone: phoneSchema,
 
     branchIds: z
       .array(z.string().min(1))
@@ -541,12 +539,7 @@ export const CreateSchemaAdmin = z
         error: "Please enter a valid email.",
       }),
 
-    phone: z
-      .string()
-      .trim()
-      .regex(/^[6-9]\d{9}$/, {
-        error: "Enter a valid 10-digit phone number.",
-      }),
+    phone: phoneSchema,
 
     password: z
       .string()
@@ -614,12 +607,7 @@ export const EditSchemaAdmin = z
         error: "Please enter a valid email.",
       }),
 
-    phone: z
-      .string()
-      .trim()
-      .regex(/^[6-9]\d{9}$/, {
-        error: "Enter a valid 10-digit phone number.",
-      }),
+    phone: phoneSchema,
 
     password: z
       .string()
@@ -676,3 +664,5 @@ export type FormStateAdmin = {
 
   message?: string;
 };
+
+

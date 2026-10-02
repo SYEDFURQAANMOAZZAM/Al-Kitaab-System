@@ -31,7 +31,7 @@ export default async function AdminLayout({
         </header>
 
         {/* Main page */}
-        <main className="min-h-0 min-w-0 flex-1 p-6">
+        <main className="min-h-0 min-w-0 flex-1 p-6 max-[430px]:p-2">
           {children}
         </main>
       </SidebarInset>

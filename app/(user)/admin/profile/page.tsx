@@ -14,7 +14,7 @@ export default async function AdminProfilePage() {
   const user = await requireRole("ADMIN");
 
   return (
-    <div className="mx-auto w-full max-w-5xl p-4 sm:p-6">
+    <div className="mx-auto w-full max-w-5xl p-4 sm:p-6 max-[430px]:p-2">
       <div className="space-y-6">
 
         {/* Page Header */}

@@ -26,7 +26,7 @@ export default async function EditAdminPage({
     updateAdmin.bind(null, userId);
 
   return (
-    <div className="mx-auto w-full max-w-6xl p-4 sm:p-6">
+    <div className="mx-auto w-full max-w-6xl p-4 sm:p-6 max-[430px]:p-2">
       <AdminForm
         mode="edit"
         action={updateAdminWithId}
