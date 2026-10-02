@@ -40,7 +40,7 @@ export default async function CreateBatchPage({
   );
 
   return (
-    <main className="mx-auto w-full max-w-3xl space-y-6 p-4 sm:p-6">
+    <main className="mx-auto w-full max-w-3xl space-y-6 p-4 sm:p-6 max-[430px]:p-2">
       <div className="space-y-2">
         <Link
           href="/admin/branches"

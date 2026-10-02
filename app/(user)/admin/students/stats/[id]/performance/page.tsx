@@ -61,7 +61,7 @@ export default async function StudentPerformancePage({
   );
 
   return (
-    <main className="mx-auto min-w-0 w-full max-w-[1800px] p-4 sm:p-6">
+    <main className="mx-auto min-w-0 w-full max-w-[1800px] p-4 sm:p-6 max-[430px]:p-2">
       <div className="flex min-w-0 flex-col gap-6">
         {/* HEADER */}
 
