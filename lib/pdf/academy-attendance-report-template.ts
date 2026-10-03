@@ -21,13 +21,15 @@ function escapeHtml(value: unknown): string {
     .replace(/'/g, "&#039;");
 }
 
-function formatMonth(year: number, month: number) {
-  return new Date(Date.UTC(year, month - 1, 1))
-    .toLocaleDateString("en-US", {
+function formatMonth(year: number, month: number): string {
+  return new Date(Date.UTC(year, month - 1, 1)).toLocaleDateString(
+    "en-US",
+    {
       month: "long",
       year: "numeric",
       timeZone: "UTC",
-    });
+    },
+  );
 }
 
 function getMonthDays(year: number, month: number): string[] {
@@ -36,38 +38,41 @@ function getMonthDays(year: number, month: number): string[] {
   return Array.from({ length: total }, (_, index) => {
     const day = String(index + 1).padStart(2, "0");
     const m = String(month).padStart(2, "0");
+
     return `${year}-${m}-${day}`;
   });
 }
 
-function formatDate(date: string) {
-  return new Date(`${date}T00:00:00.000Z`)
-    .toLocaleDateString("en-US", {
+function formatDate(date: string): string {
+  return new Date(`${date}T00:00:00.000Z`).toLocaleDateString(
+    "en-US",
+    {
       weekday: "short",
       day: "2-digit",
       month: "short",
       year: "numeric",
       timeZone: "UTC",
-    });
+    },
+  );
 }
 
-function renderStatus(status?: AttendanceStatus | null) {
-  const map = {
+function renderStatus(status?: AttendanceStatus | null): string {
+  const map: Record<NonNullable<AttendanceStatus>, [string, string]> = {
     PRESENT: ["P", "present"],
     ABSENT: ["A", "absent"],
     LEAVE: ["L", "leave"],
-  } as const;
+  };
 
   if (!status) {
     return `<span class="status not-marked">—</span>`;
   }
 
-  const [label, className] = map[status] ?? ["—", "not-marked"];
+  const [label, className] = map[status];
 
   return `<span class="status ${className}">${label}</span>`;
 }
 
-function renderLegend() {
+function renderLegend(): string {
   return `
     <div class="legend">
       <span><b class="present">P</b> Present</span>
@@ -80,54 +85,71 @@ function renderLegend() {
 
 function renderAttendanceTaken(
   batch: BatchPerformanceData,
-  days: string[]
-) {
+  days: string[],
+): string {
   const takenMap = new Map(
-  batch.attendanceTaken.map((item) => [
-    String(item.date).slice(0, 10),
-    item.taken,
-  ])
-);
+    batch.attendanceTaken.map((item) => [
+      String(item.date).slice(0, 10),
+      item.taken,
+    ]),
+  );
 
   return `
     <table class="taken-table">
       <thead>
-        <tr><th>Date</th><th>Attendance</th></tr>
+        <tr>
+          <th>Date</th>
+          <th>Attendance</th>
+        </tr>
       </thead>
       <tbody>
-        ${days.map((date) => {
-          const taken = takenMap.get(date) ?? false;
-          return `
-            <tr>
-              <td>${formatDate(date)}</td>
-              <td class="${taken ? "taken" : "not-taken"}">
-                ${taken ? "✓ Taken" : "× Not taken"}
-              </td>
-            </tr>
-          `;
-        }).join("")}
+        ${days
+          .map((date) => {
+            const taken = takenMap.get(date) ?? false;
+
+            return `
+              <tr>
+                <td>${formatDate(date)}</td>
+                <td class="${taken ? "taken" : "not-taken"}">
+                  ${taken ? "✓ Taken" : "× Not taken"}
+                </td>
+              </tr>
+            `;
+          })
+          .join("")}
       </tbody>
     </table>
   `;
 }
 
 function renderMatrix(
-  people: BatchPerformanceData["students"] |
-    BatchPerformanceData["teachers"],
+  people:
+    | BatchPerformanceData["students"]
+    | BatchPerformanceData["teachers"],
   days: string[],
-  label: "Student" | "Teacher"
-) {
-  const rows = people.map((person) => `
-    <tr>
-      <td class="name">${escapeHtml(person.name)}</td>
-      <td class="count">${person.presentDays}/${person.eligibleDays}</td>
-      ${days.map((date) => `
-        <td class="day">
-          ${renderStatus(person.attendance[date] ?? null)}
-        </td>
-      `).join("")}
-    </tr>
-  `).join("");
+  label: "Student" | "Teacher",
+): string {
+  const rows = people
+    .map(
+      (person) => `
+        <tr>
+          <td class="name">${escapeHtml(person.name)}</td>
+          <td class="count">
+            ${person.presentDays}/${person.eligibleDays}
+          </td>
+          ${days
+            .map(
+              (date) => `
+                <td class="day">
+                  ${renderStatus(person.attendance[date] ?? null)}
+                </td>
+              `,
+            )
+            .join("")}
+        </tr>
+      `,
+    )
+    .join("");
 
   return `
     <table class="matrix">
@@ -135,30 +157,64 @@ function renderMatrix(
         <tr>
           <th class="name">${label}</th>
           <th class="count">P/E</th>
-          ${days.map((date) =>
-            `<th class="day-heading">${Number(date.slice(8, 10))}</th>`
-          ).join("")}
+          ${days
+            .map(
+              (date) =>
+                `<th class="day-heading">${Number(date.slice(8, 10))}</th>`,
+            )
+            .join("")}
         </tr>
       </thead>
       <tbody>
-        ${rows || `<tr><td colspan="${days.length + 2}" class="empty">
-          No ${label.toLowerCase()}s available.
-        </td></tr>`}
+        ${
+          rows ||
+          `
+            <tr>
+              <td colspan="${days.length + 2}" class="empty">
+                No ${label.toLowerCase()}s available.
+              </td>
+            </tr>
+          `
+        }
       </tbody>
     </table>
     ${renderLegend()}
   `;
 }
 
+function renderReportHeader(
+  academyName: string,
+  monthName: string,
+): string {
+  return `
+    <header class="report-header">
+      <h1>${escapeHtml(academyName)}</h1>
+      <p>
+        Academy Attendance Report · ${escapeHtml(monthName)}
+      </p>
+    </header>
+  `;
+}
+
 function renderBatch(
   batch: BatchPerformanceData,
   days: string[],
-  index: number
-) {
+  index: number,
+  academyName: string,
+  monthName: string,
+): string {
   return `
-    <section class="batch-section">
+    <section class="batch-section ${index === 0 ? "first-batch" : ""}">
+      ${
+        index === 0
+          ? renderReportHeader(academyName, monthName)
+          : ""
+      }
+
       <header class="batch-header">
-        <h2>${index + 1}. ${escapeHtml(batch.batch.name)}</h2>
+        <h2>
+          ${index + 1}. ${escapeHtml(batch.batch.name)}
+        </h2>
         <span>Monthly Attendance</span>
       </header>
 
@@ -174,14 +230,39 @@ function renderBatch(
   `;
 }
 
-function styles() {
+function renderEmptyReport(
+  academyName: string,
+  monthName: string,
+): string {
+  return `
+    <section class="empty-report">
+      ${renderReportHeader(academyName, monthName)}
+      <p class="empty-message">
+        No batch attendance data is available for this month.
+      </p>
+    </section>
+  `;
+}
+
+function styles(): string {
   return `
     <style>
-      @page { size: A4 landscape; margin: 8mm; }
-      @page cover { size: A4 portrait; margin: 15mm; }
+      @page {
+        size: A4 landscape;
+        margin: 8mm;
+      }
 
-      * { box-sizing: border-box; }
-      html, body {
+      @page cover {
+        size: A4 portrait;
+        margin: 15mm;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
         margin: 0;
         padding: 0;
         font-family: Arial, Helvetica, sans-serif;
@@ -244,15 +325,27 @@ function styles() {
         margin-bottom: 5mm;
       }
 
-      .report-header h1 { margin: 0; font-size: 19pt; }
-      .report-header p { margin: 2mm 0 0; color: #6b7280; }
+      .report-header h1 {
+        margin: 0;
+        font-size: 19pt;
+      }
 
+      .report-header p {
+        margin: 2mm 0 0;
+        color: #6b7280;
+      }
+
+      /*
+       * Each batch after the first starts on a new page.
+       * The first batch follows the cover without adding
+       * another page break.
+       */
       .batch-section {
         break-before: page;
         page-break-before: always;
       }
 
-      .batch-section:first-of-type {
+      .batch-section.first-batch {
         break-before: auto;
         page-break-before: auto;
       }
@@ -266,13 +359,20 @@ function styles() {
         padding-bottom: 2mm;
       }
 
-      .batch-header h2 { font-size: 16pt; margin: 0; }
-      .batch-header span { color: #6b7280; }
+      .batch-header h2 {
+        font-size: 16pt;
+        margin: 0;
+      }
+
+      .batch-header span {
+        color: #6b7280;
+      }
 
       h3 {
         font-size: 11pt;
         margin: 4mm 0 2mm;
         break-after: avoid;
+        page-break-after: avoid;
       }
 
       table {
@@ -281,7 +381,8 @@ function styles() {
         table-layout: fixed;
       }
 
-      th, td {
+      th,
+      td {
         border: 0.25mm solid #d1d5db;
         padding: 1mm 0.5mm;
         text-align: center;
@@ -295,18 +396,39 @@ function styles() {
         font-weight: 700;
       }
 
-      .taken-table { width: 95mm; font-size: 8pt; }
-      .taken-table th, .taken-table td {
+      .taken-table {
+        width: 95mm;
+        font-size: 8pt;
+      }
+
+      .taken-table th,
+      .taken-table td {
         height: 7mm;
         text-align: left;
         padding: 1mm 3mm;
       }
 
-      .taken { color: #047857; font-weight: 700; }
-      .not-taken { color: #b91c1c; font-weight: 700; }
+      .taken {
+        color: #047857;
+        font-weight: 700;
+      }
 
-      .matrix { font-size: 6.5pt; line-height: 1.1; }
-      .matrix th, .matrix td { height: 7mm; padding: 0.5mm 0.2mm; }
+      .not-taken {
+        color: #b91c1c;
+        font-weight: 700;
+      }
+
+      .matrix {
+        font-size: 6.5pt;
+        line-height: 1.1;
+      }
+
+      .matrix th,
+      .matrix td {
+        height: 7mm;
+        padding: 0.5mm 0.2mm;
+      }
+
       .matrix .name {
         width: 48mm;
         text-align: left;
@@ -315,14 +437,35 @@ function styles() {
         font-weight: 600;
         overflow-wrap: anywhere;
       }
-      .matrix .count { width: 13mm; white-space: nowrap; }
-      .matrix .day { padding: 0; }
 
-      .status { font-weight: 700; }
-      .present { color: #047857; }
-      .absent { color: #b91c1c; }
-      .leave { color: #b45309; }
-      .not-marked { color: #9ca3af; }
+      .matrix .count {
+        width: 13mm;
+        white-space: nowrap;
+      }
+
+      .matrix .day {
+        padding: 0;
+      }
+
+      .status {
+        font-weight: 700;
+      }
+
+      .present {
+        color: #047857;
+      }
+
+      .absent {
+        color: #b91c1c;
+      }
+
+      .leave {
+        color: #b45309;
+      }
+
+      .not-marked {
+        color: #9ca3af;
+      }
 
       .legend {
         display: flex;
@@ -332,10 +475,32 @@ function styles() {
         font-size: 7pt;
       }
 
-      .empty { text-align: center; color: #6b7280; padding: 4mm; }
+      .empty {
+        text-align: center;
+        color: #6b7280;
+        padding: 4mm;
+      }
 
-      thead { display: table-header-group; }
-      tr { break-inside: avoid; page-break-inside: avoid; }
+      .empty-report {
+        break-before: auto;
+        page-break-before: auto;
+      }
+
+      .empty-message {
+        margin-top: 8mm;
+        color: #6b7280;
+        font-size: 10pt;
+        text-align: center;
+      }
+
+      thead {
+        display: table-header-group;
+      }
+
+      tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
 
       .footer {
         margin-top: 4mm;
@@ -358,41 +523,72 @@ export function createAcademyAttendanceReportHtml({
 }: AcademyAttendanceTemplateInput): string {
   const monthName = formatMonth(year, month);
   const days = getMonthDays(year, month);
+
   const appUrl =
     process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
   const logo = logoUrl ?? `${appUrl}/lightThemeLogo.jpeg`;
+
+  const batchContent =
+    batches.length > 0
+      ? batches
+          .map((batch, index) =>
+            renderBatch(
+              batch,
+              days,
+              index,
+              academyName,
+              monthName,
+            ),
+          )
+          .join("")
+      : renderEmptyReport(academyName, monthName);
 
   return `
     <!DOCTYPE html>
     <html lang="en">
       <head>
         <meta charset="UTF-8" />
-        <title>${escapeHtml(academyName)} - Academy Attendance Report</title>
+        <title>
+          ${escapeHtml(academyName)} - Academy Attendance Report
+        </title>
         ${styles()}
       </head>
+
       <body>
         <section class="cover">
-          <img class="cover-logo"
+          <img
+            class="cover-logo"
             src="${escapeHtml(logo)}"
-            alt="${escapeHtml(academyName)} logo" />
-          <h1 class="academy-name">${escapeHtml(academyName)}</h1>
+            alt="${escapeHtml(academyName)} logo"
+          />
+
+          <h1 class="academy-name">
+            ${escapeHtml(academyName)}
+          </h1>
+
           <div class="divider"></div>
-          <h2 class="cover-subtitle">Academy Attendance Report</h2>
-          <div class="cover-period">${escapeHtml(monthName)}</div>
+
+          <h2 class="cover-subtitle">
+            Academy Attendance Report
+          </h2>
+
+          <div class="cover-period">
+            ${escapeHtml(monthName)}
+          </div>
         </section>
 
-        <header class="report-header">
-          <h1>${escapeHtml(academyName)}</h1>
-          <p>Academy Attendance Report · ${escapeHtml(monthName)}</p>
-        </header>
+        ${batchContent}
 
-        ${batches.map((batch, index) =>
-          renderBatch(batch, days, index)
-        ).join("")}
-
-        <div class="footer">
-          Academy Attendance Report · ${escapeHtml(monthName)}
-        </div>
+        ${
+          batches.length > 0
+            ? `
+              <div class="footer">
+                Academy Attendance Report · ${escapeHtml(monthName)}
+              </div>
+            `
+            : ""
+        }
       </body>
     </html>
   `;

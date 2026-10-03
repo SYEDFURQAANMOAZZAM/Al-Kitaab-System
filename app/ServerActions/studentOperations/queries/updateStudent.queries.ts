@@ -134,43 +134,126 @@ export async function updateStudentRecord(
     }
 
     /*
-     * Batches
-     */
+    * Batches
+    */
     if (updateBatches) {
-      await tx.studentEnrollment.deleteMany({
-        where: {
-          studentId: student.id,
-        },
-      });
-
-      await tx.studentEnrollment.createMany({
-        data: effectiveBatchIds.map(
-          (batchId) => ({
+      const existingEnrollments =
+        await tx.studentEnrollment.findMany({
+          where: {
             studentId: student.id,
-            batchId,
-          }),
+          },
+          select: {
+            batchId: true,
+          },
+        });
+
+      const existingBatchIds = new Set(
+        existingEnrollments.map(
+          (enrollment) => enrollment.batchId,
         ),
-      });
+      );
+
+      const submittedBatchIds = new Set(
+        effectiveBatchIds,
+      );
+
+      // Only create newly added batches
+      const batchIdsToCreate =
+        effectiveBatchIds.filter(
+          (batchId) =>
+            !existingBatchIds.has(batchId),
+        );
+
+      // Only delete batches removed from the form
+      const batchIdsToDelete =
+        [...existingBatchIds].filter(
+          (batchId) =>
+            !submittedBatchIds.has(batchId),
+        );
+
+      if (batchIdsToCreate.length > 0) {
+        await tx.studentEnrollment.createMany({
+          data: batchIdsToCreate.map(
+            (batchId) => ({
+              studentId: student.id,
+              batchId,
+            }),
+          ),
+          skipDuplicates: true,
+        });
+      }
+
+      if (batchIdsToDelete.length > 0) {
+        await tx.studentEnrollment.deleteMany({
+          where: {
+            studentId: student.id,
+            batchId: {
+              in: batchIdsToDelete,
+            },
+          },
+        });
+      }
     }
 
     /*
-     * Subjects
-     */
+    * Subjects
+    */
     if (updateSubjects) {
-      await tx.studentSubject.deleteMany({
-        where: {
-          studentId: student.id,
-        },
-      });
+      const existingStudentSubjects =
+        await tx.studentSubject.findMany({
+          where: {
+            studentId: student.id,
+          },
+          select: {
+            subjectId: true,
+          },
+        });
 
-      if (effectiveSubjectIds.length > 0) {
+      const existingSubjectIds = new Set(
+        existingStudentSubjects.map(
+          (studentSubject) =>
+            studentSubject.subjectId,
+        ),
+      );
+
+      const submittedSubjectIds = new Set(
+        effectiveSubjectIds,
+      );
+
+      // Only create newly added subjects
+      const subjectIdsToCreate =
+        effectiveSubjectIds.filter(
+          (subjectId) =>
+            !existingSubjectIds.has(subjectId),
+        );
+
+      // Only delete subjects removed from the form
+      const subjectIdsToDelete =
+        [...existingSubjectIds].filter(
+          (subjectId) =>
+            !submittedSubjectIds.has(subjectId),
+        );
+
+      if (subjectIdsToCreate.length > 0) {
         await tx.studentSubject.createMany({
-          data: effectiveSubjectIds.map(
+          data: subjectIdsToCreate.map(
             (subjectId) => ({
               studentId: student.id,
               subjectId,
             }),
           ),
+          skipDuplicates: true,
+        });
+      }
+
+      if (subjectIdsToDelete.length > 0) {
+        await tx.studentSubject.deleteMany({
+          where: {
+            studentId: student.id,
+            subjectId: {
+              in: subjectIdsToDelete,
+            },
+          },
         });
       }
     }

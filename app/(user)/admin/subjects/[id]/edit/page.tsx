@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
-
-import { AddSubject } from "@/components/AddSubject";
+import { UpdateSubjectForm } from "@/components/EditSubject";
 
 type PageProps = {
   params: Promise<{
@@ -10,41 +9,30 @@ type PageProps = {
   }>;
 };
 
-export default async function Page({
-  params,
-}: PageProps) {
+export default async function Page({ params }: PageProps) {
   const { id } = await params;
 
   const [subject, branches] = await Promise.all([
     prisma.subject.findUnique({
-      where: {
-        id,
-      },
+      where: { id },
       select: {
         id: true,
         name: true,
-
         parts: {
-          orderBy: {
-            position: "asc",
-          },
+          orderBy: { position: "asc" },
           select: {
             id: true,
             name: true,
             position: true,
           },
         },
-
         batches: {
           select: {
             batchId: true,
           },
         },
-
         trackingTerms: {
-          orderBy: {
-            position: "asc",
-          },
+          orderBy: { position: "asc" },
           select: {
             id: true,
             name: true,
@@ -55,17 +43,12 @@ export default async function Page({
     }),
 
     prisma.branch.findMany({
-      orderBy: {
-        name: "asc",
-      },
+      orderBy: { name: "asc" },
       select: {
         id: true,
         name: true,
-
         batches: {
-          orderBy: {
-            name: "asc",
-          },
+          orderBy: { name: "asc" },
           select: {
             id: true,
             name: true,
@@ -81,9 +64,9 @@ export default async function Page({
 
   return (
     <main className="p-2">
-      <AddSubject
-        branches={branches}
+      <UpdateSubjectForm
         subject={subject}
+        branches={branches}
       />
     </main>
   );
