@@ -29,7 +29,7 @@ export const TEACHER_FIELD_PERMISSIONS:
 
     TEACHER: {
       name: true,
-      email: false,
+      email: true,
       phone: true,
       password: true,
       batches: false,

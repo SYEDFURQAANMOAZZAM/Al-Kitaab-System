@@ -19,6 +19,7 @@ export async function getTeacherTocReport({
 }) {
   const session =
     await requireRoleForAction([
+      "ADMIN",
       "TEACHER",
     ]);
 

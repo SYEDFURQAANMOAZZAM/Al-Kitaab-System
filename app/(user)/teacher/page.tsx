@@ -1,11 +1,7 @@
 import AuthVerify from '@/app/ServerActions/auth/authVerify'
+import { redirect } from 'next/navigation'
 
-export default async function Admin() {
-  const user=await AuthVerify("TEACHER")
+export default async function Teacher() {
+  await AuthVerify("TEACHER")
 
-  return (
-    <div>
-      <h1>Welcome, {user.name}</h1>
-    </div>
-  )
-}
+  return (redirect("/teacher/dashboard"))}

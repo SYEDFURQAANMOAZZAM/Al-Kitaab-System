@@ -1,7 +1,7 @@
 "use client";
 
 import { Collapsible } from "@base-ui/react/collapsible";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
 import {
@@ -224,15 +223,44 @@ export function ProgressForm({
     setLoadingSubjects,
   ] = useState<string | null>(null);
 
-  const [
-    studentProgressSearch,
-    setStudentProgressSearch,
-  ] = useState("");
+  // Search text is committed to the URL on submit. The applied query is
+  // restored after a full page reload so progress is fetched again.
+  const [studentProgressSearch, setStudentProgressSearch] = useState("");
+  const [appliedStudentSearch, setAppliedStudentSearch] = useState("");
+  const [submittingStudents, setSubmittingStudents] = useState<
+    Record<string, boolean>
+  >({});
 
-  const [
-    progressLoading,
-    setProgressLoading,
-  ] = useState(true);
+  const [progressLoading, setProgressLoading] = useState(true);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const query = params.get("studentSearch") ?? "";
+    setStudentProgressSearch(query);
+    setAppliedStudentSearch(query.trim().toLowerCase());
+  }, []);
+
+  const submitStudentSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const url = new URL(window.location.href);
+    const query = studentProgressSearch.trim();
+
+    if (query) {
+      url.searchParams.set("studentSearch", query);
+    } else {
+      url.searchParams.delete("studentSearch");
+    }
+
+    // A hard reload intentionally reruns the page and progress-loading flow.
+    window.location.assign(url.toString());
+  };
+
+  const clearStudentSearch = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("studentSearch");
+    window.location.assign(url.toString());
+  };
 
   /* ==========================================================
      HELPERS
@@ -780,6 +808,9 @@ export function ProgressForm({
         data.learnings,
       );
 
+    if (submittingStudents[student.id]) return;
+    setSubmittingStudents((current) => ({ ...current, [student.id]: true }));
+
     try {
       await submitProgress({
         studentId: student.id,
@@ -816,6 +847,11 @@ export function ProgressForm({
           ? error.message
           : "Failed to submit progress.",
       );
+    } finally {
+      setSubmittingStudents((current) => ({
+        ...current,
+        [student.id]: false,
+      }));
     }
   };
 
@@ -942,17 +978,9 @@ export function ProgressForm({
      SEARCH
   ========================================================== */
 
-  const searchTerm =
-    studentProgressSearch
-      .trim()
-      .toLowerCase();
-
-  const filteredStudents =
-    students.filter((student) =>
-      student.name
-        .toLowerCase()
-        .includes(searchTerm),
-    );
+  const filteredStudents = students.filter((student) =>
+    student.name.toLowerCase().includes(appliedStudentSearch),
+  );
 
   /* ==========================================================
      RENDER
@@ -1173,11 +1201,11 @@ export function ProgressForm({
 
 
                                 {isExpanded && (
-                                  <div className="space-y-2 px-2 py-1.5">
+                                  <div className="space-y-1.5 px-1.5 py-1 sm:px-2 sm:py-1.5">
 
                                     {/* SUBJECT + STATUS */}
 
-                                    <div className="grid gap-1.5 md:grid-cols-2">
+                                    <div className="grid grid-cols-[minmax(0,1fr)_minmax(5.5rem,0.55fr)] items-center gap-1.5 sm:grid-cols-2">
 
                                       {/* SUBJECT */}
 
@@ -1186,23 +1214,12 @@ export function ProgressForm({
                                           rounded-lg
                                           border border-blue-200/70
                                           bg-blue-50/60
-                                          p-2
+                                          p-1.5
                                           dark:border-blue-400/20
                                           dark:bg-blue-400/[0.08]
                                         "
                                       >
-                                        <Label
-                                          className="
-                                            mb-1 block
-                                            text-xs font-semibold
-                                            text-blue-700
-                                            dark:text-blue-300
-                                          "
-                                        >
-                                          Subject
-                                        </Label>
-
-                                        <Button
+<Button
                                           type="button"
                                           variant="outline"
                                           size="sm"
@@ -1240,23 +1257,12 @@ export function ProgressForm({
                                           rounded-lg
                                           border border-amber-200/70
                                           bg-amber-50/60
-                                          p-2
+                                          p-1.5
                                           dark:border-amber-400/20
                                           dark:bg-amber-400/[0.08]
                                         "
                                       >
-                                        <Label
-                                          className="
-                                            mb-1 block
-                                            text-xs font-semibold
-                                            text-amber-700
-                                            dark:text-amber-300
-                                          "
-                                        >
-                                          Status
-                                        </Label>
-
-                                        <Select
+<Select
                                           value={
                                             learning.status
                                           }
@@ -1323,12 +1329,12 @@ export function ProgressForm({
                                           rounded-lg
                                           border border-violet-200/70
                                           bg-violet-50/50
-                                          p-2
+                                          p-1.5
                                           dark:border-violet-400/20
                                           dark:bg-violet-400/[0.07]
                                         "
                                       >
-                                        <div className="mb-1.5">
+                                        <div className="mb-1">
                                           <p
                                             className="
                                               text-xs font-semibold
@@ -1589,16 +1595,7 @@ export function ProgressForm({
             STUDENT PROGRESS
         ====================================================== */}
 
-        {progressLoading ? (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                Loading progress...
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="border-0 bg-transparent shadow-none">
+        <Card className="border-0 bg-transparent shadow-none">
 
             <CardHeader className="px-0 pb-3">
               <div className="flex flex-col gap-2 px-1.5 md:flex-row md:items-start md:justify-between">
@@ -1613,39 +1610,42 @@ export function ProgressForm({
                   </p>
                 </div>
 
-                <div className="relative w-full md:w-64 lg:w-72">
-                  <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-
-                  <input
-                    type="search"
-                    value={
-                      studentProgressSearch
-                    }
-                    onChange={(event) =>
-                      setStudentProgressSearch(
-                        event.target.value,
-                      )
-                    }
-                    placeholder="Search students..."
-                    className="
-                      h-9 w-full
-                      rounded-lg
-                      border border-input
-                      bg-background
-                      pl-8 pr-3
-                      text-sm
-                      outline-none
-                      placeholder:text-muted-foreground
-                      focus:border-ring
-                      focus:ring-2
-                      focus:ring-ring
-                    "
-                  />
-                </div>
+                <form
+                  onSubmit={submitStudentSearch}
+                  className="flex w-full gap-1.5 md:w-auto"
+                  role="search"
+                >
+                  <div className="relative min-w-0 flex-1 md:w-64 md:flex-none lg:w-72">
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="search"
+                      value={studentProgressSearch}
+                      onChange={(event) => setStudentProgressSearch(event.target.value)}
+                      placeholder="Search students..."
+                      aria-label="Search students"
+                      className="h-9 w-full rounded-lg border border-input bg-background pl-8 pr-3 text-sm outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
+                  <Button type="submit" size="sm" className="h-9 shrink-0">
+                    Search
+                  </Button>
+                  {studentProgressSearch && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-9 shrink-0 px-2.5"
+                      onClick={clearStudentSearch}
+                      aria-label="Clear student search"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </form>
 
               </div>
 
-              {studentProgressSearch.trim() && (
+              {appliedStudentSearch && (
                 <div className="px-1.5 pt-1">
                   <p className="text-[11px] text-muted-foreground">
                     {
@@ -1665,6 +1665,12 @@ export function ProgressForm({
 
 
             <CardContent className="space-y-1.5 p-0">
+
+              {progressLoading && (
+                <div className="rounded-lg border bg-muted/40 px-3 py-2 text-center" role="status" aria-live="polite">
+                  <p className="text-xs text-muted-foreground">Loading student progress...</p>
+                </div>
+              )}
 
               {students.length === 0 ? (
                 <div className="rounded-lg border p-6 text-center">
@@ -1923,13 +1929,13 @@ export function ProgressForm({
 
 
                                           {isExpanded && (
-                                            <div className="space-y-2 px-2 py-1.5">
+                                            <div className="space-y-1.5 px-1.5 py-1 sm:px-2 sm:py-1.5">
 
                                               {/* ==================================================
                                                   SUBJECT + STATUS
                                               ================================================== */}
 
-                                              <div className="grid gap-1.5 md:grid-cols-2">
+                                              <div className="grid grid-cols-[minmax(0,1fr)_minmax(5.5rem,0.55fr)] items-center gap-1.5 sm:grid-cols-2">
 
                                                 {/* SUBJECT */}
 
@@ -1939,24 +1945,12 @@ export function ProgressForm({
                                                     border
                                                     border-blue-200/70
                                                     bg-blue-50/60
-                                                    p-2
+                                                    p-1.5
                                                     dark:border-blue-400/20
                                                     dark:bg-blue-400/[0.08]
                                                   "
                                                 >
-
-                                                  <Label
-                                                    className="
-                                                      mb-1 block
-                                                      text-xs font-semibold
-                                                      text-blue-700
-                                                      dark:text-blue-300
-                                                    "
-                                                  >
-                                                    Subject
-                                                  </Label>
-
-                                                  <Button
+<Button
                                                     type="button"
                                                     variant="outline"
                                                     size="sm"
@@ -2019,24 +2013,12 @@ export function ProgressForm({
                                                     border
                                                     border-amber-200/70
                                                     bg-amber-50/60
-                                                    p-2
+                                                    p-1.5
                                                     dark:border-amber-400/20
                                                     dark:bg-amber-400/[0.08]
                                                   "
                                                 >
-
-                                                  <Label
-                                                    className="
-                                                      mb-1 block
-                                                      text-xs font-semibold
-                                                      text-amber-700
-                                                      dark:text-amber-300
-                                                    "
-                                                  >
-                                                    Status
-                                                  </Label>
-
-                                                  <Select
+<Select
                                                     value={
                                                       learning.status
                                                     }
@@ -2109,13 +2091,13 @@ export function ProgressForm({
                                                     border
                                                     border-violet-200/70
                                                     bg-violet-50/50
-                                                    p-2
+                                                    p-1.5
                                                     dark:border-violet-400/20
                                                     dark:bg-violet-400/[0.07]
                                                   "
                                                 >
 
-                                                  <div className="mb-1.5">
+                                                  <div className="mb-1">
                                                     <p
                                                       className="
                                                         text-xs font-semibold
@@ -2216,12 +2198,11 @@ export function ProgressForm({
                                 )
                               }
                               disabled={
-                                data.learnings
-                                  .length ===
-                                0
+                                data.learnings.length === 0 ||
+                                Boolean(submittingStudents[student.id])
                               }
                             >
-                              Submit
+                              {submittingStudents[student.id] ? "Saving..." : "Submit"}
                             </Button>
                           </div>
 
@@ -2237,7 +2218,6 @@ export function ProgressForm({
 
             </CardContent>
           </Card>
-        )}
 
 
         {/* ========================================================

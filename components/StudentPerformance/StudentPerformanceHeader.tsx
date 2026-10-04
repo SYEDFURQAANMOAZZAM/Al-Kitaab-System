@@ -61,23 +61,7 @@ export default function StudentPerformanceHeader({
           </span>
         </Button>
 
-        {isAdmin && (
-          <Button
-            type="button"
-            variant="destructive"
-            className="gap-2"
-          >
-            <Trash2 className="size-4" />
-
-            <span className="hidden sm:inline">
-              Delete Data
-            </span>
-
-            <span className="sm:hidden">
-              Delete
-            </span>
-          </Button>
-        )}
+        
       </div>
     </header>
   );

@@ -470,7 +470,7 @@ export function UpdateSubjectForm({ subject, branches }: Props) {
         </div>
       </section>
 
-      <div className="flex justify-end">
+      {/* <div className="flex justify-end">
         <button
           type="button"
           onClick={() => router.replace("/admin/subjects")}
@@ -479,7 +479,7 @@ export function UpdateSubjectForm({ subject, branches }: Props) {
         >
           Back to Subjects
         </button>
-      </div>
+      </div> */}
     </div>
   );
 }

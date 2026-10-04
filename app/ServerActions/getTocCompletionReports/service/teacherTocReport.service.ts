@@ -67,73 +67,50 @@ export async function getTeacherTocReportService({
       (item) => item.subjectId
     );
 
-  if (
-    allowedBatchIds.length === 0 ||
-    allowedSubjectIds.length === 0
-  ) {
-    return {
-      data: [],
-      page: safePage,
-      pageSize: PAGE_SIZE,
-      totalStudents: 0,
-      totalPages: 0,
-      hasNextPage: false,
-      hasPreviousPage:
-        safePage > 1,
-    };
-  }
-
-  const where = {
-    ...(searchValue
-      ? {
-          user: {
-            name: {
-              contains: searchValue,
-              mode: "insensitive" as const,
-            },
-          },
-        }
-      : {}),
-
-    enrollments: {
-      some: {
-        batchId: {
-          in: allowedBatchIds,
-        },
-      },
-    },
-
-    studentSubjects: {
-      some: {
-        subjectId: {
-          in: allowedSubjectIds,
-        },
-      },
-    },
+  if (allowedBatchIds.length === 0) {
+  return {
+    data: [],
+    page: safePage,
+    pageSize: PAGE_SIZE,
+    totalStudents: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPreviousPage: safePage > 1,
   };
+}
 
-  const [totalStudents, students] =
-    await Promise.all([
-      countStudents(where),
-      findStudents(
-        where,
-        skip,
-        PAGE_SIZE
-      ),
-    ]);
+const where = {
+  ...(searchValue
+    ? {
+        user: {
+          name: {
+            contains: searchValue,
+            mode: "insensitive" as const,
+          },
+        },
+      }
+    : {}),
 
-  const data =
-    await buildTocReport({
-      studentIds: students.map(
-        (student) => student.id
-      ),
+  enrollments: {
+    some: {
+      batchId: {
+        in: allowedBatchIds,
+      },
+    },
+  },
+};
 
-      subjectIds:
-        allowedSubjectIds,
+const [totalStudents, students] =
+  await Promise.all([
+    countStudents(where),
+    findStudents(where, skip, PAGE_SIZE),
+  ]);
 
-      month:
-        month?.trim() || undefined,
-    });
+const data = await buildTocReport({
+  studentIds: students.map((student) => student.id),
+  subjectIds: allowedSubjectIds,
+  month: month?.trim() || undefined,
+});
 
   const totalPages =
     Math.ceil(

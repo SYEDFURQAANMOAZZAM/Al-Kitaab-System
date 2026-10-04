@@ -1,43 +1,46 @@
+
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
+
 import {
-  ChevronDown,
-  Languages,
-  X,
-  LayoutDashboard,
-  UserCheck,
-  Users,
-  Building2,
-  Layers3,
-  BookOpen,
-  ClipboardCheck,
-  TrendingUp,
-  FileText,
-  CalendarDays,
-  Clock,
-  ClipboardList,
-  Trophy,
-  IndianRupee,
-  CreditCard,
-  Bell,
-  MessageSquare,
-  User,
-  Settings,
-  CircleHelp,
-  LogOut,
-  Home,
-  Search,
-  Folder,
-  Check,
-  Star,
-  Target,
   Activity,
   BarChart3,
+  Bell,
+  BookOpen,
+  Building2,
+  CalendarDays,
+  Check,
+  ChevronRight,
+  CircleHelp,
+  ClipboardCheck,
+  ClipboardList,
+  Clock,
+  CreditCard,
+  FileText,
+  Folder,
+  Home,
+  IndianRupee,
+  Languages,
+  LayoutDashboard,
+  LogOut,
+  MessageSquare,
+  Search,
+  Settings,
   ShieldCheck,
+  Star,
+  Target,
+  TrendingUp,
+  Trophy,
+  User,
+  UserCheck,
+  Users,
+  X,
+  Layers3,
+  ContactRound
 } from "lucide-react";
 
 import { useSidebar } from "@/components/ui/sidebar";
@@ -56,6 +59,12 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+
+import type {
+  SidebarItem,
+  SidebarGroupItem,
+  SidebarIcon,
+} from "@/components/sidebar-types";
 
 import ThemeToggle from "./toggleTheme";
 
@@ -100,50 +109,53 @@ export const iconMap = {
   activity: Activity,
   analytics: BarChart3,
   shield: ShieldCheck,
-};
-
-/* =========================================================
-   SIDEBAR TYPES
-========================================================= */
-
-export type SidebarIcon = keyof typeof iconMap;
-
-export type SidebarLink = {
-  title: string;
-  href: string;
-  icon: SidebarIcon;
-};
-
-export type SidebarGroupItem = {
-  title: string;
-  icon: SidebarIcon;
-  children: SidebarItem[];
-};
-
-export type SidebarItem =
-  | SidebarLink
-  | SidebarGroupItem;
+  contacts: ContactRound,
+} satisfies Record<SidebarIcon, typeof LayoutDashboard>;
 
 /* =========================================================
    HELPERS
 ========================================================= */
 
-function isGroup(
-  item: SidebarItem,
-): item is SidebarGroupItem {
-  return "children" in item;
+function isGroup(item: SidebarItem): item is SidebarGroupItem {
+  return "children" in item && Array.isArray(item.children);
 }
 
 /**
- * Checks whether any link/group inside an item
- * belongs to the current route.
+ * Returns the first link href in a group, including nested groups.
+ * This avoids accessing href on a SidebarGroupItem.
  */
+function getFirstLinkHref(
+  items: SidebarItem[],
+): string | undefined {
+  for (const item of items) {
+    if ("href" in item) {
+      return item.href;
+    }
+
+    const href = getFirstLinkHref(item.children);
+
+    if (href) {
+      return href;
+    }
+  }
+
+  return undefined;
+}
+
+function getGroupKey(item: SidebarGroupItem): string {
+  return getFirstLinkHref(item.children) ?? item.title;
+}
+
+function isLinkActive(href: string, pathname: string): boolean {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 function isItemActive(
   item: SidebarItem,
   pathname: string,
 ): boolean {
   if (!isGroup(item)) {
-    return pathname === item.href;
+    return isLinkActive(item.href, pathname);
   }
 
   return item.children.some((child) =>
@@ -160,7 +172,7 @@ type AppSidebarProps = {
 };
 
 /* =========================================================
-   RECURSIVE SIDEBAR
+   RECURSIVE SIDEBAR ITEMS
 ========================================================= */
 
 function SidebarItems({
@@ -174,62 +186,50 @@ function SidebarItems({
   level?: number;
   onNavigate: () => void;
 }) {
-  const [openGroups, setOpenGroups] = useState<
+  /**
+   * Only stores manual overrides.
+   * If no override exists, active groups are expanded automatically.
+   */
+  const [groupOverrides, setGroupOverrides] = useState<
     Record<string, boolean>
-  >(() => {
-    const initial: Record<string, boolean> = {};
+  >({});
 
-    items.forEach((item) => {
-      if (isGroup(item)) {
-        initial[item.title] = isItemActive(
-          item,
-          pathname,
-        );
-      }
-    });
-
-    return initial;
-  });
-
-  function toggleGroup(title: string) {
-    setOpenGroups((previous) => ({
-      ...previous,
-      [title]: !previous[title],
+  const toggleGroup = (
+    key: string,
+    currentlyExpanded: boolean,
+  ) => {
+    setGroupOverrides((current) => ({
+      ...current,
+      [key]: !currentlyExpanded,
     }));
-  }
+  };
 
   return (
     <>
       {items.map((item, index) => {
         const Icon = iconMap[item.icon];
-
-        /*
-         * Use a combination of title + index.
-         * This also works for dynamically generated batches.
-         */
         const key = `${item.title}-${level}-${index}`;
 
-        /* =================================================
-           GROUP
-        ================================================= */
-
+        /* GROUP / DROPDOWN */
         if (isGroup(item)) {
-          const open =
-            openGroups[item.title] ?? false;
+          const groupKey = getGroupKey(item);
+          const groupActive = isItemActive(item, pathname);
 
-          const groupActive =
-            isItemActive(item, pathname);
+          const isExpanded =
+            groupOverrides[groupKey] ?? groupActive;
 
           return (
             <SidebarMenuItem key={key}>
               <SidebarMenuButton
                 onClick={() =>
-                  toggleGroup(item.title)
+                  toggleGroup(groupKey, isExpanded)
                 }
+                isActive={groupActive}
+                aria-expanded={isExpanded}
                 className={`h-10 rounded-lg text-[15px] ${
                   groupActive
                     ? "font-semibold text-foreground"
-                    : "font-normal text-foreground/80"
+                    : "font-medium text-foreground/80"
                 }`}
               >
                 <Icon
@@ -237,23 +237,19 @@ function SidebarItems({
                   strokeWidth={1.75}
                 />
 
-                <span>{item.title}</span>
+                <span className="flex-1 truncate">
+                  {item.title}
+                </span>
 
-                <ChevronDown
-                  className={`ml-auto h-4 w-4 text-muted-foreground transition-transform ${
-                    open ? "rotate-180" : ""
+                <ChevronRight
+                  className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+                    isExpanded ? "rotate-90" : ""
                   }`}
                 />
               </SidebarMenuButton>
 
-              {open && (
-                <SidebarMenuSub
-                  className={
-                    level === 0
-                      ? "mx-0 border-l-0 pl-9"
-                      : "mx-0 border-l-0 pl-6"
-                  }
-                >
+              {isExpanded && (
+                <SidebarMenuSub className="mx-0 border-l-0 pl-4">
                   <SidebarItems
                     items={item.children}
                     pathname={pathname}
@@ -266,18 +262,11 @@ function SidebarItems({
           );
         }
 
-        /* =================================================
-           LINK
-        ================================================= */
+        /* REGULAR LINK */
+        // TypeScript knows item is a SidebarLink here.
+        const active = isLinkActive(item.href, pathname);
 
-        const active =
-          pathname === item.href;
-
-        /*
-         * Nested links use SidebarMenuSubItem.
-         * Top-level links use SidebarMenuItem.
-         */
-
+        /* NESTED LINK */
         if (level > 0) {
           return (
             <SidebarMenuSubItem key={key}>
@@ -306,6 +295,7 @@ function SidebarItems({
           );
         }
 
+        /* TOP-LEVEL LINK */
         return (
           <SidebarMenuItem key={key}>
             <SidebarMenuButton
@@ -344,18 +334,9 @@ export default function AppSidebar({
   sidebarItems,
 }: AppSidebarProps) {
   const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
 
-  const {
-    isMobile,
-    setOpenMobile,
-  } = useSidebar();
-
-  /*
-   * Close the sidebar only on mobile.
-   *
-   * This is called by actual navigation links.
-   * Group buttons do not call this.
-   */
+  // Close the sidebar only on mobile navigation.
   const handleNavigate = () => {
     if (isMobile) {
       setOpenMobile(false);
@@ -367,10 +348,7 @@ export default function AppSidebar({
       collapsible="offcanvas"
       className="border-r-0 shadow-sm"
     >
-      {/* =================================================
-          FIXED HEADER
-      ================================================= */}
-
+      {/* FIXED HEADER */}
       <SidebarHeader className="shrink-0 border-b bg-background px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -415,12 +393,7 @@ export default function AppSidebar({
         </div>
       </SidebarHeader>
 
-      {/* =================================================
-          SCROLLABLE CONTENT
-          
-          ONLY THIS SECTION SCROLLS.
-      ================================================= */}
-
+      {/* SCROLLABLE CONTENT */}
       <SidebarContent className="min-h-0 flex-1 px-2 py-3">
         <SidebarGroup className="p-0">
           <SidebarMenu className="gap-0.5">
@@ -433,13 +406,9 @@ export default function AppSidebar({
         </SidebarGroup>
       </SidebarContent>
 
-      {/* =================================================
-          FIXED FOOTER
-      ================================================= */}
-
+      {/* FIXED FOOTER */}
       <SidebarFooter className="shrink-0 gap-0 border-t bg-background px-4 py-3">
-        {/* Language + theme */}
-
+        {/* Language and theme */}
         <div className="flex items-center justify-between py-2">
           <button
             type="button"
@@ -449,7 +418,6 @@ export default function AppSidebar({
               className="h-4 w-4"
               strokeWidth={1.75}
             />
-
             <span>UR</span>
           </button>
 
@@ -457,13 +425,11 @@ export default function AppSidebar({
         </div>
 
         {/* User */}
-
         <div className="flex items-center justify-between pt-2">
           <div>
             <p className="text-sm font-semibold leading-tight">
               Admin User
             </p>
-
             <p className="text-xs text-muted-foreground">
               Admin
             </p>

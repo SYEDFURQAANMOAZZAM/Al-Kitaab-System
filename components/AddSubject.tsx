@@ -2,8 +2,15 @@
 "use client";
 
 import { useMemo, useState, useTransition, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
-import { Check, Layers3, Loader2, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
+import {
+  Check,
+  CheckCircle2,
+  Layers3,
+  Loader2,
+  Plus,
+  Trash2,
+} from "lucide-react";
 
 import { createSubject } from "@/app/ServerActions/subjectOperations/createSubject";
 
@@ -23,13 +30,12 @@ type AddSubjectProps = {
 };
 
 export function AddSubject({ branches }: AddSubjectProps) {
-  const router = useRouter();
-
   const [name, setName] = useState("");
   const [parts, setParts] = useState<string[]>([""]);
   const [trackingTerms, setTrackingTerms] = useState<string[]>([""]);
   const [selectedBatchIds, setSelectedBatchIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const allBatches = useMemo(
@@ -46,11 +52,18 @@ export function AddSubject({ branches }: AddSubjectProps) {
     allBatchIds.length > 0 &&
     allBatchIds.every((id) => selectedBatchIds.includes(id));
 
+  function clearFeedback() {
+    setError(null);
+    setSuccess(null);
+  }
+
   function addPart() {
+    clearFeedback();
     setParts((current) => [...current, ""]);
   }
 
   function removePart(index: number) {
+    clearFeedback();
     setParts((current) =>
       current.length > 1
         ? current.filter((_, partIndex) => partIndex !== index)
@@ -59,6 +72,7 @@ export function AddSubject({ branches }: AddSubjectProps) {
   }
 
   function updatePart(index: number, value: string) {
+    clearFeedback();
     setParts((current) =>
       current.map((part, partIndex) =>
         partIndex === index ? value : part,
@@ -67,10 +81,12 @@ export function AddSubject({ branches }: AddSubjectProps) {
   }
 
   function addTrackingTerm() {
+    clearFeedback();
     setTrackingTerms((current) => [...current, ""]);
   }
 
   function removeTrackingTerm(index: number) {
+    clearFeedback();
     setTrackingTerms((current) =>
       current.length > 1
         ? current.filter((_, termIndex) => termIndex !== index)
@@ -79,6 +95,7 @@ export function AddSubject({ branches }: AddSubjectProps) {
   }
 
   function updateTrackingTerm(index: number, value: string) {
+    clearFeedback();
     setTrackingTerms((current) =>
       current.map((term, termIndex) =>
         termIndex === index ? value : term,
@@ -87,6 +104,7 @@ export function AddSubject({ branches }: AddSubjectProps) {
   }
 
   function toggleBatch(batchId: string) {
+    clearFeedback();
     setSelectedBatchIds((current) =>
       current.includes(batchId)
         ? current.filter((id) => id !== batchId)
@@ -95,6 +113,7 @@ export function AddSubject({ branches }: AddSubjectProps) {
   }
 
   function toggleSelectAll() {
+    clearFeedback();
     setSelectedBatchIds(allSelected ? [] : allBatchIds);
   }
 
@@ -104,6 +123,7 @@ export function AddSubject({ branches }: AddSubjectProps) {
     if (isPending) return;
 
     setError(null);
+    setSuccess(null);
 
     const trimmedName = name.trim();
     const trimmedParts = parts.map((part) => part.trim());
@@ -111,6 +131,11 @@ export function AddSubject({ branches }: AddSubjectProps) {
 
     if (!trimmedName) {
       setError("Subject name is required.");
+      return;
+    }
+
+    if (trimmedName.length > 100) {
+      setError("Subject name cannot exceed 100 characters.");
       return;
     }
 
@@ -122,12 +147,25 @@ export function AddSubject({ branches }: AddSubjectProps) {
       return;
     }
 
+    if (trimmedParts.some((part) => part.length > 100)) {
+      setError("Subject part names cannot exceed 100 characters.");
+      return;
+    }
+
     if (trimmedTrackingTerms.some((term) => !term)) {
       setError("Every tracking term must have a name.");
       return;
     }
 
-    const normalizedParts = trimmedParts.map((part) => part.toLowerCase());
+    if (trimmedTrackingTerms.some((term) => term.length > 100)) {
+      setError("Tracking term names cannot exceed 100 characters.");
+      return;
+    }
+
+    const normalizedParts = trimmedParts.map((part) =>
+      part.toLowerCase(),
+    );
+
     if (new Set(normalizedParts).size !== normalizedParts.length) {
       setError("Subject parts must have unique names.");
       return;
@@ -136,6 +174,7 @@ export function AddSubject({ branches }: AddSubjectProps) {
     const normalizedTerms = trimmedTrackingTerms.map((term) =>
       term.toLowerCase(),
     );
+
     if (new Set(normalizedTerms).size !== normalizedTerms.length) {
       setError("Tracking terms must have unique names.");
       return;
@@ -163,8 +202,12 @@ export function AddSubject({ branches }: AddSubjectProps) {
           return;
         }
 
-        router.replace("/admin/subjects");
-        router.refresh();
+        setName("");
+        setParts([""]);
+        setTrackingTerms([""]);
+        setSelectedBatchIds([]);
+        setError(null);
+        setSuccess("Subject created successfully!");
       } catch {
         setError("Something went wrong while creating the subject.");
       }
@@ -172,12 +215,16 @@ export function AddSubject({ branches }: AddSubjectProps) {
   }
 
   const sectionClass = "border-t px-5 py-6 sm:px-7";
+
   const addButtonClass =
     "inline-flex h-9 items-center justify-center gap-2 self-start rounded-lg border bg-background px-3 text-sm font-medium transition hover:bg-muted disabled:pointer-events-none disabled:opacity-50 sm:self-auto";
+
   const itemClass =
     "flex items-center gap-3 rounded-lg border bg-background px-3 py-2 transition focus-within:border-primary/50";
+
   const inputClass =
     "h-9 min-w-0 flex-1 border-0 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground disabled:opacity-50";
+
   const removeButtonClass =
     "flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-40";
 
@@ -212,7 +259,9 @@ export function AddSubject({ branches }: AddSubjectProps) {
         <section className="bg-background px-5 py-6 sm:px-7">
           <div className="max-w-2xl">
             <div className="mb-5">
-              <h2 className="text-base font-semibold">Basic Information</h2>
+              <h2 className="text-base font-semibold">
+                Basic Information
+              </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Give your subject a clear name.
               </p>
@@ -227,7 +276,10 @@ export function AddSubject({ branches }: AddSubjectProps) {
                 id="subject-name"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  clearFeedback();
+                  setName(e.target.value);
+                }}
                 placeholder="Example: Nazira"
                 disabled={isPending}
                 required
@@ -274,7 +326,9 @@ export function AddSubject({ branches }: AddSubjectProps) {
                   type="text"
                   value={part}
                   onChange={(e) => updatePart(index, e.target.value)}
-                  placeholder={index === 0 ? "Example: Para" : "Example: Surah"}
+                  placeholder={
+                    index === 0 ? "Example: Para" : "Example: Surah"
+                  }
                   disabled={isPending}
                   required
                   maxLength={100}
@@ -455,7 +509,9 @@ export function AddSubject({ branches }: AddSubjectProps) {
                                   : "bg-background"
                               }`}
                             >
-                              {selected && <Check className="h-3.5 w-3.5" />}
+                              {selected && (
+                                <Check className="h-3.5 w-3.5" />
+                              )}
                             </span>
 
                             <span className="min-w-0 flex-1 truncate text-sm font-medium">
@@ -481,7 +537,32 @@ export function AddSubject({ branches }: AddSubjectProps) {
           </div>
         </section>
 
-        {/* Error */}
+        {/* Success Message */}
+        {success && (
+          <div className="border-t border-emerald-500/20 bg-emerald-500/5 px-5 py-4 sm:px-7">
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex flex-col gap-3 rounded-lg border border-emerald-500/30 bg-background px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                <div>
+                  <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                    {success}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    You can create another subject or view all subjects.
+                  </p>
+                </div>
+              </div>
+
+              
+            </div>
+          </div>
+        )}
+
+        {/* Error Message */}
         {error && (
           <div className="border-t bg-destructive/10 px-5 py-4 sm:px-7">
             <div
@@ -495,15 +576,6 @@ export function AddSubject({ branches }: AddSubjectProps) {
 
         {/* Footer */}
         <div className="flex flex-col-reverse gap-3 border-t bg-muted/50 p-5 sm:flex-row sm:justify-end sm:px-7">
-          <button
-            type="button"
-            onClick={() => router.replace("/admin/subjects")}
-            disabled={isPending}
-            className="h-10 rounded-lg border bg-background px-5 text-sm font-medium transition hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
-          >
-            Cancel
-          </button>
-
           <button
             type="submit"
             disabled={isPending}

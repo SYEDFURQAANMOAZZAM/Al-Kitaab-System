@@ -1,8 +1,7 @@
+import AuthVerify from '@/app/ServerActions/auth/authVerify'
+import { redirect } from 'next/navigation'
 
-const student = () => {
-  return (
-    <div>student</div>
-  )
-}
+export default async function Student() {
+  await AuthVerify("STUDENT")
 
-export default student
+  return (redirect("/student/dashboard"))}

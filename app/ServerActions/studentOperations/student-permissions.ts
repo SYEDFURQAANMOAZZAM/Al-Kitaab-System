@@ -43,10 +43,10 @@ export const STUDENT_FIELD_PERMISSIONS: Record<
 
   STUDENT: {
     name: true,
-    fatherName: false,
-    address: false,
-    email: false,
-    phone: false,
+    fatherName: true,
+    address: true,
+    email: true,
+    phone: true,
     phone2: true,
     password: true,
     batches: false,

@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   Edit,
   Mail,
-  MapPin,
   Phone,
   User,
   Users,
