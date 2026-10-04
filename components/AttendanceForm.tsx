@@ -453,9 +453,9 @@ export function AttendanceForm({
             !loadingDate && (
               <div className="mt-4 flex items-center rounded-lg border border-border bg-muted px-3 py-2.5 text-sm text-muted-foreground">
                 Attendance for{" "}
-                <span className="ml-1 font-medium text-foreground">
+                <span className="ml-1 mr-1 font-medium text-foreground">
                   {displayDate}
-                </span>{" "}
+                </span>
                 has already been taken.
               </div>
             )}

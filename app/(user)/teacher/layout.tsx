@@ -4,6 +4,7 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 
 import { getSidebarItems } from "./sidebarContent";
 import { requireRole } from "@/lib/auth/require-role";
@@ -35,9 +36,7 @@ export default async function TeacherLayout({
   });
 
   const batches =
-    teacher?.assignments.map(
-      (assignment) => assignment.batch
-    ) ?? [];
+    teacher?.assignments.map((assignment) => assignment.batch) ?? [];
 
   const sidebarItems = getSidebarItems(batches);
 
@@ -45,13 +44,19 @@ export default async function TeacherLayout({
     <SidebarProvider>
       <AppSidebar sidebarItems={sidebarItems} />
 
-      <SidebarInset>
+      <SidebarInset className="min-h-svh min-w-0">
+        {/* Mobile top bar */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 md:hidden">
-          <SidebarTrigger className="-ml-1 lg:hidden" />
-          <h1>Maktab</h1>
+          <SidebarTrigger className="-ml-1" />
+
+          <Separator
+            orientation="vertical"
+            className="mr-2 h-4"
+          />
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6 max-[430px]:p-2">
+        {/* Main page */}
+        <main className="min-h-0 min-w-0 flex-1 p-6 max-[430px]:p-2">
           {children}
         </main>
       </SidebarInset>

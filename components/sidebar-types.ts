@@ -34,6 +34,7 @@ export type SidebarIcon =
   | "target"
   | "activity"
   | "analytics"
+  | "contacts"
   | "shield";
 
 export type SidebarLink = {

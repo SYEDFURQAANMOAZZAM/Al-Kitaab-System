@@ -1,7 +1,7 @@
 
 "use client";
 
-import { FileDown, Trash2 } from "lucide-react";
+import { FileDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -54,15 +54,7 @@ export default function TeacherPerformanceHeader({
           Export PDF
         </Button>
 
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={onDelete}
-          disabled={!onDelete}
-        >
-          <Trash2 className="mr-2 size-4" />
-          Delete
-        </Button>
+        
       </div>
     </div>
   );

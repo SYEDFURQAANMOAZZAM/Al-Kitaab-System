@@ -1,74 +1,68 @@
+
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 type BatchNavProps = {
-  branchId: string;
-  batchId: string;
+  basePath: string;
   className?: string;
 };
 
-export function BatchNav({
-  branchId,
-  batchId,
-  className,
-}: BatchNavProps) {
+const tabs = [
+  { value: "progress", label: "Progress" },
+  { value: "attendance", label: "Attendance" },
+  { value: "performance", label: "Performance" },
+  { value: "students", label: "Students" },
+  { value: "teachers", label: "Teachers" },
+] as const;
+
+export function BatchNav({ basePath, className }: BatchNavProps) {
   const pathname = usePathname();
-  const router = useRouter();
 
-  const basePath = `/admin/branches/${branchId}/batches/${batchId}`;
-
-  const progressPath = `${basePath}/progress`;
-  const attendancePath = `${basePath}/attendance`;
-  const performancePath = `${basePath}/performance`;
-
-  const activeTab = pathname.startsWith(attendancePath)
-    ? "attendance"
-    : pathname.startsWith(performancePath)
-      ? "performance"
-      : "progress";
-
-  function handleTabChange(value: string) {
-    switch (value) {
-      case "progress":
-        router.push(progressPath);
-        break;
-
-      case "attendance":
-        router.push(attendancePath);
-        break;
-
-      case "performance":
-        router.push(performancePath);
-        break;
-    }
-  }
+  const activeTab =
+    tabs.find((tab) => {
+      const path = `${basePath}/${tab.value}`;
+      return pathname === path || pathname.startsWith(`${path}/`);
+    })?.value ?? "progress";
 
   return (
-    <Tabs
-      value={activeTab}
-      onValueChange={handleTabChange}
-      className={className}
-    >
-      <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="progress">
-          Progress
-        </TabsTrigger>
+    <div className={cn("w-full min-w-0", className)}>
+      <div
+        role="tablist"
+        aria-label="Batch navigation"
+        className="flex w-full gap-1 overflow-x-auto rounded-lg bg-muted p-1
+          [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {tabs.map((tab) => {
+          const href = `${basePath}/${tab.value}`;
+          const isActive = activeTab === tab.value;
 
-        <TabsTrigger value="attendance">
-          Attendance
-        </TabsTrigger>
-
-        <TabsTrigger value="performance">
-          Performance
-        </TabsTrigger>
-      </TabsList>
-    </Tabs>
+          return (
+            <Link
+              key={tab.value}
+              href={href}
+              role="tab"
+              aria-selected={isActive}
+              aria-current={isActive ? "page" : undefined}
+              className={cn(
+                "flex min-w-[100px] flex-1 items-center justify-center",
+                "whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium",
+                "transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2",
+                "focus-visible:ring-ring focus-visible:ring-offset-2",
+                isActive
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
+              )}
+            >
+              {tab.label}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
   );
 }
