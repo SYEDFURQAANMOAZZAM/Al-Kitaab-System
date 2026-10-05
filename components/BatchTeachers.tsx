@@ -1078,35 +1078,48 @@ export default function BatchTeachers({ batchId, isAdmin }: Props) {
 
                 {/* Teacher actions */}
 
-                {canManage && (
+                {/* Teacher actions */}
+{canManage && (
+  <DropdownMenu>
+    <DropdownMenuTrigger
+      render={
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-9 shrink-0"
+          aria-label={`Actions for ${teacher.name}`}
+        >
+          <MoreHorizontal className="size-4" />
+        </Button>
+      }
+    />
 
-                  <DropdownMenu>
+    <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuItem
+        onClick={() => openReplaceDialog(teacher)}
+      >
+        <ArrowLeftRight className="mr-2 size-4" />
+        Change batch
+      </DropdownMenuItem>
 
-                    <DropdownMenuTrigger render={<Button
+      <DropdownMenuSeparator />
 
-                        variant="ghost"
-
-                        size="icon"
-
-                        className="size-9 shrink-0"
-
-                        aria-label={`Actions for ${teacher.name}`}
-
-                      >
-
-                        <MoreHorizontal className="h-4 w-4" />
-
-                      </Button>} />
-
-                    <DropdownMenuContent>
-
-                      {/* Menu items */}
-
-                    </DropdownMenuContent>
-
-                  </DropdownMenu>
-
-                )}
+      <DropdownMenuItem
+        className="text-destructive focus:text-destructive"
+        onClick={() =>
+          setConfirmAction({
+            type: "remove-teacher",
+            teacherId: teacher.teacherId,
+            label: teacher.name,
+          })
+        }
+      >
+        <Trash2 className="mr-2 size-4" />
+        Remove teacher
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
+)}
 
               </div>
 
