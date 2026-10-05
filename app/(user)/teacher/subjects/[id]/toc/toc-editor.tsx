@@ -1,8 +1,11 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
 import { getExampleText } from "./toc-rules";
 
 import {
@@ -26,6 +29,8 @@ import {
   deleteTocItem,
   updateTocItem,
 } from "@/app/ServerActions/subjectOperations/toc";
+
+import { addMultipleTocItems } from "@/app/ServerActions/subjectOperations/multipleToc";
 
 import { importToc } from "@/app/ServerActions/subjectOperations/bulkToc";
 
@@ -54,6 +59,15 @@ type Subject = {
   tocItems: Item[];
 };
 
+type AddMode = "menu" | "one" | "range";
+
+type RangeDraft = {
+  prefix: string;
+  from: string;
+  to: string;
+  suffix: string;
+};
+
 /* ============================================================
    COMPONENT
 ============================================================ */
@@ -65,48 +79,103 @@ export default function TocEditor({
 }) {
   const router = useRouter();
 
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] =
+    useTransition();
 
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
-  const [editing, setEditing] = useState<Record<string, boolean>>({});
-  const [editDrafts, setEditDrafts] = useState<Record<string, string>>({});
+  /* ==========================================================
+     DRAFTS
+  ========================================================== */
 
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [drafts, setDrafts] = useState<
+    Record<string, string>
+  >({});
 
-  const [showAdd, setShowAdd] = useState<Record<string, boolean>>({});
+  const [editing, setEditing] = useState<
+    Record<string, boolean>
+  >({});
 
-  const [showBulk, setShowBulk] = useState(false);
-  const [showRules, setShowRules] = useState(false);
+  const [editDrafts, setEditDrafts] = useState<
+    Record<string, string>
+  >({});
 
-  const [bulkText, setBulkText] = useState("");
+  const [expanded, setExpanded] = useState<
+    Record<string, boolean>
+  >({});
 
-  /* ============================================================
+  /*
+   * Add UI state.
+   *
+   * key:
+   *   subjectPartId-parentId
+   *
+   * parentId:
+   *   "root" for root items
+   */
+  const [addModes, setAddModes] = useState<
+    Record<string, AddMode | undefined>
+  >({});
+
+  const [rangeDrafts, setRangeDrafts] =
+    useState<
+      Record<string, RangeDraft>
+    >({});
+
+  /* ==========================================================
+     BULK / RULES
+  ========================================================== */
+
+  const [showBulk, setShowBulk] =
+    useState(false);
+
+  const [showRules, setShowRules] =
+    useState(false);
+
+  const [bulkText, setBulkText] =
+    useState("");
+
+  /* ==========================================================
      SORTED PARTS
-  ============================================================ */
+  ========================================================== */
 
   const parts = [...subject.parts].sort(
     (a, b) => a.position - b.position,
   );
 
-  /* ============================================================
+  /* ==========================================================
      TREE HELPERS
-  ============================================================ */
+  ========================================================== */
 
-  const children = (parentId: string | null) => {
+  const children = (
+    parentId: string | null,
+  ) => {
     return subject.tocItems
-      .filter((item) => item.parentId === parentId)
-      .sort((a, b) => a.position - b.position);
+      .filter(
+        (item) =>
+          item.parentId === parentId,
+      )
+      .sort(
+        (a, b) =>
+          a.position - b.position,
+      );
   };
 
   const rootItems = children(null);
 
-  const getPart = (partId: string) => {
-    return parts.find((part) => part.id === partId);
+  const getPart = (
+    partId: string,
+  ) => {
+    return parts.find(
+      (part) => part.id === partId,
+    );
   };
 
-  const getChildPart = (part: Part) => {
+  const getChildPart = (
+    part: Part,
+  ) => {
     return parts.find(
-      (child) => child.position === part.position + 1,
+      (child) =>
+        child.position ===
+        part.position + 1,
     );
   };
 
@@ -122,78 +191,126 @@ export default function TocEditor({
    *
    * Para 1 => 3 Surahs
    */
-  const getChildCount = (item: Item) => {
+
+  const getChildCount = (
+    item: Item,
+  ) => {
     return children(item.id).length;
   };
 
-  const getDraftKey = (
+  /* ==========================================================
+     ADD HELPERS
+  ========================================================== */
+
+  const getAddKey = (
     partId: string,
     parentId: string | null,
   ) => {
-    return `${partId}-${parentId ?? "root"}`;
+    return `${partId}-${
+      parentId ?? "root"
+    }`;
   };
 
-  /* ============================================================
+  const getEmptyRangeDraft =
+    (): RangeDraft => ({
+      prefix: "",
+      from: "",
+      to: "",
+      suffix: "",
+    });
+
+  /* ==========================================================
      EXPAND / COLLAPSE
-  ============================================================ */
+  ========================================================== */
 
-  const toggleExpanded = (id: string) => {
+  const toggleExpanded = (
+    id: string,
+  ) => {
     setExpanded((current) => ({
       ...current,
-      [id]: !(current[id] ?? false),
+      [id]: !(
+        current[id] ?? false
+      ),
     }));
   };
 
-  /* ============================================================
+  /* ==========================================================
      ADD UI
-  ============================================================ */
+  ========================================================== */
 
-  const openAdd = (id: string) => {
-    setShowAdd((current) => ({
+  const openAdd = (
+    key: string,
+  ) => {
+    setAddModes((current) => ({
       ...current,
-      [id]: true,
-    }));
-
-    setExpanded((current) => ({
-      ...current,
-      [id]: true,
+      [key]: "menu",
     }));
   };
 
-  const closeAdd = (id: string) => {
-    setShowAdd((current) => ({
+  const closeAdd = (
+    key: string,
+  ) => {
+    setAddModes((current) => ({
       ...current,
-      [id]: false,
+      [key]: undefined,
     }));
+
+    setDrafts((current) => {
+      const next = {
+        ...current,
+      };
+
+      delete next[key];
+
+      return next;
+    });
+
+    setRangeDrafts((current) => {
+      const next = {
+        ...current,
+      };
+
+      delete next[key];
+
+      return next;
+    });
   };
 
-  /* ============================================================
-     ADD ITEM
-  ============================================================ */
+  /* ==========================================================
+     SINGLE ADD
+  ========================================================== */
 
   const addItem = (
     part: Part,
     parentId: string | null,
-    afterSuccess?: () => void,
   ) => {
-    const key = getDraftKey(part.id, parentId);
+    const key = getAddKey(
+      part.id,
+      parentId,
+    );
 
-    const name = drafts[key]?.trim();
+    const name =
+      drafts[key]?.trim();
 
-    if (!name) {
+    if (!name || pending) {
       return;
     }
 
     startTransition(async () => {
-      const result = await addTocItem({
-        subjectId: subject.id,
-        subjectPartId: part.id,
-        parentId,
-        name,
-      });
+      const result =
+        await addTocItem({
+          subjectId: subject.id,
+          subjectPartId: part.id,
+          parentId,
+          name,
+        });
 
       if (!result.success) {
-        alert(result.error ?? "Failed to add TOC item.");
+        alert(
+          result.error ??
+            "Failed to add TOC item.",
+        );
+
         return;
       }
 
@@ -202,17 +319,465 @@ export default function TocEditor({
         [key]: "",
       }));
 
-      afterSuccess?.();
+      closeAdd(key);
 
       router.refresh();
     });
   };
 
-  /* ============================================================
-     EDIT
-  ============================================================ */
+  /* ==========================================================
+     MULTIPLE / RANGE ADD
+  ========================================================== */
 
-  const startEdit = (item: Item) => {
+  const addItemsInRange = (
+    part: Part,
+    parentId: string | null,
+  ) => {
+    const key = getAddKey(
+      part.id,
+      parentId,
+    );
+
+    const draft =
+      rangeDrafts[key] ??
+      getEmptyRangeDraft();
+
+    const prefix =
+      draft.prefix.trim();
+
+    const suffix =
+      draft.suffix.trim();
+
+    const from =
+      Number(draft.from);
+
+    const to =
+      Number(draft.to);
+
+    if (
+      !Number.isInteger(from) ||
+      !Number.isInteger(to)
+    ) {
+      alert(
+        "From and To must be whole numbers.",
+      );
+
+      return;
+    }
+
+    if (from > to) {
+      alert(
+        "From cannot be greater than To.",
+      );
+
+      return;
+    }
+
+    if (!prefix && !suffix) {
+      alert(
+        "Enter text before or after the number.",
+      );
+
+      return;
+    }
+
+    if (pending) {
+      return;
+    }
+
+    startTransition(async () => {
+      const result =
+        await addMultipleTocItems({
+          subjectId: subject.id,
+          subjectPartId: part.id,
+          parentId,
+          prefix,
+          from,
+          to,
+          suffix,
+        });
+
+      if (!result.success) {
+        alert(
+          result.error ??
+            "Failed to add TOC items.",
+        );
+
+        return;
+      }
+
+      closeAdd(key);
+
+      router.refresh();
+    });
+  };
+
+  /* ==========================================================
+     RANGE DRAFT
+  ========================================================== */
+
+  const updateRangeDraft = (
+    key: string,
+    field: keyof RangeDraft,
+    value: string,
+  ) => {
+    setRangeDrafts((current) => ({
+      ...current,
+
+      [key]: {
+        ...(current[key] ??
+          getEmptyRangeDraft()),
+
+        [field]: value,
+      },
+    }));
+  };
+
+  /* ==========================================================
+     ADD CONTROLS
+  ========================================================== */
+
+  const renderAddControls = (
+    part: Part,
+    parentId: string | null,
+  ): ReactNode => {
+    const key = getAddKey(
+      part.id,
+      parentId,
+    );
+
+    const mode =
+      addModes[key];
+
+    /*
+     * ========================================================
+     * DEFAULT ADD BUTTON
+     * ========================================================
+     */
+
+    if (!mode) {
+      return (
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() =>
+            openAdd(key)
+          }
+          className="inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm hover:bg-muted disabled:opacity-50"
+        >
+          <Plus className="h-4 w-4" />
+
+          Add {part.name}
+        </button>
+      );
+    }
+
+    /*
+     * ========================================================
+     * OPTION MENU
+     * ========================================================
+     */
+
+    if (mode === "menu") {
+      return (
+        <div className="rounded-lg border bg-background p-3">
+          <p className="text-xs font-semibold">
+            Add {part.name}
+          </p>
+
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                setAddModes(
+                  (current) => ({
+                    ...current,
+                    [key]: "one",
+                  }),
+                )
+              }
+              className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
+            >
+              Add One
+            </button>
+
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => {
+                setRangeDrafts(
+                  (current) => ({
+                    ...current,
+
+                    [key]:
+                      current[key] ??
+                      getEmptyRangeDraft(),
+                  }),
+                );
+
+                setAddModes(
+                  (current) => ({
+                    ...current,
+                    [key]: "range",
+                  }),
+                );
+              }}
+              className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
+            >
+              Add in Range
+            </button>
+          </div>
+
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() =>
+              closeAdd(key)
+            }
+            className="mt-2 w-full rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        </div>
+      );
+    }
+
+    /*
+     * ========================================================
+     * ADD ONE
+     * ========================================================
+     */
+
+    if (mode === "one") {
+      return (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+
+            addItem(
+              part,
+              parentId,
+            );
+          }}
+          className="rounded-lg border bg-background p-3"
+        >
+          <p className="text-xs font-semibold">
+            Add {part.name}
+          </p>
+
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Enter one {part.name}.
+          </p>
+
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+            <input
+              autoFocus
+              value={
+                drafts[key] ?? ""
+              }
+              onChange={(event) =>
+                setDrafts(
+                  (current) => ({
+                    ...current,
+
+                    [key]:
+                      event.target
+                        .value,
+                  }),
+                )
+              }
+              disabled={pending}
+              placeholder={`Enter ${part.name}`}
+              className="h-9 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+
+            <button
+              type="submit"
+              disabled={
+                pending ||
+                !drafts[key]?.trim()
+              }
+              className="h-9 rounded-md bg-primary px-3 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              Save
+            </button>
+
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                closeAdd(key)
+              }
+              className="h-9 rounded-md border px-3 text-sm hover:bg-muted disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      );
+    }
+
+    /*
+     * ========================================================
+     * ADD IN RANGE
+     * ========================================================
+     */
+
+    const range =
+      rangeDrafts[key] ??
+      getEmptyRangeDraft();
+
+    const previewFrom =
+      range.from || "1";
+
+    const previewTo =
+      range.to || "10";
+
+    return (
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+
+          addItemsInRange(
+            part,
+            parentId,
+          );
+        }}
+        className="rounded-lg border bg-background p-3"
+      >
+        <p className="text-xs font-semibold">
+          Add {part.name} in Range
+        </p>
+
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Add multiple {part.name}
+          {" "}
+          items using a number range.
+        </p>
+
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_90px_auto_90px_minmax(0,1fr)] sm:items-center">
+          <input
+            autoFocus
+            value={range.prefix}
+            onChange={(event) =>
+              updateRangeDraft(
+                key,
+                "prefix",
+                event.target.value,
+              )
+            }
+            disabled={pending}
+            placeholder="Text before"
+            className="h-9 w-full min-w-0 rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+          />
+
+          <input
+            type="number"
+            value={range.from}
+            onChange={(event) =>
+              updateRangeDraft(
+                key,
+                "from",
+                event.target.value,
+              )
+            }
+            disabled={pending}
+            placeholder="From"
+            className="h-9 w-full min-w-0 rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+          />
+
+          <span className="hidden text-center text-sm text-muted-foreground sm:block">
+            to
+          </span>
+
+          <input
+            type="number"
+            value={range.to}
+            onChange={(event) =>
+              updateRangeDraft(
+                key,
+                "to",
+                event.target.value,
+              )
+            }
+            disabled={pending}
+            placeholder="To"
+            className="h-9 w-full min-w-0 rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+          />
+
+          <input
+            value={range.suffix}
+            onChange={(event) =>
+              updateRangeDraft(
+                key,
+                "suffix",
+                event.target.value,
+              )
+            }
+            disabled={pending}
+            placeholder="Text after"
+            className="h-9 w-full min-w-0 rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+
+        <div className="mt-2 text-xs text-muted-foreground">
+          Example:
+          {" "}
+          <span className="font-medium text-foreground">
+            {range.prefix ||
+              "Item "}
+            {previewFrom}
+            {range.suffix}
+          </span>
+
+          {" ... "}
+
+          <span className="font-medium text-foreground">
+            {range.prefix ||
+              "Item "}
+            {previewTo}
+            {range.suffix}
+          </span>
+        </div>
+
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <button
+            type="submit"
+            disabled={
+              pending ||
+              !range.from ||
+              !range.to ||
+              (!range.prefix.trim() &&
+                !range.suffix.trim())
+            }
+            className="h-9 rounded-md bg-primary px-3 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            Add Range
+          </button>
+
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() =>
+              closeAdd(key)
+            }
+            className="h-9 rounded-md border px-3 text-sm hover:bg-muted disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    );
+  };
+
+  /* ==========================================================
+     EDIT
+  ========================================================== */
+
+  const startEdit = (
+    item: Item,
+  ) => {
     setEditing((current) => ({
       ...current,
       [item.id]: true,
@@ -224,28 +789,38 @@ export default function TocEditor({
     }));
   };
 
-  const cancelEdit = (id: string) => {
+  const cancelEdit = (
+    id: string,
+  ) => {
     setEditing((current) => ({
       ...current,
       [id]: false,
     }));
   };
 
-  const saveEdit = (item: Item) => {
-    const name = editDrafts[item.id]?.trim();
+  const saveEdit = (
+    item: Item,
+  ) => {
+    const name =
+      editDrafts[item.id]?.trim();
 
-    if (!name) {
+    if (!name || pending) {
       return;
     }
 
     startTransition(async () => {
-      const result = await updateTocItem({
-        id: item.id,
-        name,
-      });
+      const result =
+        await updateTocItem({
+          id: item.id,
+          name,
+        });
 
       if (!result.success) {
-        alert(result.error ?? "Failed to update TOC item.");
+        alert(
+          result.error ??
+            "Failed to update TOC item.",
+        );
+
         return;
       }
 
@@ -258,11 +833,13 @@ export default function TocEditor({
     });
   };
 
-  /* ============================================================
+  /* ==========================================================
      DELETE
-  ============================================================ */
+  ========================================================== */
 
-  const removeItem = (item: Item) => {
+  const removeItem = (
+    item: Item,
+  ) => {
     if (
       !window.confirm(
         `Remove "${item.name}"?\n\nAll child items will also be removed.`,
@@ -272,10 +849,17 @@ export default function TocEditor({
     }
 
     startTransition(async () => {
-      const result = await deleteTocItem(item.id);
+      const result =
+        await deleteTocItem(
+          item.id,
+        );
 
       if (!result.success) {
-        alert(result.error ?? "Failed to remove TOC item.");
+        alert(
+          result.error ??
+            "Failed to remove TOC item.",
+        );
+
         return;
       }
 
@@ -283,25 +867,31 @@ export default function TocEditor({
     });
   };
 
-  /* ============================================================
+  /* ==========================================================
      BULK IMPORT
-  ============================================================ */
+  ========================================================== */
 
   const saveBulk = () => {
-    const value = bulkText.trim();
+    const value =
+      bulkText.trim();
 
-    if (!value) {
+    if (!value || pending) {
       return;
     }
 
     startTransition(async () => {
-      const result = await importToc({
-        subjectId: subject.id,
-        text: value,
-      });
+      const result =
+        await importToc({
+          subjectId: subject.id,
+          text: value,
+        });
 
       if (!result.success) {
-        alert(result.error ?? "Failed to import TOC.");
+        alert(
+          result.error ??
+            "Failed to import TOC.",
+        );
+
         return;
       }
 
@@ -312,44 +902,57 @@ export default function TocEditor({
     });
   };
 
-  /* ============================================================
+  /* ==========================================================
      COPY RULES
-  ============================================================ */
+  ========================================================== */
 
-  const copyRules = async () => {
-    const rules = getRulesText(subject);
+  const copyRules =
+    async () => {
+      const rules =
+        getRulesText(subject);
 
-    try {
-      await navigator.clipboard.writeText(rules);
-    } catch {
-      alert("Could not copy rules.");
-    }
-  };
+      try {
+        await navigator.clipboard.writeText(
+          rules,
+        );
+      } catch {
+        alert(
+          "Could not copy rules.",
+        );
+      }
+    };
 
-  /* ============================================================
+  /* ==========================================================
      TREE NODE
-  ============================================================ */
+  ========================================================== */
 
-  const renderNode = (item: Item): React.ReactNode => {
-    const part = getPart(item.subjectPartId);
+  const renderNode = (
+    item: Item,
+  ): ReactNode => {
+    const part = getPart(
+      item.subjectPartId,
+    );
 
     if (!part) {
       return null;
     }
 
-    const itemChildren = children(item.id);
-    const childCount = itemChildren.length;
+    const itemChildren =
+      children(item.id);
 
-    const childPart = getChildPart(part);
+    const childCount =
+      itemChildren.length;
 
-    const isExpanded = expanded[item.id] ?? false;
+    const childPart =
+      getChildPart(part);
 
-    const isEditing = editing[item.id] ?? false;
+    const isExpanded =
+      expanded[item.id] ??
+      false;
 
-    const addKey = getDraftKey(
-      childPart?.id ?? "",
-      item.id,
-    );
+    const isEditing =
+      editing[item.id] ??
+      false;
 
     return (
       <div
@@ -361,22 +964,39 @@ export default function TocEditor({
         ==================================================== */}
 
         <div
-          role={childCount > 0 ? "button" : undefined}
-          tabIndex={childCount > 0 ? 0 : undefined}
+          role={
+            childCount > 0
+              ? "button"
+              : undefined
+          }
+          tabIndex={
+            childCount > 0
+              ? 0
+              : undefined
+          }
           onClick={() => {
-            if (childCount > 0 && !isEditing) {
-              toggleExpanded(item.id);
+            if (
+              childCount > 0 &&
+              !isEditing
+            ) {
+              toggleExpanded(
+                item.id,
+              );
             }
           }}
           onKeyDown={(event) => {
             if (
               childCount > 0 &&
               !isEditing &&
-              (event.key === "Enter" ||
+              (event.key ===
+                "Enter" ||
                 event.key === " ")
             ) {
               event.preventDefault();
-              toggleExpanded(item.id);
+
+              toggleExpanded(
+                item.id,
+              );
             }
           }}
           className={[
@@ -406,17 +1026,33 @@ export default function TocEditor({
 
           <div className="min-w-0 flex-1">
             {isEditing ? (
-              <div
+              <form
                 className="flex min-w-0 gap-2"
-                onClick={(event) => event.stopPropagation()}
+                onClick={(event) =>
+                  event.stopPropagation()
+                }
+                onSubmit={(event) => {
+                  event.preventDefault();
+
+                  saveEdit(item);
+                }}
               >
                 <input
-                  value={editDrafts[item.id] ?? ""}
+                  value={
+                    editDrafts[
+                      item.id
+                    ] ?? ""
+                  }
                   onChange={(event) =>
-                    setEditDrafts((current) => ({
-                      ...current,
-                      [item.id]: event.target.value,
-                    }))
+                    setEditDrafts(
+                      (current) => ({
+                        ...current,
+
+                        [item.id]:
+                          event.target
+                            .value,
+                      }),
+                    )
                   }
                   disabled={pending}
                   autoFocus
@@ -424,12 +1060,13 @@ export default function TocEditor({
                 />
 
                 <button
-                  type="button"
+                  type="submit"
                   disabled={
                     pending ||
-                    !editDrafts[item.id]?.trim()
+                    !editDrafts[
+                      item.id
+                    ]?.trim()
                   }
-                  onClick={() => saveEdit(item)}
                   className="rounded-md bg-primary p-2 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                   aria-label="Save"
                 >
@@ -439,13 +1076,17 @@ export default function TocEditor({
                 <button
                   type="button"
                   disabled={pending}
-                  onClick={() => cancelEdit(item.id)}
+                  onClick={() =>
+                    cancelEdit(
+                      item.id,
+                    )
+                  }
                   className="rounded-md border p-2 hover:bg-muted"
                   aria-label="Cancel"
                 >
                   <X className="h-4 w-4" />
                 </button>
-              </div>
+              </form>
             ) : (
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -460,13 +1101,16 @@ export default function TocEditor({
 
                 {/* CHILD COUNT */}
 
-                {childCount > 0 && childPart && (
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    {childCount}{" "}
-                    {childPart.name}
-                    {childCount !== 1 ? "s" : ""}
-                  </p>
-                )}
+                {childCount > 0 &&
+                  childPart && (
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      {childCount}{" "}
+                      {childPart.name}
+                      {childCount !== 1
+                        ? "s"
+                        : ""}
+                    </p>
+                  )}
               </div>
             )}
           </div>
@@ -481,21 +1125,20 @@ export default function TocEditor({
               }
             >
               {childPart && (
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => openAdd(item.id)}
-                  className="rounded-md border px-2 py-1 text-xs hover:bg-muted"
-                >
-                  <Plus className="mr-1 inline h-3 w-3" />
-                  {childPart.name}
-                </button>
+                <div>
+                  {renderAddControls(
+                    childPart,
+                    item.id,
+                  )}
+                </div>
               )}
 
               <button
                 type="button"
                 disabled={pending}
-                onClick={() => startEdit(item)}
+                onClick={() =>
+                  startEdit(item)
+                }
                 className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                 aria-label="Edit"
               >
@@ -505,7 +1148,9 @@ export default function TocEditor({
               <button
                 type="button"
                 disabled={pending}
-                onClick={() => removeItem(item)}
+                onClick={() =>
+                  removeItem(item)
+                }
                 className="rounded-md p-1.5 text-destructive hover:bg-destructive/10"
                 aria-label="Delete"
               >
@@ -516,96 +1161,41 @@ export default function TocEditor({
         </div>
 
         {/* ====================================================
-            CHILDREN / ADD
+            CHILDREN
         ==================================================== */}
 
-        {(showAdd[item.id] ||
-          (isExpanded && childCount > 0)) && (
-          <div className="border-t bg-muted/20 px-3 py-3 sm:px-4">
-            {/* ADD CHILD */}
-
-            {showAdd[item.id] && childPart && (
-              <div className="mb-3 rounded-lg border bg-background p-3">
-                <p className="text-xs font-semibold">
-                  Add {childPart.name}
-                </p>
-
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Under {item.name}
-                </p>
-
-                <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-                  <input
-                    value={drafts[addKey] ?? ""}
-                    onChange={(event) =>
-                      setDrafts((current) => ({
-                        ...current,
-                        [addKey]: event.target.value,
-                      }))
-                    }
-                    placeholder={`Enter ${childPart.name}`}
-                    disabled={pending}
-                    className="h-9 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  />
-
-                  <button
-                    type="button"
-                    disabled={
-                      pending ||
-                      !drafts[addKey]?.trim()
-                    }
-                    onClick={() =>
-                      addItem(
-                        childPart,
-                        item.id,
-                        () => closeAdd(item.id),
-                      )
-                    }
-                    className="h-9 rounded-md bg-primary px-3 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                  >
-                    Save
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() =>
-                      closeAdd(item.id)
-                    }
-                    className="h-9 rounded-md border px-3 text-sm hover:bg-muted"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* CHILDREN */}
-
-            {isExpanded && childCount > 0 && (
+        {isExpanded &&
+          childCount > 0 && (
+            <div className="border-t bg-muted/20 px-3 py-3 sm:px-4">
               <div className="space-y-2 border-l-2 border-muted pl-3 sm:pl-4">
-                {itemChildren.map(renderNode)}
+                {itemChildren.map(
+                  renderNode,
+                )}
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
       </div>
     );
   };
 
-  /* ============================================================
+  /* ==========================================================
      ROOT ADD
-  ============================================================ */
+  ========================================================== */
 
-  const firstPart = parts[0];
+  const firstPart =
+    parts[0];
 
-  const rootDraftKey = firstPart
-    ? getDraftKey(firstPart.id, null)
-    : "";
+  const rootAddKey =
+    firstPart
+      ? getAddKey(
+          firstPart.id,
+          null,
+        )
+      : "";
 
-  /* ============================================================
+  /* ==========================================================
      RENDER
-  ============================================================ */
+  ========================================================== */
 
   return (
     <main className="min-h-screen bg-background">
@@ -632,10 +1222,11 @@ export default function TocEditor({
 
         <div className="mb-4">
           <Link
-            href={`/teacher/subjects/${subject.id}`}
+            href={`/admin/subjects/${subject.id}`}
             className="mb-3 inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-1 h-4 w-4" />
+
             Back to {subject.name}
           </Link>
 
@@ -660,20 +1251,26 @@ export default function TocEditor({
               <button
                 type="button"
                 disabled={pending}
-                onClick={() => setShowRules(true)}
+                onClick={() =>
+                  setShowRules(true)
+                }
                 className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border bg-card px-3 text-sm font-medium hover:bg-muted sm:px-4"
               >
                 <Info className="h-4 w-4" />
+
                 Rules
               </button>
 
               <button
                 type="button"
                 disabled={pending}
-                onClick={() => setShowBulk(true)}
+                onClick={() =>
+                  setShowBulk(true)
+                }
                 className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:px-4"
               >
                 <Upload className="h-4 w-4" />
+
                 Bulk Import
               </button>
             </div>
@@ -691,55 +1288,31 @@ export default function TocEditor({
             </h2>
 
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Click an item to expand or collapse it.
+              Click an item to expand or
+              collapse it.
             </p>
           </div>
 
           <div className="space-y-2 p-3 sm:p-4">
-            {/* ROOT ADD */}
+            {/* ==================================================
+                ROOT ADD
+            ================================================== */}
 
             {firstPart && (
               <div className="rounded-lg border border-dashed bg-muted/20 p-3">
-                <p className="mb-2 text-xs font-semibold">
-                  Add {firstPart.name}
-                </p>
-
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <input
-                    value={drafts[rootDraftKey] ?? ""}
-                    onChange={(event) =>
-                      setDrafts((current) => ({
-                        ...current,
-                        [rootDraftKey]:
-                          event.target.value,
-                      }))
-                    }
-                    placeholder={`Enter ${firstPart.name}`}
-                    disabled={pending}
-                    className="h-9 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  />
-
-                  <button
-                    type="button"
-                    disabled={
-                      pending ||
-                      !drafts[rootDraftKey]?.trim()
-                    }
-                    onClick={() =>
-                      addItem(firstPart, null)
-                    }
-                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-primary px-3 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add
-                  </button>
-                </div>
+                {renderAddControls(
+                  firstPart,
+                  null,
+                )}
               </div>
             )}
 
-            {/* TREE */}
+            {/* ==================================================
+                TREE
+            ================================================== */}
 
-            {rootItems.length === 0 ? (
+            {rootItems.length ===
+            0 ? (
               <div className="rounded-lg border border-dashed p-6 text-center sm:p-8">
                 <p className="font-medium">
                   No TOC items yet.
@@ -747,12 +1320,16 @@ export default function TocEditor({
 
                 <p className="mt-1 text-sm text-muted-foreground">
                   Add the first{" "}
-                  {firstPart?.name ?? "TOC item"}{" "}
-                  or use Bulk Import.
+                  {firstPart?.name ??
+                    "TOC item"}{" "}
+                  or use Bulk
+                  Import.
                 </p>
               </div>
             ) : (
-              rootItems.map(renderNode)
+              rootItems.map(
+                renderNode,
+              )
             )}
           </div>
         </section>
@@ -765,10 +1342,14 @@ export default function TocEditor({
       {showRules && (
         <Dialog
           title="Subject TOC Rules"
-          onClose={() => setShowRules(false)}
+          onClose={() =>
+            setShowRules(false)
+          }
         >
           <div className="space-y-5 text-sm">
-            <RulesContent subject={subject} />
+            <RulesContent
+              subject={subject}
+            />
 
             <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
               <button
@@ -777,12 +1358,15 @@ export default function TocEditor({
                 className="inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted"
               >
                 <Copy className="h-4 w-4" />
+
                 Copy Rules
               </button>
 
               <button
                 type="button"
-                onClick={() => setShowRules(false)}
+                onClick={() =>
+                  setShowRules(false)
+                }
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
               >
                 Close
@@ -801,35 +1385,45 @@ export default function TocEditor({
           title="Bulk Import TOC"
           wide
           onClose={() =>
-            !pending && setShowBulk(false)
+            !pending &&
+            setShowBulk(false)
           }
         >
           <div className="space-y-4">
             <div className="rounded-lg bg-muted/50 p-3 sm:p-4">
               <p className="text-sm">
-                Add additional TOC items using
-                the rules below.
+                Add additional TOC
+                items using the rules
+                below.
               </p>
 
               <p className="mt-1 text-xs text-muted-foreground">
-                Existing TOC items will remain
-                unchanged. Imported items are
-                appended to the existing TOC.
+                Existing TOC items
+                will remain unchanged.
+                Imported items are
+                appended to the existing
+                TOC.
               </p>
 
               <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-md border bg-background p-3 text-xs leading-5">
-                {getExampleText(subject)}
+                {getExampleText(
+                  subject,
+                )}
               </pre>
             </div>
 
             <textarea
               value={bulkText}
               onChange={(event) =>
-                setBulkText(event.target.value)
+                setBulkText(
+                  event.target.value,
+                )
               }
               disabled={pending}
               spellCheck={false}
-              placeholder={getExampleText(subject)}
+              placeholder={getExampleText(
+                subject,
+              )}
               className="min-h-[320px] w-full resize-y rounded-lg border bg-background p-3 font-mono text-sm leading-6 outline-none focus:ring-2 focus:ring-ring sm:min-h-[500px] sm:p-4"
             />
 
@@ -837,7 +1431,9 @@ export default function TocEditor({
               <button
                 type="button"
                 disabled={pending}
-                onClick={() => setShowBulk(false)}
+                onClick={() =>
+                  setShowBulk(false)
+                }
                 className="rounded-lg border px-4 py-2 text-sm hover:bg-muted sm:min-w-24"
               >
                 Cancel
@@ -846,7 +1442,8 @@ export default function TocEditor({
               <button
                 type="button"
                 disabled={
-                  pending || !bulkText.trim()
+                  pending ||
+                  !bulkText.trim()
                 }
                 onClick={saveBulk}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 sm:min-w-40"
@@ -876,7 +1473,7 @@ function Dialog({
   wide = false,
 }: {
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
   onClose: () => void;
   wide?: boolean;
 }) {
@@ -884,7 +1481,9 @@ function Dialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
       <div
         className={`max-h-[90vh] w-full overflow-hidden rounded-xl border bg-card shadow-2xl ${
-          wide ? "max-w-5xl" : "max-w-2xl"
+          wide
+            ? "max-w-5xl"
+            : "max-w-2xl"
         }`}
       >
         <div className="flex items-center justify-between gap-3 border-b px-4 py-4 sm:px-5">
@@ -896,6 +1495,7 @@ function Dialog({
             type="button"
             onClick={onClose}
             className="rounded-md p-1 hover:bg-muted"
+            aria-label="Close"
           >
             <X className="h-5 w-5" />
           </button>
@@ -918,8 +1518,11 @@ function RulesContent({
 }: {
   subject: Subject;
 }) {
-  const parts = [...subject.parts].sort(
-    (a, b) => a.position - b.position,
+  const parts = [
+    ...subject.parts,
+  ].sort(
+    (a, b) =>
+      a.position - b.position,
   );
 
   return (
@@ -930,14 +1533,18 @@ function RulesContent({
         </h3>
 
         <p className="text-muted-foreground">
-          Every line must start with one of
-          the SubjectPart names defined for
-          this subject.
+          Every line must start
+          with one of the
+          SubjectPart names defined
+          for this subject.
         </p>
 
         <pre className="mt-2 overflow-x-auto rounded-lg border bg-muted/40 p-3">
           {parts
-            .map((part) => `${part.name}:value`)
+            .map(
+              (part) =>
+                `${part.name}:value`,
+            )
             .join("\n")}
         </pre>
       </div>
@@ -948,14 +1555,19 @@ function RulesContent({
         </h3>
 
         <p className="text-muted-foreground">
-          Hierarchy is determined by the
-          SubjectPart position. Indentation is
-          optional and has no meaning.
+          Hierarchy is determined
+          by the SubjectPart
+          position. Indentation is
+          optional and has no
+          meaning.
         </p>
 
         <pre className="mt-2 overflow-x-auto rounded-lg border bg-muted/40 p-3">
           {parts
-            .map((part) => `${part.name}:example`)
+            .map(
+              (part) =>
+                `${part.name}:example`,
+            )
             .join("\n")}
         </pre>
       </div>
@@ -966,7 +1578,10 @@ function RulesContent({
         </h3>
 
         <pre className="rounded-lg border bg-muted/40 p-3">
-          {`${parts[0]?.name ?? "Lesson"}:1 Example`}
+          {`${
+            parts[0]?.name ??
+            "Lesson"
+          }:1 Example`}
         </pre>
       </div>
 
@@ -976,7 +1591,8 @@ function RulesContent({
         </h3>
 
         <p className="text-muted-foreground">
-          A range uses this syntax:
+          A range uses this
+          syntax:
         </p>
 
         <pre className="mt-2 rounded-lg border bg-muted/40 p-3">
@@ -984,7 +1600,8 @@ function RulesContent({
         </pre>
 
         <pre className="mt-2 rounded-lg border bg-muted/40 p-3">
-          range(i=1-10):Exercise {"{i}"}
+          range(i=1-10):Exercise{" "}
+          {"{i}"}
         </pre>
       </div>
 
@@ -994,7 +1611,9 @@ function RulesContent({
         </h3>
 
         <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg border bg-muted/40 p-3 leading-6">
-          {getExampleText(subject)}
+          {getExampleText(
+            subject,
+          )}
         </pre>
       </div>
     </div>
@@ -1005,16 +1624,25 @@ function RulesContent({
    COPYABLE RULES
 ============================================================ */
 
-function getRulesText(subject: Subject) {
-  const parts = [...subject.parts].sort(
-    (a, b) => a.position - b.position,
+function getRulesText(
+  subject: Subject,
+) {
+  const parts = [
+    ...subject.parts,
+  ].sort(
+    (a, b) =>
+      a.position - b.position,
   );
 
   return `SUBJECT TOC RULES
 
 Subject part names:
+
 ${parts
-  .map((part) => `${part.name}:value`)
+  .map(
+    (part) =>
+      `${part.name}:value`,
+  )
   .join("\n")}
 
 HIERARCHY
@@ -1023,7 +1651,10 @@ Hierarchy is determined by SubjectPart position.
 Indentation is optional and has no meaning.
 
 ${parts
-  .map((part) => `${part.name}:example`)
+  .map(
+    (part) =>
+      `${part.name}:example`,
+  )
   .join("\n")}
 
 NORMAL VALUE
