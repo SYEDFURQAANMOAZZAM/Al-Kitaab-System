@@ -1,7 +1,6 @@
 
 import Link from "next/link";
 import {
-  ArrowLeft,
   Edit,
   Mail,
   MapPin,
@@ -87,16 +86,7 @@ export default async function StudentProfilePage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/student/profile">
-            <ButtonShadcn
-              variant="ghost"
-              size="icon"
-              className="shrink-0"
-              aria-label="Back to profile"
-            >
-              <ArrowLeft className="size-4" />
-            </ButtonShadcn>
-          </Link>
+          
 
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">

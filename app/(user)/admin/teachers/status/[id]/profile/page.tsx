@@ -103,15 +103,7 @@ export default async function TeacherProfilePage({
           deleted or does not exist.
         </p>
 
-        <Link
-          href="/admin/teachers"
-          className="mt-5"
-        >
-          <ButtonShadcn variant="outline">
-            <ArrowLeft className="mr-2 size-4" />
-            Back to Teachers
-          </ButtonShadcn>
-        </Link>
+        
       </div>
     );
   }
@@ -121,15 +113,7 @@ export default async function TeacherProfilePage({
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/admin/teachers">
-            <ButtonShadcn
-              variant="ghost"
-              size="icon"
-              className="shrink-0"
-            >
-              <ArrowLeft className="size-4" />
-            </ButtonShadcn>
-          </Link>
+          
 
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">

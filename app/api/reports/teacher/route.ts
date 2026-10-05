@@ -1,6 +1,6 @@
-
 import { NextRequest, NextResponse } from "next/server";
 
+import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/require-role";
 
 import { getTeacherPerformance } from "@/app/ServerActions/TeacherPerformance/queries";
@@ -29,44 +29,76 @@ export async function GET(request: NextRequest) {
   ) {
     return NextResponse.json(
       { error: "Invalid report parameters." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   try {
     await requireRole("ADMIN", "TEACHER");
 
-    const performance = await getTeacherPerformance(
-      teacherId,
-      month,
-      year
-    );
+    const [teacher, performance] = await Promise.all([
+      prisma.teacher.findUnique({
+        where: {
+          id: teacherId,
+        },
+        select: {
+          user: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      }),
+
+      getTeacherPerformance(
+        teacherId,
+        month,
+        year,
+      ),
+    ]);
+
+    if (!teacher) {
+      return NextResponse.json(
+        { error: "Teacher not found." },
+        { status: 404 },
+      );
+    }
 
     const html = createTeacherReportHtml(
       performance,
       year,
-      month
+      month,
     );
 
     const pdf = await generateTeacherReportPdf(html);
+
+    const teacherName = teacher.user.name
+      .trim()
+      .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
+      .replace(/\s+/g, "-");
+
+    const monthString = String(month).padStart(2, "0");
+
+    const filename =
+      `${teacherName}-${year}-${monthString}.pdf`;
 
     return new NextResponse(new Uint8Array(pdf), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="teacher-report-${year}-${String(month).padStart(2, "0")}.pdf"`,
+        "Content-Disposition": `attachment; filename="${filename}"`,
         "Cache-Control": "no-store, max-age=0",
       },
     });
   } catch (error) {
     console.error(
       "[Teacher Report API] Generation failed:",
-      error
+      error,
     );
 
     return NextResponse.json(
       { error: "Failed to generate teacher report." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

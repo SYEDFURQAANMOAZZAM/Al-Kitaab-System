@@ -80,15 +80,7 @@ export default async function StudentProfilePage({
           The student may have been deleted or does not exist.
         </p>
 
-        <Link
-          href="/admin/students/stats"
-          className="mt-5"
-        >
-          <ButtonShadcn variant="outline">
-            <ArrowLeft className="mr-2 size-4" />
-            Back to Students
-          </ButtonShadcn>
-        </Link>
+        
       </div>
     );
   }

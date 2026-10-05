@@ -1097,7 +1097,7 @@ export function createStudentReportHtml(
       <body>
         <section class="cover-page">
           <img class="cover-logo" src="${escapeHtml(logoUrl)}" alt="Al-Kitaab Academy Logo" />
-          <h1 class="cover-academy">Al-Kitaab Academy</h1>
+          <h1 class="cover-academy">AL-KITAAB ACADEMY</h1>
           <div class="cover-divider"></div>
           <h2 class="cover-report-title">Student Report</h2>
           <div class="cover-month">${escapeHtml(monthName)}</div>

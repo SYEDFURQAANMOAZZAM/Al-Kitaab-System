@@ -476,7 +476,7 @@ export function createAcademyProgressReportHtml(
             src="${escapeHtml(logoUrl)}"
             alt="Al-Kitaab Academy Logo"
           />
-          <h1 class="cover-academy">Al-Kitaab Academy</h1>
+          <h1 class="cover-academy">AL-KITAAB ACADEMY</h1>
           <div class="cover-divider"></div>
           <h2 class="cover-title">Academy Progress Report</h2>
           <div class="cover-month">${escapeHtml(monthName)}</div>

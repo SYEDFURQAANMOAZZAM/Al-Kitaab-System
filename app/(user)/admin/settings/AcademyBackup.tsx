@@ -1,11 +1,9 @@
-
 "use client";
 
 import { useState } from "react";
 import {
   CalendarDays,
   Download,
-  Trash2,
   Users,
   ClipboardCheck,
   LoaderCircle,
@@ -29,19 +27,29 @@ export default function AcademyBackup({
   const [loading, setLoading] = useState<BackupType | null>(null);
 
   const months = [
-    "January", "February", "March", "April",
-    "May", "June", "July", "August",
-    "September", "October", "November", "December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   async function exportReport(type: BackupType) {
-    const ids = type === "attendance" ? batchIds : studentIds;
+    const ids =
+      type === "attendance" ? batchIds : studentIds;
 
     if (ids.length === 0) {
       alert(
         type === "attendance"
           ? "No batches found."
-          : "No students found."
+          : "No students found.",
       );
       return;
     }
@@ -60,10 +68,18 @@ export default function AcademyBackup({
           },
           body: JSON.stringify(
             type === "attendance"
-              ? { batchIds: ids, year, month }
-              : { studentIds: ids, year, month }
+              ? {
+                  batchIds: ids,
+                  year,
+                  month,
+                }
+              : {
+                  studentIds: ids,
+                  year,
+                  month,
+                },
           ),
-        }
+        },
       );
 
       const result = await response.json();
@@ -72,11 +88,10 @@ export default function AcademyBackup({
         throw new Error(
           result.error ??
             result.message ??
-            "Failed to fetch report data."
+            "Failed to fetch report data.",
         );
       }
 
-      // Send the retrieved JSON to the server-side PDF endpoint.
       const pdfResponse = await fetch(
         type === "attendance"
           ? "/api/reports/academy/attendance/pdf"
@@ -87,7 +102,7 @@ export default function AcademyBackup({
             "Content-Type": "application/json",
           },
           body: JSON.stringify(result),
-        }
+        },
       );
 
       if (!pdfResponse.ok) {
@@ -100,28 +115,23 @@ export default function AcademyBackup({
 
       link.href = url;
       link.download = `academy-${type}-${year}-${String(month).padStart(2, "0")}.pdf`;
+
       document.body.appendChild(link);
       link.click();
       link.remove();
+
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Backup export error:", error);
+
       alert(
         error instanceof Error
           ? error.message
-          : "Something went wrong."
+          : "Something went wrong.",
       );
     } finally {
       setLoading(null);
     }
-  }
-
-  function deleteData(type: BackupType) {
-    // Connect this to a dedicated, authenticated deletion API
-    // only after defining which records may safely be deleted.
-    alert(
-      `A secure ${type} data deletion endpoint must be implemented before this action can be enabled.`
-    );
   }
 
   return (
@@ -132,12 +142,17 @@ export default function AcademyBackup({
         <div className="grid flex-1 grid-cols-2 gap-2">
           <select
             value={month}
-            onChange={(e) => setMonth(Number(e.target.value))}
+            onChange={(e) =>
+              setMonth(Number(e.target.value))
+            }
             className="h-9 min-w-0 rounded-md border bg-background px-2 text-sm"
             aria-label="Month"
           >
             {months.map((name, index) => (
-              <option key={name} value={index + 1}>
+              <option
+                key={name}
+                value={index + 1}
+              >
                 {name}
               </option>
             ))}
@@ -145,13 +160,18 @@ export default function AcademyBackup({
 
           <select
             value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
+            onChange={(e) =>
+              setYear(Number(e.target.value))
+            }
             className="h-9 min-w-0 rounded-md border bg-background px-2 text-sm"
             aria-label="Year"
           >
             {Array.from(
-              { length: 10 },
-              (_, index) => currentDate.getFullYear() - index
+              {
+                length: 10,
+              },
+              (_, index) =>
+                currentDate.getFullYear() - index,
             ).map((value) => (
               <option key={value} value={value}>
                 {value}
@@ -165,20 +185,26 @@ export default function AcademyBackup({
         title="Attendance Backup"
         description="Export monthly attendance records for all academy batches."
         count={`${batchIds.length} batches`}
-        icon={<ClipboardCheck className="size-5" />}
+        icon={
+          <ClipboardCheck className="size-5" />
+        }
         loading={loading === "attendance"}
-        onExport={() => exportReport("attendance")}
-        onDelete={() => deleteData("attendance")}
+        onExport={() =>
+          exportReport("attendance")
+        }
       />
 
       <BackupCard
         title="Student Progress Backup"
         description="Export daily progress records for all academy students."
         count={`${studentIds.length} students`}
-        icon={<Users className="size-5" />}
+        icon={
+          <Users className="size-5" />
+        }
         loading={loading === "progress"}
-        onExport={() => exportReport("progress")}
-        onDelete={() => deleteData("progress")}
+        onExport={() =>
+          exportReport("progress")
+        }
       />
     </div>
   );
@@ -191,7 +217,6 @@ function BackupCard({
   icon,
   loading,
   onExport,
-  onDelete,
 }: {
   title: string;
   description: string;
@@ -199,7 +224,6 @@ function BackupCard({
   icon: React.ReactNode;
   loading: boolean;
   onExport: () => void;
-  onDelete: () => void;
 }) {
   return (
     <section className="rounded-lg border bg-card p-3 sm:p-4">
@@ -212,38 +236,33 @@ function BackupCard({
           <h2 className="text-sm font-semibold sm:text-base">
             {title}
           </h2>
+
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground sm:text-sm">
             {description}
           </p>
+
           <p className="mt-1 text-xs text-muted-foreground">
             {count}
           </p>
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2 sm:justify-end">
-        <button
-          type="button"
-          onClick={onDelete}
-          disabled={loading}
-          className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-md border px-3 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50 sm:flex-none sm:text-sm"
-        >
-          <Trash2 className="size-4" />
-          Delete Data
-        </button>
-
+      <div className="mt-3 flex justify-end">
         <button
           type="button"
           onClick={onExport}
           disabled={loading}
-          className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 sm:flex-none sm:text-sm"
+          className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 sm:w-auto sm:text-sm"
         >
           {loading ? (
             <LoaderCircle className="size-4 animate-spin" />
           ) : (
             <Download className="size-4" />
           )}
-          {loading ? "Generating..." : "Export PDF"}
+
+          {loading
+            ? "Generating..."
+            : "Export PDF"}
         </button>
       </div>
     </section>
