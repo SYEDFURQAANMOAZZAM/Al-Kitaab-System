@@ -4,7 +4,7 @@ import chromium from "@sparticuz/chromium";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import type { BatchPerformanceData } from "@/app/ServerActions/batchPerformance/types";
+import type { BatchPerformanceData } from "@/app/ServerActions/academyReports/types";
 import { createAcademyAttendanceReportHtml } from "./academy-attendance-report-template";
 
 export async function getBrowserConfig() {

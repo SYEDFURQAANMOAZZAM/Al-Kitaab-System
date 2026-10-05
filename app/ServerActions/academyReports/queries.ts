@@ -1,4 +1,3 @@
-
 import { prisma } from "@/lib/prisma";
 import type {
   AttendanceStatus,
@@ -17,8 +16,9 @@ function getMonthRange(year: number, month: number) {
 function getMonthDays(year: number, month: number) {
   const totalDays = new Date(Date.UTC(year, month, 0)).getUTCDate();
 
-  return Array.from({ length: totalDays }, (_, i) =>
-    new Date(Date.UTC(year, month - 1, i + 1))
+  return Array.from(
+    { length: totalDays },
+    (_, i) => new Date(Date.UTC(year, month - 1, i + 1)),
   );
 }
 
@@ -29,11 +29,13 @@ function dateKey(date: Date) {
 export async function getBatchesPerformance(
   batchIds: string[],
   year: number,
-  month: number
+  month: number,
 ): Promise<BatchPerformanceData[]> {
   if (
     !Array.isArray(batchIds) ||
-    batchIds.some((id) => typeof id !== "string" || !id.trim()) ||
+    batchIds.some(
+      (id) => typeof id !== "string" || !id.trim(),
+    ) ||
     !Number.isInteger(year) ||
     year < 1900 ||
     year > 9999 ||
@@ -46,97 +48,127 @@ export async function getBatchesPerformance(
 
   const uniqueBatchIds = [...new Set(batchIds)];
 
-  if (uniqueBatchIds.length === 0) return [];
+  if (uniqueBatchIds.length === 0) {
+    return [];
+  }
 
   const { start, end } = getMonthRange(year, month);
   const days = getMonthDays(year, month);
 
-  const [batches, attendance, studentSummaries, teacherSummaries] =
-    await Promise.all([
-      prisma.batch.findMany({
-        where: {
-          id: { in: uniqueBatchIds },
+  const [
+    batches,
+    attendance,
+    studentSummaries,
+    teacherSummaries,
+  ] = await Promise.all([
+    prisma.batch.findMany({
+      where: {
+        id: {
+          in: uniqueBatchIds,
         },
-        select: {
-          id: true,
-          name: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        branch: {
+          select: {
+            id: true,
+            name: true,
+          },
         },
-        orderBy: {
+      },
+      orderBy: [
+        {
+          branch: {
+            name: "asc",
+          },
+        },
+        {
           name: "asc",
         },
-      }),
+      ],
+    }),
 
-      prisma.attendance.findMany({
-        where: {
-          batchId: { in: uniqueBatchIds },
-          date: {
-            gte: start,
-            lt: end,
-          },
+    prisma.attendance.findMany({
+      where: {
+        batchId: {
+          in: uniqueBatchIds,
         },
-        select: {
-          batchId: true,
-          userId: true,
-          date: true,
-          attended: true,
+        date: {
+          gte: start,
+          lt: end,
         },
-      }),
+      },
+      select: {
+        batchId: true,
+        userId: true,
+        date: true,
+        attended: true,
+      },
+    }),
 
-      prisma.studentAttendanceSummary.findMany({
-        where: {
-          batchId: { in: uniqueBatchIds },
-          year,
-          month,
+    prisma.studentAttendanceSummary.findMany({
+      where: {
+        batchId: {
+          in: uniqueBatchIds,
         },
-        select: {
-          batchId: true,
-          studentId: true,
-          presentDays: true,
-          eligibleDays: true,
-          student: {
-            select: {
-              userId: true,
-              user: {
-                select: {
-                  name: true,
-                },
+        year,
+        month,
+      },
+      select: {
+        batchId: true,
+        studentId: true,
+        presentDays: true,
+        eligibleDays: true,
+        student: {
+          select: {
+            userId: true,
+            user: {
+              select: {
+                name: true,
               },
             },
           },
         },
-      }),
+      },
+    }),
 
-      prisma.teacherAttendanceSummary.findMany({
-        where: {
-          batchId: { in: uniqueBatchIds },
-          year,
-          month,
+    prisma.teacherAttendanceSummary.findMany({
+      where: {
+        batchId: {
+          in: uniqueBatchIds,
         },
-        select: {
-          batchId: true,
-          teacherId: true,
-          presentDays: true,
-          eligibleDays: true,
-          teacher: {
-            select: {
-              userId: true,
-              user: {
-                select: {
-                  name: true,
-                },
+        year,
+        month,
+      },
+      select: {
+        batchId: true,
+        teacherId: true,
+        presentDays: true,
+        eligibleDays: true,
+        teacher: {
+          select: {
+            userId: true,
+            user: {
+              select: {
+                name: true,
               },
             },
           },
         },
-      }),
-    ]);
+      },
+    }),
+  ]);
 
   const attendanceByBatch = new Map<
     string,
     Map<string, Record<string, AttendanceStatus>>
   >();
 
-  const attendanceDatesByBatch = new Map<string, Set<string>>();
+  const attendanceDatesByBatch = new Map<
+    string,
+    Set<string>
+  >();
 
   for (const record of attendance) {
     const key = dateKey(record.date);
@@ -167,10 +199,14 @@ export async function getBatchesPerformance(
     dates.add(key);
   }
 
-  const studentsByBatch = new Map<string, StudentPerformance[]>();
+  const studentsByBatch = new Map<
+    string,
+    StudentPerformance[]
+  >();
 
   for (const summary of studentSummaries) {
-    const students = studentsByBatch.get(summary.batchId) ?? [];
+    const students =
+      studentsByBatch.get(summary.batchId) ?? [];
 
     students.push({
       id: summary.studentId,
@@ -186,10 +222,14 @@ export async function getBatchesPerformance(
     studentsByBatch.set(summary.batchId, students);
   }
 
-  const teachersByBatch = new Map<string, TeacherPerformance[]>();
+  const teachersByBatch = new Map<
+    string,
+    TeacherPerformance[]
+  >();
 
   for (const summary of teacherSummaries) {
-    const teachers = teachersByBatch.get(summary.batchId) ?? [];
+    const teachers =
+      teachersByBatch.get(summary.batchId) ?? [];
 
     teachers.push({
       id: summary.teacherId,
@@ -205,34 +245,46 @@ export async function getBatchesPerformance(
     teachersByBatch.set(summary.batchId, teachers);
   }
 
-  return batches.map((batch): BatchPerformanceData => {
-    const students = studentsByBatch.get(batch.id) ?? [];
-    const teachers = teachersByBatch.get(batch.id) ?? [];
-    const attendanceDates =
-      attendanceDatesByBatch.get(batch.id) ?? new Set<string>();
+  return batches.map(
+    (batch): BatchPerformanceData => {
+      const students =
+        studentsByBatch.get(batch.id) ?? [];
 
-    return {
-      batch: {
-        id: batch.id,
-        name: batch.name,
-      },
+      const teachers =
+        teachersByBatch.get(batch.id) ?? [];
 
-      attendanceTaken: days.map((day) => {
-        const key = dateKey(day);
+      const attendanceDates =
+        attendanceDatesByBatch.get(batch.id) ??
+        new Set<string>();
 
-        return {
-          date: key,
-          taken: attendanceDates.has(key),
-        };
-      }),
+      return {
+        branch: {
+          id: batch.branch.id,
+          name: batch.branch.name,
+        },
 
-      teachers: [...teachers].sort((a, b) =>
-        a.name.localeCompare(b.name)
-      ),
+        batch: {
+          id: batch.id,
+          name: batch.name,
+        },
 
-      students: [...students].sort((a, b) =>
-        a.name.localeCompare(b.name)
-      ),
-    };
-  });
+        attendanceTaken: days.map((day) => {
+          const key = dateKey(day);
+
+          return {
+            date: key,
+            taken: attendanceDates.has(key),
+          };
+        }),
+
+        teachers: [...teachers].sort((a, b) =>
+          a.name.localeCompare(b.name),
+        ),
+
+        students: [...students].sort((a, b) =>
+          a.name.localeCompare(b.name),
+        ),
+      };
+    },
+  );
 }

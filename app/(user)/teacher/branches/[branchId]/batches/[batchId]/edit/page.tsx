@@ -48,7 +48,7 @@ export default async function EditBatchPage({
     <main className="mx-auto w-full mx-auto space-y-6 p-2 sm:p-6">
       <div className="space-y-2">
         <Link
-          href={`/admin/branches/${branchId}`}
+          href={`/teacher/branches`}
           className="text-sm text-muted-foreground hover:text-foreground"
         >
           ← Back to Branch

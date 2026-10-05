@@ -1817,8 +1817,8 @@ export function createBatchReportHtml({
 
       <body>
         <section class="page cover-page">
-          <img class="cover-logo" src="${escapeHtml(logoUrl)}" alt="Al-Kitaab Academy logo" />
-          <h1 class="cover-academy-name">Al-Kitaab Academy</h1>
+          <img class="cover-logo" src="${escapeHtml(logoUrl)}" alt="AL-KITAAB ACADEMY logo" />
+          <h1 class="cover-academy-name">AL-KITAAB ACADEMY</h1>
           <div class="cover-divider"></div>
           <h2 class="cover-report-title">Batch Performance Report</h2>
           <div class="cover-batch-name">${escapeHtml(batchName)}</div>

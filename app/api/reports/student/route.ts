@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { prisma } from "@/lib/prisma";
+
 import { getStudentPerformance } from "@/app/ServerActions/studentPerformance/queries";
 import { getStudentMonthProgress } from "@/app/ServerActions/getProgress/services";
 
@@ -27,13 +29,27 @@ export async function GET(request: NextRequest) {
   ) {
     return NextResponse.json(
       { error: "Invalid report parameters." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   try {
-    const [performance, progress] = await Promise.all([
+    const [student, performance, progress] = await Promise.all([
+      prisma.student.findUnique({
+        where: {
+          userId: studentId,
+        },
+        select: {
+          user: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      }),
+
       getStudentPerformance(studentId, year, month),
+
       getStudentMonthProgress({
         studentId,
         year,
@@ -41,29 +57,49 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
+    if (!student) {
+      return NextResponse.json(
+        { error: "Student not found." },
+        { status: 404 },
+      );
+    }
+
     const html = createStudentReportHtml(
       performance,
       progress,
       year,
-      month
+      month,
     );
 
     const pdf = await generateStudentReportPdf(html);
+
+    const studentName = student.user.name
+      .trim()
+      .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
+      .replace(/\s+/g, "-");
+
+    const monthString = String(month).padStart(2, "0");
+
+    const filename =
+      `${studentName}-${year}-${monthString}.pdf`;
 
     return new NextResponse(new Uint8Array(pdf), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="student-report-${year}-${String(month).padStart(2, "0")}.pdf"`,
+        "Content-Disposition": `attachment; filename="${filename}"`,
         "Cache-Control": "no-store, max-age=0",
       },
     });
   } catch (error) {
-    console.error("[Student Report API] Generation failed:", error);
+    console.error(
+      "[Student Report API] Generation failed:",
+      error,
+    );
 
     return NextResponse.json(
       { error: "Failed to generate student report." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

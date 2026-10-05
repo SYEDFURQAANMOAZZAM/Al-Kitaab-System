@@ -114,12 +114,6 @@ export const sidebarItems: SidebarItem[] = [
     href: "/admin/subject-completion",
     icon: "pattern",
   },
-
-  {
-    title: "Materials",
-    href: "/admin/materials",
-    icon: "materials",
-  },
   {
   title: "My Profile",
   href: "/admin/profile",

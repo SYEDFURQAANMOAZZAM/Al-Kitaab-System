@@ -43,7 +43,7 @@ export default async function CreateBatchPage({
     <main className="mx-auto w-full max-w-3xl space-y-6 p-4 sm:p-6 max-[430px]:p-2">
       <div className="space-y-2">
         <Link
-          href="/admin/branches"
+          href="/teacher/branches"
           className="text-sm text-muted-foreground hover:text-foreground"
         >
           ← Back to Branches

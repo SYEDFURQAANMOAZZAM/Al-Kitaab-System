@@ -13,7 +13,7 @@ export default async function BatchLayout({
   const { branchId, batchId } = await params;
 
   const basePath =
-    `/admin/branches/${branchId}/batches/${batchId}`;
+    `/teacher/branches/${branchId}/batches/${batchId}`;
 
   return (
     <div className="space-y-6">

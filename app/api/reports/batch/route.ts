@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { prisma } from "@/lib/prisma";
 import { requireRoleForAction } from "@/lib/auth/require-role";
 
 import { getBatchPerformance } from "@/app/ServerActions/batchPerformance/queries";
@@ -12,7 +13,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireRoleForAction(["ADMIN", "TEACHER"]);
+    const user = await requireRoleForAction([
+      "ADMIN",
+      "TEACHER",
+    ]);
 
     console.log("[Batch API] Authenticated:", user.id);
 
@@ -26,35 +30,56 @@ export async function GET(request: NextRequest) {
       !batchId?.trim() ||
       !Number.isInteger(year) ||
       year < 2000 ||
+      year > 2100 ||
       !Number.isInteger(month) ||
       month < 1 ||
       month > 12
     ) {
       return NextResponse.json(
         { error: "Invalid batchId, year, or month" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    console.log("[Batch API] Fetching performance");
+    console.log("[Batch API] Fetching batch report data");
 
-    const performance = await getBatchPerformance(
-      batchId,
-      year,
-      month
-    );
+    const [batch, performance, progress] =
+      await Promise.all([
+        prisma.batch.findUnique({
+          where: {
+            id: batchId,
+          },
+          select: {
+            name: true,
+          },
+        }),
 
+        getBatchPerformance(
+          batchId,
+          year,
+          month,
+        ),
+
+        getBatchStudentsMonthProgress({
+          batchId,
+          year,
+          month,
+        }),
+      ]);
+
+    if (!batch) {
+      return NextResponse.json(
+        { error: "Batch not found." },
+        { status: 404 },
+      );
+    }
+
+    console.log("[Batch API] Batch:", batch.name);
     console.log("[Batch API] Performance fetched");
-
-    console.log("[Batch API] Fetching progress");
-
-    const progress = await getBatchStudentsMonthProgress({
-      batchId,
-      year,
-      month,
-    });
-
-    console.log("[Batch API] Progress fetched:", progress.length);
+    console.log(
+      "[Batch API] Progress fetched:",
+      progress.length,
+    );
 
     console.log("[Batch API] Generating PDF");
 
@@ -67,11 +92,21 @@ export async function GET(request: NextRequest) {
 
     console.log("[Batch API] PDF generated");
 
+    const batchName = batch.name
+      .trim()
+      .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
+      .replace(/\s+/g, "-");
+
+    const monthString = String(month).padStart(2, "0");
+
+    const filename =
+      `${batchName}-${year}-${monthString}.pdf`;
+
     return new NextResponse(new Uint8Array(pdf), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": 'attachment; filename="batch-report.pdf"',
+        "Content-Disposition": `attachment; filename="${filename}"`,
         "Cache-Control": "no-store, max-age=0",
       },
     });
@@ -85,7 +120,7 @@ export async function GET(request: NextRequest) {
             ? error.message
             : "Failed to generate batch report",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

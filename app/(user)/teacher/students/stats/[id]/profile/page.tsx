@@ -80,15 +80,7 @@ export default async function StudentProfilePage({
           The student may have been deleted or does not exist.
         </p>
 
-        <Link
-          href="/admin/students/stats"
-          className="mt-5"
-        >
-          <ButtonShadcn variant="outline">
-            <ArrowLeft className="mr-2 size-4" />
-            Back to Students
-          </ButtonShadcn>
-        </Link>
+        
       </div>
     );
   }
@@ -98,15 +90,7 @@ export default async function StudentProfilePage({
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/admin/students/stats">
-            <ButtonShadcn
-              variant="ghost"
-              size="icon"
-              className="shrink-0"
-            >
-              <ArrowLeft className="size-4" />
-            </ButtonShadcn>
-          </Link>
+          
 
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
@@ -120,7 +104,7 @@ export default async function StudentProfilePage({
         </div>
 
         <Link
-          href={`/admin/students/stats/${student.id}/edit`}
+          href={`/teacher/students/stats/${student.id}/edit`}
         >
           <ButtonShadcn className="bg-primary text-primary-foreground hover:bg-primary/90">
             <Edit className="mr-2 size-4" />

@@ -592,7 +592,7 @@ export function createTeacherReportHtml(
             alt="Al-Kitaab Academy logo"
           />
 
-          <h1 class="academy-title">Al-Kitaab Academy</h1>
+          <h1 class="academy-title">AL-KITAAB ACADEMY</h1>
 
           <hr class="cover-divider" />
 

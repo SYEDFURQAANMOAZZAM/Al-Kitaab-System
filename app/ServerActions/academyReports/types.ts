@@ -26,6 +26,11 @@ export type StudentPerformance = {
 };
 
 export type BatchPerformanceData = {
+  branch: {
+    id: string;
+    name: string;
+  };
+
   batch: {
     id: string;
     name: string;

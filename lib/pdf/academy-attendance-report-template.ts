@@ -1,8 +1,7 @@
-
 import type {
   BatchPerformanceData,
   AttendanceStatus,
-} from "@/app/ServerActions/batchPerformance/types";
+} from "@/app/ServerActions/academyReports/types";
 
 type AcademyAttendanceTemplateInput = {
   batches: BatchPerformanceData[];
@@ -22,42 +21,50 @@ function escapeHtml(value: unknown): string {
 }
 
 function formatMonth(year: number, month: number): string {
-  return new Date(Date.UTC(year, month - 1, 1)).toLocaleDateString(
-    "en-US",
-    {
-      month: "long",
-      year: "numeric",
-      timeZone: "UTC",
-    },
-  );
-}
-
-function getMonthDays(year: number, month: number): string[] {
-  const total = new Date(Date.UTC(year, month, 0)).getUTCDate();
-
-  return Array.from({ length: total }, (_, index) => {
-    const day = String(index + 1).padStart(2, "0");
-    const m = String(month).padStart(2, "0");
-
-    return `${year}-${m}-${day}`;
+  return new Date(
+    Date.UTC(year, month - 1, 1),
+  ).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
   });
 }
 
-function formatDate(date: string): string {
-  return new Date(`${date}T00:00:00.000Z`).toLocaleDateString(
-    "en-US",
-    {
-      weekday: "short",
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      timeZone: "UTC",
+function getMonthDays(year: number, month: number): string[] {
+  const total = new Date(
+    Date.UTC(year, month, 0),
+  ).getUTCDate();
+
+  return Array.from(
+    { length: total },
+    (_, index) => {
+      const day = String(index + 1).padStart(2, "0");
+      const m = String(month).padStart(2, "0");
+
+      return `${year}-${m}-${day}`;
     },
   );
 }
 
-function renderStatus(status?: AttendanceStatus | null): string {
-  const map: Record<NonNullable<AttendanceStatus>, [string, string]> = {
+function formatDate(date: string): string {
+  return new Date(
+    `${date}T00:00:00.000Z`,
+  ).toLocaleDateString("en-US", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+function renderStatus(
+  status?: AttendanceStatus | null,
+): string {
+  const map: Record<
+    NonNullable<AttendanceStatus>,
+    [string, string]
+  > = {
     PRESENT: ["P", "present"],
     ABSENT: ["A", "absent"],
     LEAVE: ["L", "leave"],
@@ -102,14 +109,17 @@ function renderAttendanceTaken(
           <th>Attendance</th>
         </tr>
       </thead>
+
       <tbody>
         ${days
           .map((date) => {
-            const taken = takenMap.get(date) ?? false;
+            const taken =
+              takenMap.get(date) ?? false;
 
             return `
               <tr>
                 <td>${formatDate(date)}</td>
+
                 <td class="${taken ? "taken" : "not-taken"}">
                   ${taken ? "✓ Taken" : "× Not taken"}
                 </td>
@@ -133,15 +143,21 @@ function renderMatrix(
     .map(
       (person) => `
         <tr>
-          <td class="name">${escapeHtml(person.name)}</td>
+          <td class="name">
+            ${escapeHtml(person.name)}
+          </td>
+
           <td class="count">
             ${person.presentDays}/${person.eligibleDays}
           </td>
+
           ${days
             .map(
               (date) => `
                 <td class="day">
-                  ${renderStatus(person.attendance[date] ?? null)}
+                  ${renderStatus(
+                    person.attendance[date] ?? null,
+                  )}
                 </td>
               `,
             )
@@ -157,20 +173,27 @@ function renderMatrix(
         <tr>
           <th class="name">${label}</th>
           <th class="count">P/E</th>
+
           ${days
             .map(
               (date) =>
-                `<th class="day-heading">${Number(date.slice(8, 10))}</th>`,
+                `<th class="day-heading">${Number(
+                  date.slice(8, 10),
+                )}</th>`,
             )
             .join("")}
         </tr>
       </thead>
+
       <tbody>
         ${
           rows ||
           `
             <tr>
-              <td colspan="${days.length + 2}" class="empty">
+              <td
+                colspan="${days.length + 2}"
+                class="empty"
+              >
                 No ${label.toLowerCase()}s available.
               </td>
             </tr>
@@ -178,6 +201,7 @@ function renderMatrix(
         }
       </tbody>
     </table>
+
     ${renderLegend()}
   `;
 }
@@ -189,9 +213,23 @@ function renderReportHeader(
   return `
     <header class="report-header">
       <h1>${escapeHtml(academyName)}</h1>
+
       <p>
-        Academy Attendance Report · ${escapeHtml(monthName)}
+        Academy Attendance Report ·
+        ${escapeHtml(monthName)}
       </p>
+    </header>
+  `;
+}
+
+function renderBranchHeader(
+  branchName: string,
+): string {
+  return `
+    <header class="branch-header">
+      <h2>${escapeHtml(branchName)}</h2>
+
+      <span>Branch</span>
     </header>
   `;
 }
@@ -200,34 +238,109 @@ function renderBatch(
   batch: BatchPerformanceData,
   days: string[],
   index: number,
-  academyName: string,
-  monthName: string,
 ): string {
   return `
-    <section class="batch-section ${index === 0 ? "first-batch" : ""}">
-      ${
-        index === 0
-          ? renderReportHeader(academyName, monthName)
-          : ""
-      }
-
+    <section class="batch-section">
       <header class="batch-header">
         <h2>
-          ${index + 1}. ${escapeHtml(batch.batch.name)}
+          ${index + 1}.
+          ${escapeHtml(batch.batch.name)}
         </h2>
+
         <span>Monthly Attendance</span>
       </header>
 
       <h3>Attendance Taken</h3>
+
       ${renderAttendanceTaken(batch, days)}
 
       <h3>Teacher Attendance</h3>
-      ${renderMatrix(batch.teachers, days, "Teacher")}
+
+      ${renderMatrix(
+        batch.teachers,
+        days,
+        "Teacher",
+      )}
 
       <h3>Student Attendance</h3>
-      ${renderMatrix(batch.students, days, "Student")}
+
+      ${renderMatrix(
+        batch.students,
+        days,
+        "Student",
+      )}
     </section>
   `;
+}
+
+function renderBranch(
+  branch: {
+    id: string;
+    name: string;
+    batches: BatchPerformanceData[];
+  },
+  days: string[],
+  startingBatchIndex: number,
+): string {
+  return `
+    <section class="branch-section">
+      ${renderBranchHeader(branch.name)}
+
+      ${branch.batches
+        .map((batch, index) =>
+          renderBatch(
+            batch,
+            days,
+            startingBatchIndex + index,
+          ),
+        )
+        .join("")}
+    </section>
+  `;
+}
+
+function groupBatchesByBranch(
+  batches: BatchPerformanceData[],
+) {
+  const branches = new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      batches: BatchPerformanceData[];
+    }
+  >();
+
+  for (const batch of batches) {
+    const branch = batch.branch;
+
+    const existing = branches.get(branch.id);
+
+    if (existing) {
+      existing.batches.push(batch);
+    } else {
+      branches.set(branch.id, {
+        id: branch.id,
+        name: branch.name,
+        batches: [batch],
+      });
+    }
+  }
+
+  return Array.from(branches.values())
+    .sort((a, b) =>
+      a.name.localeCompare(b.name),
+    )
+    .map((branch) => ({
+      ...branch,
+
+      batches: [...branch.batches].sort(
+        (a, b) =>
+          a.batch.name.localeCompare(
+            b.batch.name,
+          ),
+      ),
+    }));
 }
 
 function renderEmptyReport(
@@ -236,9 +349,14 @@ function renderEmptyReport(
 ): string {
   return `
     <section class="empty-report">
-      ${renderReportHeader(academyName, monthName)}
+      ${renderReportHeader(
+        academyName,
+        monthName,
+      )}
+
       <p class="empty-message">
-        No batch attendance data is available for this month.
+        No batch attendance data is available
+        for this month.
       </p>
     </section>
   `;
@@ -336,18 +454,49 @@ function styles(): string {
       }
 
       /*
-       * Each batch after the first starts on a new page.
-       * The first batch follows the cover without adding
-       * another page break.
+       * Each branch starts on a new page.
+       * The first branch follows the cover directly.
        */
-      .batch-section {
+      .branch-section {
         break-before: page;
         page-break-before: always;
       }
 
-      .batch-section.first-batch {
+      .branch-section.first-branch {
         break-before: auto;
         page-break-before: auto;
+      }
+
+      .branch-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        border-bottom: 0.5mm solid #9ca3af;
+        margin-bottom: 5mm;
+        padding-bottom: 2.5mm;
+      }
+
+      .branch-header h2 {
+        margin: 0;
+        font-size: 18pt;
+        font-weight: 700;
+        color: #111827;
+      }
+
+      .branch-header span {
+        color: #6b7280;
+        font-size: 8pt;
+      }
+
+      /*
+       * Batches inside the same branch stay together
+       * in the same branch flow instead of forcing
+       * every batch onto a new page.
+       */
+      .batch-section {
+        break-before: avoid;
+        page-break-before: avoid;
+        margin-bottom: 10mm;
       }
 
       .batch-header {
@@ -516,7 +665,7 @@ function styles(): string {
 
 export function createAcademyAttendanceReportHtml({
   batches,
-  academyName = "Al-Kitaab Academy",
+  academyName = "AL-KITAAB ACADEMY",
   logoUrl,
   year,
   month,
@@ -525,33 +674,60 @@ export function createAcademyAttendanceReportHtml({
   const days = getMonthDays(year, month);
 
   const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    process.env.NEXT_PUBLIC_APP_URL ??
+    "http://localhost:3000";
 
-  const logo = logoUrl ?? `${appUrl}/lightThemeLogo.jpeg`;
+  const logo =
+    logoUrl ?? `${appUrl}/lightThemeLogo.jpeg`;
+
+  /*
+   * Group the flat batch data:
+   *
+   * Branch A
+   *   Batch 1
+   *   Batch 2
+   *
+   * Branch B
+   *   Batch 3
+   *   Batch 4
+   */
+  const groupedBranches =
+    groupBatchesByBranch(batches);
+
+  let batchNumber = 0;
 
   const batchContent =
-    batches.length > 0
-      ? batches
-          .map((batch, index) =>
-            renderBatch(
-              batch,
+    groupedBranches.length > 0
+      ? groupedBranches
+          .map((branch, branchIndex) => {
+            const content = renderBranch(
+              branch,
               days,
-              index,
-              academyName,
-              monthName,
-            ),
-          )
+              batchNumber,
+            );
+
+            batchNumber += branch.batches.length;
+
+            return content;
+          })
           .join("")
-      : renderEmptyReport(academyName, monthName);
+      : renderEmptyReport(
+          academyName,
+          monthName,
+        );
 
   return `
     <!DOCTYPE html>
+
     <html lang="en">
       <head>
         <meta charset="UTF-8" />
+
         <title>
-          ${escapeHtml(academyName)} - Academy Attendance Report
+          ${escapeHtml(academyName)}
+          - Academy Attendance Report
         </title>
+
         ${styles()}
       </head>
 
@@ -584,7 +760,8 @@ export function createAcademyAttendanceReportHtml({
           batches.length > 0
             ? `
               <div class="footer">
-                Academy Attendance Report · ${escapeHtml(monthName)}
+                Academy Attendance Report ·
+                ${escapeHtml(monthName)}
               </div>
             `
             : ""
