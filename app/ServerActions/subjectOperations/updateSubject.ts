@@ -8,10 +8,16 @@ import { updateSubjectNameService } from "./updations/services/subjectName.servi
 import { updateSubjectPartNameService } from "./updations/services/subjectPartName.service";
 import { deleteSubjectPartService } from "./updations/services/deleteSubjectPart.service";
 import { replaceSubjectBatchesService } from "./updations/services/subjectBatch.service";
+import { addSubjectPartService } from "./updations/services/addSubjectPart.service";
 
 const SubjectNameSchema = z.object({
   subjectId: z.string().min(1, "Subject ID is required"),
   name: z.string().trim().min(1, "Subject name is required"),
+});
+
+const AddSubjectPartSchema = z.object({
+  subjectId: z.string().min(1, "Subject ID is required"),
+  name: z.string().trim().min(1, "Subject part name is required"),
 });
 
 const SubjectPartNameSchema = z.object({
@@ -213,6 +219,42 @@ export async function updateSubjectTrackingTerms(input: unknown) {
         error instanceof Error
           ? error.message
           : "Failed to update tracking terms",
+    };
+  }
+}
+
+// 3. Add subject part
+export async function addSubjectPart(input: unknown) {
+  await requireRoleForAction(["ADMIN", "TEACHER"]);
+
+  const parsed = AddSubjectPartSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      success: false as const,
+      error: getValidationError(parsed.error),
+    };
+  }
+
+  try {
+    const subjectPart = await addSubjectPartService(
+      parsed.data.subjectId,
+      parsed.data.name,
+    );
+
+    return {
+      success: true as const,
+      subjectPart,
+    };
+  } catch (error) {
+    console.error("addSubjectPart error:", error);
+
+    return {
+      success: false as const,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to add subject part",
     };
   }
 }

@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     const [student, performance, progress] = await Promise.all([
       prisma.student.findUnique({
         where: {
-          userId: studentId,
+          id: studentId,
         },
         select: {
           user: {
