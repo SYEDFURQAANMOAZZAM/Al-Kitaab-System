@@ -179,24 +179,8 @@ export default function TocEditor({
     );
   };
 
-  /*
-   * Direct children only.
-   *
-   * Example:
-   *
-   * Para 1
-   *   ├── Surah A
-   *   ├── Surah B
-   *   └── Surah C
-   *
-   * Para 1 => 3 Surahs
-   */
-
-  const getChildCount = (
-    item: Item,
-  ) => {
-    return children(item.id).length;
-  };
+ 
+  
 
   /* ==========================================================
      ADD HELPERS
@@ -373,13 +357,7 @@ export default function TocEditor({
       return;
     }
 
-    if (!prefix && !suffix) {
-      alert(
-        "Enter text before or after the number.",
-      );
-
-      return;
-    }
+   
 
     if (pending) {
       return;
@@ -463,7 +441,7 @@ export default function TocEditor({
           onClick={() =>
             openAdd(key)
           }
-          className="inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm hover:bg-muted disabled:opacity-50"
+          className="inline-flex h-9 max-w-full items-center gap-1.5 rounded-md border px-2.5 text-sm font-medium hover:bg-muted disabled:opacity-50 sm:px-3"
         >
           <Plus className="h-4 w-4" />
 
@@ -480,7 +458,7 @@ export default function TocEditor({
 
     if (mode === "menu") {
       return (
-        <div className="rounded-lg border bg-background p-3">
+        <div className="w-full min-w-[220px] rounded-lg border bg-background p-3 shadow-sm">
           <p className="text-xs font-semibold">
             Add {part.name}
           </p>
@@ -747,9 +725,7 @@ export default function TocEditor({
             disabled={
               pending ||
               !range.from ||
-              !range.to ||
-              (!range.prefix.trim() &&
-                !range.suffix.trim())
+              !range.to
             }
             className="h-9 rounded-md bg-primary px-3 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
@@ -926,257 +902,195 @@ export default function TocEditor({
      TREE NODE
   ========================================================== */
 
-  const renderNode = (
-    item: Item,
-  ): ReactNode => {
-    const part = getPart(
-      item.subjectPartId,
-    );
+const renderNode = (item: Item): ReactNode => {
+  const part = getPart(item.subjectPartId);
 
-    if (!part) {
-      return null;
-    }
+  if (!part) {
+    return null;
+  }
 
-    const itemChildren =
-      children(item.id);
+  const itemChildren = children(item.id);
+  const childCount = itemChildren.length;
+  const childPart = getChildPart(part);
 
-    const childCount =
-      itemChildren.length;
+  const isExpanded = expanded[item.id] ?? false;
+  const isEditing = editing[item.id] ?? false;
 
-    const childPart =
-      getChildPart(part);
-
-    const isExpanded =
-      expanded[item.id] ??
-      false;
-
-    const isEditing =
-      editing[item.id] ??
-      false;
-
-    return (
+  return (
+    <div
+      key={item.id}
+      className="overflow-hidden rounded-xl border bg-background"
+    >
+      {/* =====================================================
+          ITEM
+      ===================================================== */}
       <div
-        key={item.id}
-        className="overflow-hidden rounded-lg border bg-background"
+        role={childCount > 0 ? "button" : undefined}
+        tabIndex={childCount > 0 ? 0 : undefined}
+        onClick={() => {
+          if (childCount > 0 && !isEditing) {
+            toggleExpanded(item.id);
+          }
+        }}
+        onKeyDown={(event) => {
+          if (
+            childCount > 0 &&
+            !isEditing &&
+            (event.key === "Enter" || event.key === " ")
+          ) {
+            event.preventDefault();
+            toggleExpanded(item.id);
+          }
+        }}
+        className={[
+          "grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-2 p-2.5 sm:p-3 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-3",
+          childCount > 0
+            ? "cursor-pointer select-none hover:bg-muted/40"
+            : "",
+        ].join(" ")}
       >
-        {/* ====================================================
-            ITEM HEADER
-        ==================================================== */}
-
-        <div
-          role={
-            childCount > 0
-              ? "button"
-              : undefined
-          }
-          tabIndex={
-            childCount > 0
-              ? 0
-              : undefined
-          }
-          onClick={() => {
-            if (
-              childCount > 0 &&
-              !isEditing
-            ) {
-              toggleExpanded(
-                item.id,
-              );
-            }
-          }}
-          onKeyDown={(event) => {
-            if (
-              childCount > 0 &&
-              !isEditing &&
-              (event.key ===
-                "Enter" ||
-                event.key === " ")
-            ) {
-              event.preventDefault();
-
-              toggleExpanded(
-                item.id,
-              );
-            }
-          }}
-          className={[
-            "flex min-h-[64px] flex-wrap items-center gap-2.5 px-3 py-2 sm:px-4",
-            childCount > 0
-              ? "cursor-pointer select-none hover:bg-muted/40"
-              : "",
-          ].join(" ")}
-        >
-          {/* CHEVRON */}
-
-          <div className="flex w-6 shrink-0 items-center justify-center">
-            {childCount > 0 ? (
-              <span className="rounded-md p-1 text-muted-foreground">
-                {isExpanded ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-              </span>
-            ) : (
-              <span className="h-6 w-6" />
-            )}
-          </div>
-
-          {/* NAME + COUNT */}
-
-          <div className="min-w-0 flex-1">
-            {isEditing ? (
-              <form
-                className="flex min-w-0 gap-2"
-                onClick={(event) =>
-                  event.stopPropagation()
-                }
-                onSubmit={(event) => {
-                  event.preventDefault();
-
-                  saveEdit(item);
-                }}
-              >
-                <input
-                  value={
-                    editDrafts[
-                      item.id
-                    ] ?? ""
-                  }
-                  onChange={(event) =>
-                    setEditDrafts(
-                      (current) => ({
-                        ...current,
-
-                        [item.id]:
-                          event.target
-                            .value,
-                      }),
-                    )
-                  }
-                  disabled={pending}
-                  autoFocus
-                  className="h-9 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                />
-
-                <button
-                  type="submit"
-                  disabled={
-                    pending ||
-                    !editDrafts[
-                      item.id
-                    ]?.trim()
-                  }
-                  className="rounded-md bg-primary p-2 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                  aria-label="Save"
-                >
-                  <Check className="h-4 w-4" />
-                </button>
-
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() =>
-                    cancelEdit(
-                      item.id,
-                    )
-                  }
-                  className="rounded-md border p-2 hover:bg-muted"
-                  aria-label="Cancel"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </form>
-            ) : (
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="min-w-0 break-words text-sm font-semibold">
-                    {item.name}
-                  </span>
-
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                    {part.name}
-                  </span>
-                </div>
-
-                {/* CHILD COUNT */}
-
-                {childCount > 0 &&
-                  childPart && (
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {childCount}{" "}
-                      {childPart.name}
-                      {childCount !== 1
-                        ? "s"
-                        : ""}
-                    </p>
-                  )}
-              </div>
-            )}
-          </div>
-
-          {/* ACTIONS */}
-
-          {!isEditing && (
-            <div
-              className="flex shrink-0 items-center gap-0.5"
-              onClick={(event) =>
-                event.stopPropagation()
-              }
-            >
-              {childPart && (
-                <div>
-                  {renderAddControls(
-                    childPart,
-                    item.id,
-                  )}
-                </div>
+        {/* ===================================================
+            CHEVRON
+        =================================================== */}
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center">
+          {childCount > 0 ? (
+            <span className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted">
+              {isExpanded ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
               )}
+            </span>
+          ) : (
+            <span className="h-8 w-8" />
+          )}
+        </div>
+
+        {/* ===================================================
+            MAIN CONTENT
+        =================================================== */}
+        <div className="min-w-0">
+          {isEditing ? (
+            <form
+              className="flex min-w-0 gap-2"
+              onClick={(event) => event.stopPropagation()}
+              onSubmit={(event) => {
+                event.preventDefault();
+                saveEdit(item);
+              }}
+            >
+              <input
+                value={editDrafts[item.id] ?? ""}
+                onChange={(event) =>
+                  setEditDrafts((current) => ({
+                    ...current,
+                    [item.id]: event.target.value,
+                  }))
+                }
+                disabled={pending}
+                autoFocus
+                className="h-9 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
 
               <button
-                type="button"
-                disabled={pending}
-                onClick={() =>
-                  startEdit(item)
+                type="submit"
+                disabled={
+                  pending ||
+                  !editDrafts[item.id]?.trim()
                 }
-                className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                aria-label="Edit"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                aria-label="Save"
               >
-                <Pencil className="h-4 w-4" />
+                <Check className="h-4 w-4" />
               </button>
 
               <button
                 type="button"
                 disabled={pending}
-                onClick={() =>
-                  removeItem(item)
-                }
-                className="rounded-md p-1.5 text-destructive hover:bg-destructive/10"
-                aria-label="Delete"
+                onClick={() => cancelEdit(item.id)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border hover:bg-muted"
+                aria-label="Cancel"
               >
-                <Trash2 className="h-4 w-4" />
+                <X className="h-4 w-4" />
               </button>
+            </form>
+          ) : (
+            <div className="min-w-0">
+              {/* NAME + PART */}
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                <span className="min-w-0 break-words text-sm font-semibold leading-5">
+                  {item.name}
+                </span>
+
+                <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+                  {part.name}
+                </span>
+              </div>
+
+              {/* CHILD COUNT */}
+              {childCount > 0 && childPart && (
+                <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+                  {childCount} {childPart.name}
+                  {childCount !== 1 ? "s" : ""}
+                </p>
+              )}
             </div>
           )}
         </div>
 
-        {/* ====================================================
-            CHILDREN
-        ==================================================== */}
-
-        {isExpanded &&
-          childCount > 0 && (
-            <div className="border-t bg-muted/20 px-3 py-3 sm:px-4">
-              <div className="space-y-2 border-l-2 border-muted pl-3 sm:pl-4">
-                {itemChildren.map(
-                  renderNode,
-                )}
+        {/* ===================================================
+            ACTIONS
+        =================================================== */}
+        {!isEditing && (
+          <div
+            className="col-span-2 flex min-w-0 flex-wrap items-center gap-1 border-t pt-2 md:col-span-1 md:border-t-0 md:pt-0"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {/* ADD CHILD */}
+            {childPart && (
+              <div className="min-w-0 max-w-full">
+                {renderAddControls(childPart, item.id)}
               </div>
-            </div>
-          )}
+            )}
+
+            {/* EDIT */}
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => startEdit(item)}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label="Edit"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+
+            {/* DELETE */}
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => removeItem(item)}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
+              aria-label="Delete"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
-    );
-  };
+
+      {/* =====================================================
+          CHILDREN
+      ===================================================== */}
+      {isExpanded && childCount > 0 && (
+        <div className="border-t bg-muted/20 p-2 sm:p-3">
+          <div className="space-y-2 border-l-2 border-muted pl-2.5 sm:pl-3">
+            {itemChildren.map(renderNode)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
   /* ==========================================================
      ROOT ADD

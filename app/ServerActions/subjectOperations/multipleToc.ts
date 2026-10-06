@@ -98,16 +98,7 @@ export async function addMultipleTocItems(
     };
   }
 
-  /*
-   * At least something must be generated.
-   */
-  if (!prefix && !suffix) {
-    return {
-      success: false,
-      error:
-        "Enter text before or after the number.",
-    };
-  }
+  
 
   /* =======================================================
      VALIDATE SUBJECT PART

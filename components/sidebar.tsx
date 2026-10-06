@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -19,12 +18,14 @@ import {
   ClipboardCheck,
   ClipboardList,
   Clock,
+  ContactRound,
   CreditCard,
   FileText,
   Folder,
   Home,
   IndianRupee,
   Languages,
+  Layers3,
   LayoutDashboard,
   LogOut,
   MessageSquare,
@@ -39,11 +40,8 @@ import {
   UserCheck,
   Users,
   X,
-  Layers3,
-  ContactRound
 } from "lucide-react";
 
-import { useSidebar } from "@/components/ui/sidebar";
 import { logout } from "@/app/ServerActions/auth/login";
 
 import {
@@ -58,6 +56,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 import type {
@@ -113,6 +112,17 @@ export const iconMap = {
 } satisfies Record<SidebarIcon, typeof LayoutDashboard>;
 
 /* =========================================================
+   SWIPE / DRAG CONFIG
+========================================================= */
+
+/** Touch must begin within this many px of the left screen edge to open. */
+const EDGE_ZONE_PX = 28;
+/** Horizontal distance the finger must travel to trigger open/close. */
+const SWIPE_DISTANCE_PX = 60;
+/** Ignore the gesture once vertical movement exceeds this (user is scrolling). */
+const VERTICAL_CANCEL_PX = 12;
+
+/* =========================================================
    HELPERS
 ========================================================= */
 
@@ -122,11 +132,8 @@ function isGroup(item: SidebarItem): item is SidebarGroupItem {
 
 /**
  * Returns the first link href in a group, including nested groups.
- * This avoids accessing href on a SidebarGroupItem.
  */
-function getFirstLinkHref(
-  items: SidebarItem[],
-): string | undefined {
+function getFirstLinkHref(items: SidebarItem[]): string | undefined {
   for (const item of items) {
     if ("href" in item) {
       return item.href;
@@ -150,26 +157,112 @@ function isLinkActive(href: string, pathname: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function isItemActive(
-  item: SidebarItem,
-  pathname: string,
-): boolean {
+function isItemActive(item: SidebarItem, pathname: string): boolean {
   if (!isGroup(item)) {
     return isLinkActive(item.href, pathname);
   }
 
-  return item.children.some((child) =>
-    isItemActive(child, pathname),
-  );
+  return item.children.some((child) => isItemActive(child, pathname));
 }
 
 /* =========================================================
-   PROPS
+   MOBILE SWIPE HOOK
+   - Swipe right from the left edge  -> opens the sidebar
+   - Swipe left anywhere while open  -> closes the sidebar
 ========================================================= */
 
-type AppSidebarProps = {
-  sidebarItems: SidebarItem[];
+type GestureMode = "open" | "close";
+
+type GestureState = {
+  startX: number;
+  startY: number;
+  mode: GestureMode;
 };
+
+function useSidebarSwipe() {
+  const { isMobile, openMobile, setOpenMobile } = useSidebar();
+  const gesture = useRef<GestureState | null>(null);
+
+  useEffect(() => {
+    if (!isMobile) {
+      gesture.current = null;
+      return;
+    }
+
+    const handleTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1) {
+        gesture.current = null;
+        return;
+      }
+
+      const touch = event.touches[0];
+
+      if (openMobile) {
+        gesture.current = {
+          startX: touch.clientX,
+          startY: touch.clientY,
+          mode: "close",
+        };
+      } else if (touch.clientX <= EDGE_ZONE_PX) {
+        gesture.current = {
+          startX: touch.clientX,
+          startY: touch.clientY,
+          mode: "open",
+        };
+      } else {
+        gesture.current = null;
+      }
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const current = gesture.current;
+      if (!current) return;
+
+      const touch = event.touches[0];
+      const deltaX = touch.clientX - current.startX;
+      const deltaY = touch.clientY - current.startY;
+
+      // Mostly vertical movement = the user is scrolling, not swiping.
+      if (
+        Math.abs(deltaY) > VERTICAL_CANCEL_PX &&
+        Math.abs(deltaY) > Math.abs(deltaX)
+      ) {
+        gesture.current = null;
+        return;
+      }
+
+      if (current.mode === "open" && deltaX >= SWIPE_DISTANCE_PX) {
+        gesture.current = null;
+        setOpenMobile(true);
+      } else if (current.mode === "close" && deltaX <= -SWIPE_DISTANCE_PX) {
+        gesture.current = null;
+        setOpenMobile(false);
+      }
+    };
+
+    const resetGesture = () => {
+      gesture.current = null;
+    };
+
+    document.addEventListener("touchstart", handleTouchStart, {
+      passive: true,
+    });
+    document.addEventListener("touchmove", handleTouchMove, {
+      passive: true,
+    });
+    document.addEventListener("touchend", resetGesture, { passive: true });
+    document.addEventListener("touchcancel", resetGesture, {
+      passive: true,
+    });
+
+    return () => {
+      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", resetGesture);
+      document.removeEventListener("touchcancel", resetGesture);
+    };
+  }, [isMobile, openMobile, setOpenMobile]);
+}
 
 /* =========================================================
    RECURSIVE SIDEBAR ITEMS
@@ -194,10 +287,7 @@ function SidebarItems({
     Record<string, boolean>
   >({});
 
-  const toggleGroup = (
-    key: string,
-    currentlyExpanded: boolean,
-  ) => {
+  const toggleGroup = (key: string, currentlyExpanded: boolean) => {
     setGroupOverrides((current) => ({
       ...current,
       [key]: !currentlyExpanded,
@@ -214,16 +304,12 @@ function SidebarItems({
         if (isGroup(item)) {
           const groupKey = getGroupKey(item);
           const groupActive = isItemActive(item, pathname);
-
-          const isExpanded =
-            groupOverrides[groupKey] ?? groupActive;
+          const isExpanded = groupOverrides[groupKey] ?? groupActive;
 
           return (
             <SidebarMenuItem key={key}>
               <SidebarMenuButton
-                onClick={() =>
-                  toggleGroup(groupKey, isExpanded)
-                }
+                onClick={() => toggleGroup(groupKey, isExpanded)}
                 isActive={groupActive}
                 aria-expanded={isExpanded}
                 className={`h-10 rounded-lg text-[15px] ${
@@ -232,14 +318,9 @@ function SidebarItems({
                     : "font-medium text-foreground/80"
                 }`}
               >
-                <Icon
-                  className="h-[18px] w-[18px]"
-                  strokeWidth={1.75}
-                />
+                <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
 
-                <span className="flex-1 truncate">
-                  {item.title}
-                </span>
+                <span className="flex-1 truncate">{item.title}</span>
 
                 <ChevronRight
                   className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
@@ -263,7 +344,6 @@ function SidebarItems({
         }
 
         /* REGULAR LINK */
-        // TypeScript knows item is a SidebarLink here.
         const active = isLinkActive(item.href, pathname);
 
         /* NESTED LINK */
@@ -271,12 +351,7 @@ function SidebarItems({
           return (
             <SidebarMenuSubItem key={key}>
               <SidebarMenuSubButton
-                render={
-                  <Link
-                    href={item.href}
-                    onClick={onNavigate}
-                  />
-                }
+                render={<Link href={item.href} onClick={onNavigate} />}
                 isActive={active}
                 className={`h-9 rounded-lg text-[14px] ${
                   active
@@ -284,10 +359,7 @@ function SidebarItems({
                     : "font-normal text-muted-foreground"
                 }`}
               >
-                <Icon
-                  className="h-4 w-4"
-                  strokeWidth={1.75}
-                />
+                <Icon className="h-4 w-4" strokeWidth={1.75} />
 
                 <span>{item.title}</span>
               </SidebarMenuSubButton>
@@ -299,12 +371,7 @@ function SidebarItems({
         return (
           <SidebarMenuItem key={key}>
             <SidebarMenuButton
-              render={
-                <Link
-                  href={item.href}
-                  onClick={onNavigate}
-                />
-              }
+              render={<Link href={item.href} onClick={onNavigate} />}
               isActive={active}
               className={`h-10 rounded-lg text-[15px] ${
                 active
@@ -312,10 +379,7 @@ function SidebarItems({
                   : "font-normal text-foreground/80"
               }`}
             >
-              <Icon
-                className="h-[18px] w-[18px]"
-                strokeWidth={1.75}
-              />
+              <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
 
               <span>{item.title}</span>
             </SidebarMenuButton>
@@ -330,11 +394,16 @@ function SidebarItems({
    APP SIDEBAR
 ========================================================= */
 
-export default function AppSidebar({
-  sidebarItems,
-}: AppSidebarProps) {
+type AppSidebarProps = {
+  sidebarItems: SidebarItem[];
+};
+
+export default function AppSidebar({ sidebarItems }: AppSidebarProps) {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
+
+  // Swipe right from the left edge to open, swipe left to close (mobile only).
+  useSidebarSwipe();
 
   // Close the sidebar only on mobile navigation.
   const handleNavigate = () => {
@@ -344,10 +413,7 @@ export default function AppSidebar({
   };
 
   return (
-    <Sidebar
-      collapsible="offcanvas"
-      className="border-r-0 shadow-sm"
-    >
+    <Sidebar collapsible="offcanvas" className="border-r-0 shadow-sm">
       {/* FIXED HEADER */}
       <SidebarHeader className="shrink-0 border-b bg-background px-4 py-4">
         <div className="flex items-center justify-between">
@@ -384,10 +450,7 @@ export default function AppSidebar({
               aria-label="Close sidebar"
               className="text-foreground/70 hover:text-foreground"
             >
-              <X
-                className="h-5 w-5"
-                strokeWidth={1.75}
-              />
+              <X className="h-5 w-5" strokeWidth={1.75} />
             </button>
           )}
         </div>
@@ -414,10 +477,7 @@ export default function AppSidebar({
             type="button"
             className="flex items-center gap-1.5 text-sm font-medium text-foreground/80 hover:text-foreground"
           >
-            <Languages
-              className="h-4 w-4"
-              strokeWidth={1.75}
-            />
+            <Languages className="h-4 w-4" strokeWidth={1.75} />
             <span>UR</span>
           </button>
 
@@ -427,12 +487,8 @@ export default function AppSidebar({
         {/* User */}
         <div className="flex items-center justify-between pt-2">
           <div>
-            <p className="text-sm font-semibold leading-tight">
-              Admin User
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Admin
-            </p>
+            <p className="text-sm font-semibold leading-tight">Admin User</p>
+            <p className="text-xs text-muted-foreground">Admin</p>
           </div>
 
           <form action={logout}>
@@ -441,10 +497,7 @@ export default function AppSidebar({
               aria-label="Logout"
               className="text-destructive hover:opacity-80"
             >
-              <LogOut
-                className="h-[18px] w-[18px]"
-                strokeWidth={1.75}
-              />
+              <LogOut className="h-[18px] w-[18px]" strokeWidth={1.75} />
             </button>
           </form>
         </div>
