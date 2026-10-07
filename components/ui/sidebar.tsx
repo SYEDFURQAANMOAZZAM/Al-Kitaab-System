@@ -62,6 +62,15 @@ const DRAWER_TRANSITION =
 const OVERLAY_TRANSITION =
   "opacity 220ms cubic-bezier(0.22, 1, 0.36, 1)";
 
+/*
+ * Any element marked with this attribute owns its own
+ * horizontal touch scrolling.
+ *
+ * The sidebar gesture must never interfere with it.
+ */
+const HORIZONTAL_SCROLL_SELECTOR =
+  "[data-horizontal-scroll='true']";
+
 /* =========================================================
    CONTEXT
 ========================================================= */
@@ -203,7 +212,6 @@ function SidebarProvider({
         setOpen,
         isMobile,
         openMobile,
-        setOpenMobile,
         toggleSidebar,
       ],
     );
@@ -223,7 +231,7 @@ function SidebarProvider({
           } as React.CSSProperties
         }
         className={cn(
-          "group/sidebar-wrapper flex min-h-svh w-full has-data-[variant=inset]:bg-sidebar",
+          "group/sidebar-wrapper flex min-h-svh w-full min-w-0 has-data-[variant=inset]:bg-sidebar",
           className,
         )}
         {...props}
@@ -301,6 +309,29 @@ function Sidebar({
       ),
     [],
   );
+
+  /*
+   * Check whether the touch started inside a component
+   * that owns horizontal scrolling.
+   *
+   * This is the critical protection that prevents the
+   * sidebar gesture from blocking table scrolling.
+   */
+  const isHorizontalScrollTarget =
+    React.useCallback(
+      (target: EventTarget | null) => {
+        if (!(target instanceof Element)) {
+          return false;
+        }
+
+        return Boolean(
+          target.closest(
+            HORIZONTAL_SCROLL_SELECTOR,
+          ),
+        );
+      },
+      [],
+    );
 
   /*
    * Apply exact drawer position.
@@ -413,7 +444,7 @@ function Sidebar({
     );
 
   /*
-   * Sync external open/close actions.
+   * Sync external open / close actions.
    */
 
   React.useEffect(() => {
@@ -466,16 +497,15 @@ function Sidebar({
   ]);
 
   /*
-   * Full finger-controlled mobile gesture.
+   * Mobile drawer gesture.
    *
-   * CLOSED:
-   *   gesture can start anywhere on screen.
+   * IMPORTANT:
    *
-   * OPEN:
-   *   closing gesture starts inside drawer.
+   * The listeners are still document-level because the
+   * drawer must support swiping from the page.
    *
-   * Vertical scrolling:
-   *   preserved through direction locking.
+   * However, touches beginning inside an element marked
+   * data-horizontal-scroll="true" are completely ignored.
    */
 
   React.useEffect(() => {
@@ -498,6 +528,23 @@ function Sidebar({
         return;
       }
 
+      /*
+       * CRITICAL:
+       *
+       * Never start the sidebar gesture from a component
+       * that owns horizontal scrolling.
+       */
+      if (
+        isHorizontalScrollTarget(
+          event.target,
+        )
+      ) {
+        gesture.current = null;
+        isDragging.current = false;
+        directionLocked.current = false;
+        return;
+      }
+
       const touch =
         event.touches[0];
 
@@ -509,7 +556,8 @@ function Sidebar({
       /*
        * CLOSED -> OPEN
        *
-       * Can start anywhere.
+       * Can start anywhere except inside an explicitly
+       * horizontally scrollable component.
        */
 
       if (!openMobile) {
@@ -586,12 +634,6 @@ function Sidebar({
       const touch =
         event.touches[0];
 
-      /*
-       * FIX:
-       * drawer is declared here because this function
-       * needs to use it.
-       */
-
       const drawer =
         mobileDrawerRef.current;
 
@@ -618,7 +660,9 @@ function Sidebar({
 
       /*
        * Vertical gesture:
-       * let normal page scrolling happen.
+       *
+       * Cancel sidebar gesture and let the browser
+       * handle normal vertical scrolling.
        */
 
       if (
@@ -662,8 +706,12 @@ function Sidebar({
       }
 
       /*
-       * Stop browser scrolling once horizontal
-       * drawer control has been established.
+       * At this point this gesture belongs to the
+       * sidebar, so preventing browser scrolling is safe.
+       *
+       * This can NEVER happen for a table marked with
+       * data-horizontal-scroll="true", because such
+       * gestures are rejected in touchstart.
        */
 
       event.preventDefault();
@@ -934,6 +982,7 @@ function Sidebar({
     clamp,
     applyDrawerPosition,
     settleDrawer,
+    isHorizontalScrollTarget,
   ]);
 
   /*
@@ -1066,6 +1115,11 @@ function Sidebar({
               transition:
                 DRAWER_TRANSITION,
 
+              /*
+               * The drawer itself supports vertical
+               * scrolling. Horizontal drawer gestures
+               * are handled by our document listener.
+               */
               touchAction: "pan-y",
             } as React.CSSProperties
           }
@@ -1191,9 +1245,9 @@ function SidebarRail({
       aria-label="Toggle Sidebar"
       tabIndex={-1}
       onClick={toggleSidebar}
-      title="Toggle Sidebar"
+      title="Toggle sidebar"
       className={cn(
-        "absolute inset-y-0 z-20 hidden w-4 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] hover:after:bg-sidebar-border sm:flex ltr:-translate-x-1/2 rtl:-translate-x-1/2",
+        "absolute inset-y-0 z-20 hidden w-4 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] after:translate-x-[-50%] hover:after:bg-sidebar-border sm:flex ltr:-translate-x-1/2 rtl:-translate-x-1/2",
         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
         "group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full hover:group-data-[collapsible=offcanvas]:bg-sidebar",
@@ -1220,7 +1274,12 @@ function SidebarInset({
     <main
       data-slot="sidebar-inset"
       className={cn(
-        "relative flex w-full flex-1 flex-col bg-background md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2",
+        "relative flex min-h-svh min-w-0 w-full flex-1 flex-col bg-background",
+        "md:peer-data-[variant=inset]:m-2",
+        "md:peer-data-[variant=inset]:ml-0",
+        "md:peer-data-[variant=inset]:rounded-xl",
+        "md:peer-data-[variant=inset]:shadow-sm",
+        "md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2",
         className,
       )}
       {...props}
@@ -1335,7 +1394,7 @@ function SidebarContent({
       data-slot="sidebar-content"
       data-sidebar="content"
       className={cn(
-        "no-scrollbar flex min-h-0 flex-1 flex-col gap-0 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
+        "no-scrollbar flex min-h-0 min-w-0 flex-1 flex-col gap-0 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
         className,
       )}
       {...props}
