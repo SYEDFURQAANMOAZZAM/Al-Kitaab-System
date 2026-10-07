@@ -33,18 +33,28 @@ function getCurrentMonth() {
   };
 }
 
-function getDaysInMonth(year: number, month: number) {
+function getDaysInMonth(
+  year: number,
+  month: number
+) {
   const count = new Date(
     Date.UTC(year, month, 0)
   ).getUTCDate();
 
-  return Array.from({ length: count }, (_, index) => {
-    const date = new Date(
-      Date.UTC(year, month - 1, index + 1)
-    );
+  return Array.from(
+    { length: count },
+    (_, index) => {
+      const date = new Date(
+        Date.UTC(
+          year,
+          month - 1,
+          index + 1
+        )
+      );
 
-    return date.toISOString().slice(0, 10);
-  });
+      return date.toISOString().slice(0, 10);
+    }
+  );
 }
 
 export default async function BatchPerformancePage({
@@ -53,14 +63,20 @@ export default async function BatchPerformancePage({
 }: Props) {
   await requireRole("ADMIN", "TEACHER");
 
-  const { branchId, batchId } = await params;
+  const { batchId } = await params;
   const search = await searchParams;
 
   const current = getCurrentMonth();
 
-  const year = Number(search.year) || current.year;
-  const month = Number(search.month) || current.month;
+  const year =
+    Number(search.year) || current.year;
 
+  const month =
+    Number(search.month) || current.month;
+
+  /*
+   * Validate requested month.
+   */
   if (
     !Number.isInteger(year) ||
     !Number.isInteger(month) ||
@@ -72,25 +88,40 @@ export default async function BatchPerformancePage({
     notFound();
   }
 
-  const performance = await getLiveBatchPerformance(
-    batchId,
+  /*
+   * Fetch batch performance.
+   */
+  const performance =
+    await getLiveBatchPerformance(
+      batchId,
+      year,
+      month
+    );
+
+  /*
+   * Generate all days for the selected month.
+   */
+  const days = getDaysInMonth(
     year,
     month
   );
 
-  const days = getDaysInMonth(year, month);
-
-  const students = performance.students.map((student) => ({
-    id: student.id,
-    name: student.name,
-  }));
+  /*
+   * Only the information required by
+   * BatchStudentProgress is passed here.
+   */
+  const students = performance.students.map(
+    (student) => ({
+      id: student.id,
+      name: student.name,
+    })
+  );
 
   return (
-    <main className="mx-auto min-w-0 w-full max-w-[1800px] overflow-x-hidden p-2 sm:p-3">
-      <div className="flex min-w-0 flex-col gap-6">
+    <main className="mx-auto w-full min-w-0 max-w-[1800px] p-2 sm:p-3">
+      <div className="flex w-full min-w-0 flex-col gap-6">
         {/* HEADER */}
-
-        <div className="flex min-w-0 flex-col gap-4">
+        <section className="flex w-full min-w-0 flex-col gap-4">
           <BatchPerformanceHeader
             batchName={performance.batch.name}
             batchId={batchId}
@@ -104,37 +135,41 @@ export default async function BatchPerformancePage({
               month={month}
             />
           </div>
-        </div>
+        </section>
 
         {/* BATCH ATTENDANCE TAKEN */}
-
-        <BatchAttendanceTakenTable
-          days={performance.attendanceTaken}
-        />
+        <section className="w-full min-w-0">
+          <BatchAttendanceTakenTable
+            days={performance.attendanceTaken}
+          />
+        </section>
 
         {/* TEACHER ATTENDANCE */}
-
-        <TeacherAttendanceTable
-          teachers={performance.teachers}
-          days={days}
-        />
+        <section className="w-full min-w-0">
+          <TeacherAttendanceTable
+            teachers={performance.teachers}
+            days={days}
+          />
+        </section>
 
         {/* STUDENT ATTENDANCE */}
-
-        <StudentAttendanceTable
-          students={performance.students}
-          days={days}
-        />
+        <section className="w-full min-w-0">
+          <StudentAttendanceTable
+            students={performance.students}
+            days={days}
+          />
+        </section>
 
         {/* STUDENT PROGRESS */}
-
-        <BatchStudentProgress
-          students={students}
-          batchId={batchId}
-          year={year}
-          month={month}
-        />
+        <section className="w-full min-w-0">
+          <BatchStudentProgress
+            students={students}
+            batchId={batchId}
+            year={year}
+            month={month}
+          />
+        </section>
       </div>
     </main>
   );
-}
+} 
