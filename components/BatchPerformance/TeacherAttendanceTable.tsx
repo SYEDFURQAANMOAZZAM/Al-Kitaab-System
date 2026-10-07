@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -77,7 +76,8 @@ export default function TeacherAttendanceTable({
   teachers,
   days,
 }: Props) {
-  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const scrollRef =
+    React.useRef<HTMLDivElement>(null);
 
   const dragRef = React.useRef<{
     pointerId: number;
@@ -85,11 +85,27 @@ export default function TeacherAttendanceTable({
     scrollLeft: number;
   } | null>(null);
 
-  const [isDragging, setIsDragging] = React.useState(false);
+  const [isDragging, setIsDragging] =
+    React.useState(false);
 
+  /*
+   * Calculate the actual required table width.
+   *
+   * Teacher column
+   * + Present/Eligible column
+   * + one column for every day.
+   */
   const tableWidth =
-    TEACHER_WIDTH + COUNT_WIDTH + days.length * DAY_WIDTH;
+    TEACHER_WIDTH +
+    COUNT_WIDTH +
+    days.length * DAY_WIDTH;
 
+  /*
+   * Mouse drag scrolling.
+   *
+   * Touch is intentionally ignored here so that
+   * the browser can provide native touch scrolling.
+   */
   function handlePointerDown(
     event: React.PointerEvent<HTMLDivElement>
   ) {
@@ -102,6 +118,10 @@ export default function TeacherAttendanceTable({
 
     const element = event.currentTarget;
 
+    /*
+     * Don't start dragging when there is no
+     * horizontal overflow.
+     */
     if (element.scrollWidth <= element.clientWidth) {
       return;
     }
@@ -113,7 +133,9 @@ export default function TeacherAttendanceTable({
     };
 
     element.setPointerCapture(event.pointerId);
+
     setIsDragging(true);
+
     event.preventDefault();
   }
 
@@ -122,19 +144,35 @@ export default function TeacherAttendanceTable({
   ) {
     const drag = dragRef.current;
 
-    if (!drag || drag.pointerId !== event.pointerId) {
+    if (
+      !drag ||
+      drag.pointerId !== event.pointerId
+    ) {
       return;
     }
 
-    const distance = event.clientX - drag.startX;
+    const element = event.currentTarget;
 
-    event.currentTarget.scrollLeft =
+    const distance =
+      event.clientX - drag.startX;
+
+    element.scrollLeft =
       drag.scrollLeft - distance;
 
     event.preventDefault();
   }
 
-  function stopDragging() {
+  function stopDragging(
+    event?: React.PointerEvent<HTMLDivElement>
+  ) {
+    if (
+      event &&
+      dragRef.current &&
+      dragRef.current.pointerId !== event.pointerId
+    ) {
+      return;
+    }
+
     dragRef.current = null;
     setIsDragging(false);
   }
@@ -152,7 +190,7 @@ export default function TeacherAttendanceTable({
         </p>
       </div>
 
-      {/* Table */}
+      {/* Scroll container */}
       <div
         ref={scrollRef}
         onPointerDown={handlePointerDown}
@@ -161,28 +199,43 @@ export default function TeacherAttendanceTable({
         onPointerCancel={stopDragging}
         onLostPointerCapture={stopDragging}
         tabIndex={0}
-        aria-label="Teacher attendance table. Hold the left mouse button and drag horizontally to scroll."
+        aria-label="Teacher attendance table. Use horizontal scrolling or hold the left mouse button and drag."
         className={`w-full min-w-0 overflow-x-auto overscroll-x-contain ${
           isDragging
             ? "cursor-grabbing select-none"
             : "cursor-grab"
         }`}
+        style={{
+          userSelect: isDragging ? "none" : "auto",
+        }}
       >
         <table
           className="border-separate border-spacing-0 text-sm"
           style={{
-            width: `max(100%, ${tableWidth}px)`,
+            width: `${tableWidth}px`,
+            minWidth: `${tableWidth}px`,
             tableLayout: "fixed",
           }}
         >
           <colgroup>
-            <col style={{ width: `${TEACHER_WIDTH}px` }} />
-            <col style={{ width: `${COUNT_WIDTH}px` }} />
+            <col
+              style={{
+                width: `${TEACHER_WIDTH}px`,
+              }}
+            />
+
+            <col
+              style={{
+                width: `${COUNT_WIDTH}px`,
+              }}
+            />
 
             {days.map((day) => (
               <col
                 key={day}
-                style={{ width: `${DAY_WIDTH}px` }}
+                style={{
+                  width: `${DAY_WIDTH}px`,
+                }}
               />
             ))}
           </colgroup>
@@ -190,23 +243,21 @@ export default function TeacherAttendanceTable({
           <thead>
             <tr>
               {/* Sticky teacher name */}
-              <th
-                className="sticky left-0 top-0 z-30 border-b border-r border-border bg-muted px-3 py-3 text-left font-medium text-foreground"
-              >
+              <th className="sticky left-0 top-0 z-30 border-b border-r border-border bg-muted px-3 py-3 text-left font-medium text-foreground">
                 Teacher
               </th>
 
-              {/* Sticky only on large screens and above */}
+              {/* Sticky on large screens */}
               <th
                 title="Present / Eligible"
-                className="sticky top-0 z-20 border-b border-r border-border bg-muted px-1 py-3 text-center font-medium text-foreground lg:sticky lg:left-[132px] lg:z-30"
+                className="sticky top-0 z-20 border-b border-r border-border bg-muted px-1 py-3 text-center font-medium text-foreground lg:left-[132px] lg:z-30"
               >
                 <span className="text-xs leading-tight">
                   P / E
                 </span>
               </th>
 
-              {/* Compact day numbers */}
+              {/* Day numbers */}
               {days.map((day) => (
                 <th
                   key={day}
@@ -242,10 +293,8 @@ export default function TeacherAttendanceTable({
                     </span>
                   </td>
 
-                  {/* Scrollable on xs to md, sticky on lg+ */}
-                  <td
-                    className="border-b border-r border-border bg-card px-1 py-3 text-center font-medium text-foreground lg:sticky lg:left-[132px] lg:z-10"
-                  >
+                  {/* Sticky on large screens */}
+                  <td className="border-b border-r border-border bg-card px-1 py-3 text-center font-medium text-foreground lg:sticky lg:left-[132px] lg:z-10">
                     <span className="whitespace-nowrap text-xs">
                       {teacher.presentDays}/
                       {teacher.eligibleDays}
@@ -259,7 +308,9 @@ export default function TeacherAttendanceTable({
                       className="border-b border-border px-1 py-3 text-center"
                     >
                       <StatusCell
-                        status={teacher.attendance[day] ?? null}
+                        status={
+                          teacher.attendance[day] ?? null
+                        }
                       />
                     </td>
                   ))}
@@ -273,17 +324,26 @@ export default function TeacherAttendanceTable({
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border px-4 py-2 text-xs text-muted-foreground">
         <span>
-          <strong className="text-emerald-600 dark:text-emerald-400">P</strong>
-          {" "}Present
+          <strong className="text-emerald-600 dark:text-emerald-400">
+            P
+          </strong>{" "}
+          Present
         </span>
+
         <span>
-          <strong className="text-destructive">A</strong>
-          {" "}Absent
+          <strong className="text-destructive">
+            A
+          </strong>{" "}
+          Absent
         </span>
+
         <span>
-          <strong className="text-amber-600 dark:text-amber-400">L</strong>
-          {" "}Leave
+          <strong className="text-amber-600 dark:text-amber-400">
+            L
+          </strong>{" "}
+          Leave
         </span>
+
         <span>— Not marked</span>
       </div>
     </section>
