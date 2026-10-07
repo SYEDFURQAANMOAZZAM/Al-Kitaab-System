@@ -89,11 +89,7 @@ export default function TeacherAttendanceTable({
     React.useState(false);
 
   /*
-   * Calculate the actual required table width.
-   *
-   * Teacher column
-   * + Present/Eligible column
-   * + one column for every day.
+   * Total required table width.
    */
   const tableWidth =
     TEACHER_WIDTH +
@@ -101,10 +97,10 @@ export default function TeacherAttendanceTable({
     days.length * DAY_WIDTH;
 
   /*
-   * Mouse drag scrolling.
+   * Mouse drag scrolling only.
    *
-   * Touch is intentionally ignored here so that
-   * the browser can provide native touch scrolling.
+   * Touch is intentionally ignored.
+   * Mobile uses native finger scrolling.
    */
   function handlePointerDown(
     event: React.PointerEvent<HTMLDivElement>
@@ -118,10 +114,6 @@ export default function TeacherAttendanceTable({
 
     const element = event.currentTarget;
 
-    /*
-     * Don't start dragging when there is no
-     * horizontal overflow.
-     */
     if (element.scrollWidth <= element.clientWidth) {
       return;
     }
@@ -190,7 +182,7 @@ export default function TeacherAttendanceTable({
         </p>
       </div>
 
-      {/* Scroll container */}
+      {/* Horizontal scroll container */}
       <div
         ref={scrollRef}
         onPointerDown={handlePointerDown}
@@ -199,14 +191,18 @@ export default function TeacherAttendanceTable({
         onPointerCancel={stopDragging}
         onLostPointerCapture={stopDragging}
         tabIndex={0}
-        aria-label="Teacher attendance table. Use horizontal scrolling or hold the left mouse button and drag."
+        aria-label="Teacher attendance table"
         className={`w-full min-w-0 overflow-x-auto overscroll-x-contain ${
           isDragging
             ? "cursor-grabbing select-none"
             : "cursor-grab"
         }`}
         style={{
-          userSelect: isDragging ? "none" : "auto",
+          touchAction: "pan-x",
+          userSelect: isDragging
+            ? "none"
+            : "auto",
+          WebkitOverflowScrolling: "touch",
         }}
       >
         <table
@@ -242,12 +238,12 @@ export default function TeacherAttendanceTable({
 
           <thead>
             <tr>
-              {/* Sticky teacher name */}
+              {/* Teacher */}
               <th className="sticky left-0 top-0 z-30 border-b border-r border-border bg-muted px-3 py-3 text-left font-medium text-foreground">
                 Teacher
               </th>
 
-              {/* Sticky on large screens */}
+              {/* Present / Eligible */}
               <th
                 title="Present / Eligible"
                 className="sticky top-0 z-20 border-b border-r border-border bg-muted px-1 py-3 text-center font-medium text-foreground lg:left-[132px] lg:z-30"
@@ -257,7 +253,7 @@ export default function TeacherAttendanceTable({
                 </span>
               </th>
 
-              {/* Day numbers */}
+              {/* Days */}
               {days.map((day) => (
                 <th
                   key={day}
@@ -283,7 +279,7 @@ export default function TeacherAttendanceTable({
             ) : (
               teachers.map((teacher) => (
                 <tr key={teacher.id}>
-                  {/* Sticky teacher name */}
+                  {/* Teacher name */}
                   <td
                     title={teacher.name}
                     className="sticky left-0 z-10 border-b border-r border-border bg-card px-3 py-3 font-medium text-foreground"
@@ -293,7 +289,7 @@ export default function TeacherAttendanceTable({
                     </span>
                   </td>
 
-                  {/* Sticky on large screens */}
+                  {/* Present / Eligible */}
                   <td className="border-b border-r border-border bg-card px-1 py-3 text-center font-medium text-foreground lg:sticky lg:left-[132px] lg:z-10">
                     <span className="whitespace-nowrap text-xs">
                       {teacher.presentDays}/
