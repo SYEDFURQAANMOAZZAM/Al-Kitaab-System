@@ -338,6 +338,7 @@ export default function StudentAttendanceTable({
        */}
       <div
         ref={scrollContainerRef}
+        data-horizontal-scroll="true"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={stopMouseDragging}
