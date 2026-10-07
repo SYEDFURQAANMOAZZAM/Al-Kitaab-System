@@ -37,6 +37,16 @@ export type GroupedLearning = {
   learnings: Learning[];
 };
 
+export type FormattedPart = {
+  label: string;
+  value: string;
+};
+
+export type FormattedLearning = {
+  fromParts: FormattedPart[];
+  toParts: FormattedPart[];
+};
+
 /* -------------------------------------------------------------------------- */
 /* STATUS                                                                    */
 /* -------------------------------------------------------------------------- */
@@ -131,14 +141,14 @@ function getValueName(value: unknown): string {
 function getEndpointPart(
   part: LearningPart,
   endpoint: "from" | "to"
-): string {
+): FormattedPart | null {
   const label = part.subjectPart?.name?.trim();
 
-  if (!label) return "";
+  if (!label) return null;
 
   const value = part.value;
 
-  if (!value) return "";
+  if (!value) return null;
 
   /*
    * Normal range value:
@@ -154,10 +164,11 @@ function getEndpointPart(
     const endpointValue = rangeValue[endpoint];
 
     if (endpointValue?.name) {
-      return `${label} ${endpointValue.name}`;
+      const endpointName = endpointValue.name.trim();
+      return endpointName ? { label, value: endpointName } : null;
     }
 
-    return "";
+    return null;
   }
 
   /*
@@ -167,11 +178,9 @@ function getEndpointPart(
    */
   const simpleValue = getValueName(value);
 
-  if (!simpleValue) {
-    return "";
-  }
+  if (!simpleValue) return null;
 
-  return `${label} ${simpleValue}`;
+  return endpoint === "from" ? { label, value: simpleValue } : null;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -180,7 +189,7 @@ function getEndpointPart(
 
 export function formatLearning(
   learning: Learning
-): { fromText: string; toText: string } | string {
+): FormattedLearning | "" {
   if (!learning.parts || !learning.parts.length) {
     return "";
   }
@@ -188,8 +197,8 @@ export function formatLearning(
     (a, b) => (a.position ?? 0) - (b.position ?? 0)
   );
 
-  const fromParts: string[] = [];
-  const toParts: string[] = [];
+  const fromParts: FormattedPart[] = [];
+  const toParts: FormattedPart[] = [];
 
   for (const part of parts) {
     const from = getEndpointPart(part, "from");
@@ -203,28 +212,9 @@ export function formatLearning(
       toParts.push(to);
     }
 
-    /*
-     * If this is a simple value rather than a from/to object,
-     * put it into the from side.
-     */
-    if (
-      typeof part.value === "string" &&
-      part.value.trim()
-    ) {
-      const simple = getEndpointPart(part, "from");
-
-      if (simple && !fromParts.includes(simple)) {
-        fromParts.push(simple);
-      }
-    }
   }
 
-  const fromText = fromParts.join(" ");
-  const toText = toParts.join(" ");
-
-  if (fromText && toText) {
-    return { fromText, toText };
-  }
-
-  return fromText || toText;
+  return fromParts.length || toParts.length
+    ? { fromParts, toParts }
+    : "";
 }

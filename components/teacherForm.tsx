@@ -873,7 +873,7 @@ export default function TeacherForm({
           <div className="space-y-3">
             <div>
               <Label className="font-medium text-foreground">
-                Subjects
+                Subjects <span className="text-destructive">*</span>
               </Label>
 
               <p className="mt-1 text-sm text-muted-foreground">

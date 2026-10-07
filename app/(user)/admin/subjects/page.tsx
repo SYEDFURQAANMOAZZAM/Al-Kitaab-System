@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { getSubjects } from "@/app/ServerActions/subjectOperations/getSubjects";
-import { SubjectsList } from "./SubjectsList";
+import { SubjectsFilter } from "./SubjectsFilter";
 
 export default async function Page() {
   const result = await getSubjects();
@@ -47,10 +47,10 @@ export default async function Page() {
       </div>
 
       {/* =====================================================
-          SUBJECTS
+          SEARCH + CATEGORY FILTERS + SUBJECTS
       ===================================================== */}
 
-      <SubjectsList subjects={result.subjects} />
+      <SubjectsFilter subjects={result.subjects} />
     </main>
   );
 }

@@ -2,6 +2,7 @@
 
 import { Collapsible } from "@base-ui/react/collapsible";
 import { useEffect, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -180,9 +181,11 @@ export function ProgressForm({
   const [
     globalSubjectDialog,
     setGlobalSubjectDialog,
-  ] = useState<{
-    learningId: string;
-  } | null>(null);
+  ] = useState<
+    | { mode: "create" }
+    | { mode: "update"; learningId: string }
+    | null
+  >(null);
 
   const [
     loadingGlobalSubjects,
@@ -215,7 +218,7 @@ export function ProgressForm({
     setSubjectDialog,
   ] = useState<{
     studentId: string;
-    learningId: string;
+    learningId?: string;
   } | null>(null);
 
   const [
@@ -225,20 +228,17 @@ export function ProgressForm({
 
   // Search text is committed to the URL on submit. The applied query is
   // restored after a full page reload so progress is fetched again.
-  const [studentProgressSearch, setStudentProgressSearch] = useState("");
-  const [appliedStudentSearch, setAppliedStudentSearch] = useState("");
+  const searchParams = useSearchParams();
+  const initialStudentSearch = searchParams.get("studentSearch") ?? "";
+  const [studentProgressSearch, setStudentProgressSearch] = useState(
+    initialStudentSearch,
+  );
+  const appliedStudentSearch = initialStudentSearch.trim().toLowerCase();
   const [submittingStudents, setSubmittingStudents] = useState<
     Record<string, boolean>
   >({});
 
   const [progressLoading, setProgressLoading] = useState(true);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const query = params.get("studentSearch") ?? "";
-    setStudentProgressSearch(query);
-    setAppliedStudentSearch(query.trim().toLowerCase());
-  }, []);
 
   const submitStudentSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -267,33 +267,12 @@ export function ProgressForm({
   ========================================================== */
 
   const createLearningId = () => {
-    if (
-      typeof crypto !== "undefined" &&
-      crypto.randomUUID
-    ) {
-      return crypto.randomUUID();
-    }
-
-    return `${Date.now()}-${Math.random()}`;
+    return crypto.randomUUID();
   };
 
   /* ==========================================================
      STUDENT HELPERS
   ========================================================== */
-
-  const updateStudentLearnings = (
-    studentId: string,
-    learnings: Learning[],
-  ) => {
-    setProgress((current) => ({
-      ...current,
-
-      [studentId]: {
-        ...current[studentId],
-        learnings,
-      },
-    }));
-  };
 
   const toggleStudentLearnings = (
     studentId: string,
@@ -393,6 +372,41 @@ export function ProgressForm({
     }));
   };
 
+  const addLearningWithSubject = (
+    studentId: string,
+    subject: Subject,
+  ) => {
+    const learningId = createLearningId();
+    const newLearning: Learning = {
+      id: learningId,
+      subject,
+      status: getDefaultStatus(subject),
+      values: {},
+      saved: false,
+    };
+
+    setProgress((current) => ({
+      ...current,
+      [studentId]: {
+        ...current[studentId],
+        learnings: [
+          ...(current[studentId]?.learnings ?? []),
+          newLearning,
+        ],
+      },
+    }));
+
+    setExpandedStudentLearnings((current) => ({
+      ...current,
+      [studentId]: true,
+    }));
+
+    setExpandedLearnings((current) => ({
+      ...current,
+      [`${studentId}-${learningId}`]: true,
+    }));
+  };
+
   const updateGlobalLearningSubject = (
     learningId: string,
     subject: Subject,
@@ -410,6 +424,28 @@ export function ProgressForm({
           : learning,
       ),
     );
+  };
+
+  const addGlobalLearningWithSubject = (
+    subject: Subject,
+  ) => {
+    const learningId = createLearningId();
+
+    setGlobalLearnings((current) => [
+      ...current,
+      {
+        id: learningId,
+        subject,
+        status: getDefaultStatus(subject),
+        values: {},
+      },
+    ]);
+
+    setGlobalLearningsExpanded(true);
+    setExpandedGlobalLearnings((current) => ({
+      ...current,
+      [learningId]: true,
+    }));
   };
 
   /* ==========================================================
@@ -438,48 +474,9 @@ export function ProgressForm({
 
       setSubjects(commonSubjects);
 
-      const learningId =
-        createLearningId();
-
-      const newLearning: Learning = {
-        id: learningId,
-        subject: null,
-        status: "",
-        values: {},
-        saved: false,
-      };
-
-      const currentLearnings =
-        progress[student.id]?.learnings ??
-        [];
-
-      updateStudentLearnings(
-        student.id,
-        [
-          ...currentLearnings,
-          newLearning,
-        ],
-      );
-
-      setExpandedStudentLearnings(
-        (current) => ({
-          ...current,
-          [student.id]: true,
-        }),
-      );
-
-      setExpandedLearnings(
-        (current) => ({
-          ...current,
-          [`${student.id}-${learningId}`]:
-            true,
-        }),
-      );
-
       if (commonSubjects.length === 1) {
-        updateLearningSubject(
+        addLearningWithSubject(
           student.id,
-          learningId,
           commonSubjects[0],
         );
 
@@ -488,7 +485,6 @@ export function ProgressForm({
 
       setSubjectDialog({
         studentId: student.id,
-        learningId,
       });
     } finally {
       setLoadingSubjects(null);
@@ -638,41 +634,14 @@ export function ProgressForm({
         batchSubjects,
       );
 
-      const learningId =
-        createLearningId();
-
-      const newLearning: GlobalLearning = {
-        id: learningId,
-        subject: null,
-        status: "",
-        values: {},
-      };
-
-      setGlobalLearnings((current) => [
-        ...current,
-        newLearning,
-      ]);
-
-      setGlobalLearningsExpanded(true);
-
-      setExpandedGlobalLearnings(
-        (current) => ({
-          ...current,
-          [learningId]: true,
-        }),
-      );
-
       if (batchSubjects.length === 1) {
-        updateGlobalLearningSubject(
-          learningId,
-          batchSubjects[0],
-        );
+        addGlobalLearningWithSubject(batchSubjects[0]);
 
         return;
       }
 
       setGlobalSubjectDialog({
-        learningId,
+        mode: "create",
       });
     } finally {
       setLoadingGlobalSubjects(false);
@@ -1237,6 +1206,7 @@ export function ProgressForm({
                                           onClick={() =>
                                             setGlobalSubjectDialog(
                                               {
+                                                mode: "update",
                                                 learningId:
                                                   learning.id,
                                               },
@@ -2267,10 +2237,14 @@ export function ProgressForm({
                         return;
                       }
 
-                      updateGlobalLearningSubject(
-                        globalSubjectDialog.learningId,
-                        subject,
-                      );
+                      if (globalSubjectDialog.mode === "update") {
+                        updateGlobalLearningSubject(
+                          globalSubjectDialog.learningId,
+                          subject,
+                        );
+                      } else {
+                        addGlobalLearningWithSubject(subject);
+                      }
 
                       setGlobalSubjectDialog(
                         null,
@@ -2339,11 +2313,18 @@ export function ProgressForm({
                         return;
                       }
 
-                      updateLearningSubject(
-                        subjectDialog.studentId,
-                        subjectDialog.learningId,
-                        subject,
-                      );
+                      if (subjectDialog.learningId) {
+                        updateLearningSubject(
+                          subjectDialog.studentId,
+                          subjectDialog.learningId,
+                          subject,
+                        );
+                      } else {
+                        addLearningWithSubject(
+                          subjectDialog.studentId,
+                          subject,
+                        );
+                      }
 
                       setSubjectDialog(
                         null,

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRoleForAction } from "@/lib/auth/require-role";
 
 export async function deleteSubject(id: string) {
-  await requireRoleForAction(["ADMIN", "TEACHER"]);
+  await requireRoleForAction(["ADMIN"]);
 
   if (!id) {
     return {

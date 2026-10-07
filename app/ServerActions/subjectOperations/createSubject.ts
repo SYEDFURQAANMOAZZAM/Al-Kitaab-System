@@ -30,7 +30,7 @@ const CreateSubjectSchema = z.object({
 });
 
 export async function createSubject(input: unknown) {
-  await requireRoleForAction(["ADMIN", "TEACHER"]);
+  await requireRoleForAction(["ADMIN"]);
 
   const parsed = CreateSubjectSchema.safeParse(input);
 

@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useState,
+} from "react";
+
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -111,29 +114,27 @@ export const iconMap = {
   contacts: ContactRound,
 } satisfies Record<SidebarIcon, typeof LayoutDashboard>;
 
-/* =========================================================
-   SWIPE / DRAG CONFIG
-========================================================= */
-
-/** Touch must begin within this many px of the left screen edge to open. */
-const EDGE_ZONE_PX = 28;
-/** Horizontal distance the finger must travel to trigger open/close. */
-const SWIPE_DISTANCE_PX = 60;
-/** Ignore the gesture once vertical movement exceeds this (user is scrolling). */
-const VERTICAL_CANCEL_PX = 12;
 
 /* =========================================================
    HELPERS
 ========================================================= */
 
-function isGroup(item: SidebarItem): item is SidebarGroupItem {
-  return "children" in item && Array.isArray(item.children);
+function isGroup(
+  item: SidebarItem,
+): item is SidebarGroupItem {
+  return (
+    "children" in item &&
+    Array.isArray(item.children)
+  );
 }
 
 /**
- * Returns the first link href in a group, including nested groups.
+ * Returns the first link href in a group,
+ * including nested groups.
  */
-function getFirstLinkHref(items: SidebarItem[]): string | undefined {
+function getFirstLinkHref(
+  items: SidebarItem[],
+): string | undefined {
   for (const item of items) {
     if ("href" in item) {
       return item.href;
@@ -149,120 +150,40 @@ function getFirstLinkHref(items: SidebarItem[]): string | undefined {
   return undefined;
 }
 
-function getGroupKey(item: SidebarGroupItem): string {
-  return getFirstLinkHref(item.children) ?? item.title;
+function getGroupKey(
+  item: SidebarGroupItem,
+): string {
+  return (
+    getFirstLinkHref(item.children) ??
+    item.title
+  );
 }
 
-function isLinkActive(href: string, pathname: string): boolean {
-  return pathname === href || pathname.startsWith(`${href}/`);
+function isLinkActive(
+  href: string,
+  pathname: string,
+): boolean {
+  return (
+    pathname === href ||
+    pathname.startsWith(`${href}/`)
+  );
 }
 
-function isItemActive(item: SidebarItem, pathname: string): boolean {
+function isItemActive(
+  item: SidebarItem,
+  pathname: string,
+): boolean {
   if (!isGroup(item)) {
     return isLinkActive(item.href, pathname);
   }
 
-  return item.children.some((child) => isItemActive(child, pathname));
+  return item.children.some((child) =>
+    isItemActive(child, pathname),
+  );
 }
 
-/* =========================================================
-   MOBILE SWIPE HOOK
-   - Swipe right from the left edge  -> opens the sidebar
-   - Swipe left anywhere while open  -> closes the sidebar
-========================================================= */
 
-type GestureMode = "open" | "close";
 
-type GestureState = {
-  startX: number;
-  startY: number;
-  mode: GestureMode;
-};
-
-function useSidebarSwipe() {
-  const { isMobile, openMobile, setOpenMobile } = useSidebar();
-  const gesture = useRef<GestureState | null>(null);
-
-  useEffect(() => {
-    if (!isMobile) {
-      gesture.current = null;
-      return;
-    }
-
-    const handleTouchStart = (event: TouchEvent) => {
-      if (event.touches.length !== 1) {
-        gesture.current = null;
-        return;
-      }
-
-      const touch = event.touches[0];
-
-      if (openMobile) {
-        gesture.current = {
-          startX: touch.clientX,
-          startY: touch.clientY,
-          mode: "close",
-        };
-      } else if (touch.clientX <= EDGE_ZONE_PX) {
-        gesture.current = {
-          startX: touch.clientX,
-          startY: touch.clientY,
-          mode: "open",
-        };
-      } else {
-        gesture.current = null;
-      }
-    };
-
-    const handleTouchMove = (event: TouchEvent) => {
-      const current = gesture.current;
-      if (!current) return;
-
-      const touch = event.touches[0];
-      const deltaX = touch.clientX - current.startX;
-      const deltaY = touch.clientY - current.startY;
-
-      // Mostly vertical movement = the user is scrolling, not swiping.
-      if (
-        Math.abs(deltaY) > VERTICAL_CANCEL_PX &&
-        Math.abs(deltaY) > Math.abs(deltaX)
-      ) {
-        gesture.current = null;
-        return;
-      }
-
-      if (current.mode === "open" && deltaX >= SWIPE_DISTANCE_PX) {
-        gesture.current = null;
-        setOpenMobile(true);
-      } else if (current.mode === "close" && deltaX <= -SWIPE_DISTANCE_PX) {
-        gesture.current = null;
-        setOpenMobile(false);
-      }
-    };
-
-    const resetGesture = () => {
-      gesture.current = null;
-    };
-
-    document.addEventListener("touchstart", handleTouchStart, {
-      passive: true,
-    });
-    document.addEventListener("touchmove", handleTouchMove, {
-      passive: true,
-    });
-    document.addEventListener("touchend", resetGesture, { passive: true });
-    document.addEventListener("touchcancel", resetGesture, {
-      passive: true,
-    });
-
-    return () => {
-      document.removeEventListener("touchstart", handleTouchStart);
-      document.removeEventListener("touchmove", handleTouchMove);
-      document.removeEventListener("touchend", resetGesture);
-      document.removeEventListener("touchcancel", resetGesture);
-    };
-  }, [isMobile, openMobile, setOpenMobile]);
-}
 
 /* =========================================================
    RECURSIVE SIDEBAR ITEMS
@@ -279,113 +200,210 @@ function SidebarItems({
   level?: number;
   onNavigate: () => void;
 }) {
-  /**
-   * Only stores manual overrides.
-   * If no override exists, active groups are expanded automatically.
-   */
-  const [groupOverrides, setGroupOverrides] = useState<
+  const [
+    groupOverrides,
+    setGroupOverrides,
+  ] = useState<
     Record<string, boolean>
   >({});
 
-  const toggleGroup = (key: string, currentlyExpanded: boolean) => {
-    setGroupOverrides((current) => ({
-      ...current,
-      [key]: !currentlyExpanded,
-    }));
+  const toggleGroup = (
+    key: string,
+    currentlyExpanded: boolean,
+  ) => {
+    setGroupOverrides(
+      (current) => ({
+        ...current,
+        [key]: !currentlyExpanded,
+      }),
+    );
   };
 
   return (
     <>
-      {items.map((item, index) => {
-        const Icon = iconMap[item.icon];
-        const key = `${item.title}-${level}-${index}`;
+      {items.map(
+        (item, index) => {
+          const Icon =
+            iconMap[item.icon];
 
-        /* GROUP / DROPDOWN */
-        if (isGroup(item)) {
-          const groupKey = getGroupKey(item);
-          const groupActive = isItemActive(item, pathname);
-          const isExpanded = groupOverrides[groupKey] ?? groupActive;
+          const key =
+            `${item.title}-${level}-${index}`;
 
-          return (
-            <SidebarMenuItem key={key}>
-              <SidebarMenuButton
-                onClick={() => toggleGroup(groupKey, isExpanded)}
-                isActive={groupActive}
-                aria-expanded={isExpanded}
-                className={`h-10 rounded-lg text-[15px] ${
-                  groupActive
-                    ? "font-semibold text-foreground"
-                    : "font-medium text-foreground/80"
-                }`}
+          /* GROUP / DROPDOWN */
+
+          if (isGroup(item)) {
+            const groupKey =
+              getGroupKey(item);
+
+            const groupActive =
+              isItemActive(
+                item,
+                pathname,
+              );
+
+            const isExpanded =
+              groupOverrides[
+                groupKey
+              ] ?? groupActive;
+
+            return (
+              <SidebarMenuItem
+                key={key}
               >
-                <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
-
-                <span className="flex-1 truncate">{item.title}</span>
-
-                <ChevronRight
-                  className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
-                    isExpanded ? "rotate-90" : ""
+                <SidebarMenuButton
+                  onClick={() =>
+                    toggleGroup(
+                      groupKey,
+                      isExpanded,
+                    )
+                  }
+                  isActive={
+                    groupActive
+                  }
+                  aria-expanded={
+                    isExpanded
+                  }
+                  className={`h-10 rounded-lg text-[15px] ${
+                    groupActive
+                      ? "font-semibold text-foreground"
+                      : "font-medium text-foreground/80"
                   }`}
-                />
-              </SidebarMenuButton>
-
-              {isExpanded && (
-                <SidebarMenuSub className="mx-0 border-l-0 pl-4">
-                  <SidebarItems
-                    items={item.children}
-                    pathname={pathname}
-                    level={level + 1}
-                    onNavigate={onNavigate}
+                >
+                  <Icon
+                    className="h-[18px] w-[18px]"
+                    strokeWidth={
+                      1.75
+                    }
                   />
-                </SidebarMenuSub>
-              )}
-            </SidebarMenuItem>
-          );
-        }
 
-        /* REGULAR LINK */
-        const active = isLinkActive(item.href, pathname);
+                  <span className="flex-1 truncate">
+                    {item.title}
+                  </span>
 
-        /* NESTED LINK */
-        if (level > 0) {
+                  <ChevronRight
+                    className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+                      isExpanded
+                        ? "rotate-90"
+                        : ""
+                    }`}
+                  />
+                </SidebarMenuButton>
+
+                {isExpanded && (
+                  <SidebarMenuSub className="mx-0 border-l-0 pl-4">
+                    <SidebarItems
+                      items={
+                        item.children
+                      }
+                      pathname={
+                        pathname
+                      }
+                      level={
+                        level + 1
+                      }
+                      onNavigate={
+                        onNavigate
+                      }
+                    />
+                  </SidebarMenuSub>
+                )}
+              </SidebarMenuItem>
+            );
+          }
+
+          /* REGULAR LINK */
+
+          const active =
+            isLinkActive(
+              item.href,
+              pathname,
+            );
+
+          /* NESTED LINK */
+
+          if (level > 0) {
+            return (
+              <SidebarMenuSubItem
+                key={key}
+              >
+                <SidebarMenuSubButton
+                  render={
+                    <Link
+                      href={
+                        item.href
+                      }
+                      onClick={
+                        onNavigate
+                      }
+                    />
+                  }
+                  isActive={
+                    active
+                  }
+                  className={`h-9 rounded-lg text-[14px] ${
+                    active
+                      ? "font-semibold text-foreground"
+                      : "font-normal text-muted-foreground"
+                  }`}
+                >
+                  <Icon
+                    className="h-4 w-4"
+                    strokeWidth={
+                      1.75
+                    }
+                  />
+
+                  <span>
+                    {
+                      item.title
+                    }
+                  </span>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            );
+          }
+
+          /* TOP-LEVEL LINK */
+
           return (
-            <SidebarMenuSubItem key={key}>
-              <SidebarMenuSubButton
-                render={<Link href={item.href} onClick={onNavigate} />}
-                isActive={active}
-                className={`h-9 rounded-lg text-[14px] ${
+            <SidebarMenuItem
+              key={key}
+            >
+              <SidebarMenuButton
+                render={
+                  <Link
+                    href={
+                      item.href
+                    }
+                    onClick={
+                      onNavigate
+                    }
+                  />
+                }
+                isActive={
+                  active
+                }
+                className={`h-10 rounded-lg text-[15px] ${
                   active
                     ? "font-semibold text-foreground"
-                    : "font-normal text-muted-foreground"
+                    : "font-normal text-foreground/80"
                 }`}
               >
-                <Icon className="h-4 w-4" strokeWidth={1.75} />
+                <Icon
+                  className="h-[18px] w-[18px]"
+                  strokeWidth={
+                    1.75
+                  }
+                />
 
-                <span>{item.title}</span>
-              </SidebarMenuSubButton>
-            </SidebarMenuSubItem>
+                <span>
+                  {item.title}
+                </span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           );
-        }
-
-        /* TOP-LEVEL LINK */
-        return (
-          <SidebarMenuItem key={key}>
-            <SidebarMenuButton
-              render={<Link href={item.href} onClick={onNavigate} />}
-              isActive={active}
-              className={`h-10 rounded-lg text-[15px] ${
-                active
-                  ? "font-semibold text-foreground"
-                  : "font-normal text-foreground/80"
-              }`}
-            >
-              <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
-
-              <span>{item.title}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        );
-      })}
+        },
+      )}
     </>
   );
 }
@@ -398,14 +416,22 @@ type AppSidebarProps = {
   sidebarItems: SidebarItem[];
 };
 
-export default function AppSidebar({ sidebarItems }: AppSidebarProps) {
-  const pathname = usePathname();
-  const { isMobile, setOpenMobile } = useSidebar();
+export default function AppSidebar({
+  sidebarItems,
+}: AppSidebarProps) {
+  const pathname =
+    usePathname();
 
-  // Swipe right from the left edge to open, swipe left to close (mobile only).
-  useSidebarSwipe();
+  const {
+    isMobile,
+    setOpenMobile,
+  } = useSidebar();
 
-  // Close the sidebar only on mobile navigation.
+ 
+
+  /*
+   * Close sidebar only on mobile navigation.
+   */
   const handleNavigate = () => {
     if (isMobile) {
       setOpenMobile(false);
@@ -413,12 +439,19 @@ export default function AppSidebar({ sidebarItems }: AppSidebarProps) {
   };
 
   return (
-    <Sidebar collapsible="offcanvas" className="border-r-0 shadow-sm">
-      {/* FIXED HEADER */}
+    <Sidebar
+      collapsible="offcanvas"
+      className="border-r-0 shadow-sm"
+    >
+      {/* =====================================================
+          FIXED HEADER
+      ===================================================== */}
+
       <SidebarHeader className="shrink-0 border-b bg-background px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             {/* Light theme logo */}
+
             <Image
               src="/lightThemeLogo.jpeg"
               alt="AlKitaab Academy"
@@ -429,6 +462,7 @@ export default function AppSidebar({ sidebarItems }: AppSidebarProps) {
             />
 
             {/* Dark theme logo */}
+
             <Image
               src="/darkThemeLogo.png"
               alt="AlKitaab Academy"
@@ -446,38 +480,60 @@ export default function AppSidebar({ sidebarItems }: AppSidebarProps) {
           {isMobile && (
             <button
               type="button"
-              onClick={() => setOpenMobile(false)}
+              onClick={() =>
+                setOpenMobile(false)
+              }
               aria-label="Close sidebar"
               className="text-foreground/70 hover:text-foreground"
             >
-              <X className="h-5 w-5" strokeWidth={1.75} />
+              <X
+                className="h-5 w-5"
+                strokeWidth={
+                  1.75
+                }
+              />
             </button>
           )}
         </div>
       </SidebarHeader>
 
-      {/* SCROLLABLE CONTENT */}
+      {/* =====================================================
+          SCROLLABLE CONTENT
+      ===================================================== */}
+
       <SidebarContent className="min-h-0 flex-1 px-2 py-3">
         <SidebarGroup className="p-0">
           <SidebarMenu className="gap-0.5">
             <SidebarItems
               items={sidebarItems}
               pathname={pathname}
-              onNavigate={handleNavigate}
+              onNavigate={
+                handleNavigate
+              }
             />
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
 
-      {/* FIXED FOOTER */}
+      {/* =====================================================
+          FIXED FOOTER
+      ===================================================== */}
+
       <SidebarFooter className="shrink-0 gap-0 border-t bg-background px-4 py-3">
         {/* Language and theme */}
+
         <div className="flex items-center justify-between py-2">
           <button
             type="button"
             className="flex items-center gap-1.5 text-sm font-medium text-foreground/80 hover:text-foreground"
           >
-            <Languages className="h-4 w-4" strokeWidth={1.75} />
+            <Languages
+              className="h-4 w-4"
+              strokeWidth={
+                1.75
+              }
+            />
+
             <span>UR</span>
           </button>
 
@@ -485,19 +541,32 @@ export default function AppSidebar({ sidebarItems }: AppSidebarProps) {
         </div>
 
         {/* User */}
+
         <div className="flex items-center justify-between pt-2">
           <div>
-            <p className="text-sm font-semibold leading-tight">Admin User</p>
-            <p className="text-xs text-muted-foreground">Admin</p>
+            <p className="text-sm font-semibold leading-tight">
+              Admin User
+            </p>
+
+            <p className="text-xs text-muted-foreground">
+              Admin
+            </p>
           </div>
 
-          <form action={logout}>
+          <form
+            action={logout}
+          >
             <button
               type="submit"
               aria-label="Logout"
               className="text-destructive hover:opacity-80"
             >
-              <LogOut className="h-[18px] w-[18px]" strokeWidth={1.75} />
+              <LogOut
+                className="h-[18px] w-[18px]"
+                strokeWidth={
+                  1.75
+                }
+              />
             </button>
           </form>
         </div>

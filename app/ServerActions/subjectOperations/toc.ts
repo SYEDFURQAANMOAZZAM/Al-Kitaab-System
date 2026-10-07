@@ -36,7 +36,6 @@ export async function addTocItem(
 ) {
   await requireRoleForAction([
     "ADMIN",
-    "TEACHER",
   ]);
 
   const parsed =

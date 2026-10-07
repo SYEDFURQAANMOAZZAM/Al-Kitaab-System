@@ -442,7 +442,7 @@ export default function StudentForm({
           {/* EMAIL */}
           <div className="space-y-2">
             <Label htmlFor="email" className="font-medium text-foreground">
-              Email Address
+              Email Address <span className="text-destructive">*</span>
             </Label>
             <div className="relative">
               <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -572,7 +572,7 @@ export default function StudentForm({
 
           {/* BATCHES */}
           <div className="space-y-2">
-            <Label className="font-medium text-foreground">Batches</Label>
+            <Label className="font-medium text-foreground">Branches & Batches <span className="text-destructive">*</span></Label>
 
             {permissions.batches ? (
               <BatchSelector
@@ -625,7 +625,7 @@ export default function StudentForm({
           {/* SUBJECTS */}
 <div className="space-y-3">
   <div>
-    <Label className="font-medium text-foreground">Subjects</Label>
+    <Label className="font-medium text-foreground">Subjects <span className="text-destructive">*</span></Label>
     <p className="mt-1 text-sm text-muted-foreground">
       Choose the subjects this student should study.
     </p>

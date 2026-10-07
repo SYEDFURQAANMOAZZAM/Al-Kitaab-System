@@ -11,7 +11,7 @@ const CreateTrackingTermSchema = z.object({
 });
 
 export async function createTrackingTerm(input: unknown) {
-  await requireRoleForAction(["ADMIN", "TEACHER"]);
+  await requireRoleForAction(["ADMIN"]);
 
   const parsed = CreateTrackingTermSchema.safeParse(input);
 

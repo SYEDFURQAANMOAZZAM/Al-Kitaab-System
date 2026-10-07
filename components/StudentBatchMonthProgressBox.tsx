@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { ChevronRight, Loader2 } from "lucide-react";
+import { ArrowRight, ChevronRight, Loader2 } from "lucide-react";
 import { Collapsible } from "@base-ui/react/collapsible";
 
 import { fetchStudentBatchMonthProgress } from "@/app/ServerActions/getProgress/actions";
@@ -103,26 +103,35 @@ function LearningContent({
                     {group.status}:
                   </span>{" "}
 
-                  {typeof formatted === "string" ? (
-                    <span>{formatted}</span>
-                  ) : (
-                    <>
-                      <span>{formatted.fromText}</span>
-
-                      {formatted.fromText && formatted.toText && (
+                  {formatted.fromParts.map((part, partIndex) => (
+                    <React.Fragment key={`from-${partIndex}`}>
+                      {partIndex > 0 && (
                         <>
                           {" "}
-                          <span className="font-semibold text-foreground">
-                            to
-                          </span>{" "}
+                          <ArrowRight className="inline size-3 text-muted-foreground" aria-hidden="true" />
+                          {" "}
                         </>
                       )}
-
-                      <span className="font-medium text-foreground">
-                        {formatted.toText}
-                      </span>
-                    </>
+                      <span className="font-medium text-foreground">{part.label}</span>:
+                      <span>{part.value}</span>
+                    </React.Fragment>
+                  ))}
+                  {formatted.fromParts.length > 0 && formatted.toParts.length > 0 && (
+                    <span className="font-semibold text-foreground">to{" "}</span>
                   )}
+                  {formatted.toParts.map((part, partIndex) => (
+                    <React.Fragment key={`to-${partIndex}`}>
+                      {partIndex > 0 && (
+                        <>
+                          {" "}
+                          <ArrowRight className="inline size-3 text-muted-foreground" aria-hidden="true" />
+                          {" "}
+                        </>
+                      )}
+                      <span className="font-medium text-foreground">{part.label}</span>:
+                      <span>{part.value}</span>
+                    </React.Fragment>
+                  ))}
                 </div>
               );
             })}

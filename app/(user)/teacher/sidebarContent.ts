@@ -49,27 +49,6 @@ export function getSidebarItems(batches: Batch[]): SidebarItem[] {
         },
       ],
     })),
-    {
-    title: "Student",
-    icon: "student",
-    children: [
-      {
-        title: "Student Stats",
-        href: "/teacher/students/stats",
-        icon: "student",
-      },
-      {
-        title: "Add Student",
-        href: "/teacher/students/add",
-        icon: "student",
-      },
-    ],
-  },
-    {
-      title: "Subjects",
-      href: "/teacher/subjects",
-      icon: "pattern",
-    },
 
     {
       title: "Subject Completion",

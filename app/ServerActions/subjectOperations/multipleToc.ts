@@ -47,7 +47,6 @@ export async function addMultipleTocItems(
 ) {
   await requireRoleForAction([
     "ADMIN",
-    "TEACHER",
   ]);
 
   const parsed =

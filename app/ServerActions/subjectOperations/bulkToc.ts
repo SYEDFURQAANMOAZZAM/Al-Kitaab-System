@@ -50,7 +50,6 @@ export async function importToc(
 
   await requireRoleForAction([
     "ADMIN",
-    "TEACHER",
   ]);
 
   /* -------------------------------------------------------

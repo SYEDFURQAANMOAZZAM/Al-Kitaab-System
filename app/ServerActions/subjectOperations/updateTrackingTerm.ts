@@ -12,7 +12,7 @@ const UpdateTrackingTermSchema = z.object({
 });
 
 export async function updateTrackingTerm(input: unknown) {
-  await requireRoleForAction(["ADMIN", "TEACHER"]);
+  await requireRoleForAction(["ADMIN"]);
 
   const parsed = UpdateTrackingTermSchema.safeParse(input);
 

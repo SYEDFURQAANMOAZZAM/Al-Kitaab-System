@@ -40,7 +40,7 @@ function getValidationError(error: z.ZodError) {
 
 // 1. Change subject name
 export async function updateSubjectName(input: unknown) {
-  await requireRoleForAction(["ADMIN", "TEACHER"]);
+  await requireRoleForAction(["ADMIN"]);
 
   const parsed = SubjectNameSchema.safeParse(input);
 

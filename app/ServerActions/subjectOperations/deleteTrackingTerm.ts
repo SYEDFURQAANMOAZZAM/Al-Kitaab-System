@@ -7,7 +7,7 @@ export async function deleteTrackingTerm(
   id: string,
   subjectId?: string,
 ) {
-  await requireRoleForAction(["ADMIN", "TEACHER"]);
+  await requireRoleForAction(["ADMIN"]);
 
   if (!id) {
     return {

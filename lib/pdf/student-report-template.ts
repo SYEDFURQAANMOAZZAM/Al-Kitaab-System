@@ -134,29 +134,9 @@ function renderProgress(
 
                   if (!formatted) return "";
 
-                  const learningContent =
-
-                    typeof formatted === "string"
-
-                      ? escapeHtml(formatted)
-
-                      : `
-
-                          ${escapeHtml(formatted.fromText)}
-
-                          ${
-
-                            formatted.fromText && formatted.toText
-
-                              ? `<strong> to </strong>`
-
-                              : ""
-
-                          }
-
-                          ${escapeHtml(formatted.toText)}
-
-                        `;
+                  const renderParts = (parts: typeof formatted.fromParts) =>
+                    parts.map((part) => `<span class="learning-label">${escapeHtml(part.label)}</span>:<span class="learning-value">${escapeHtml(part.value)}</span>`).join(' <span class="learning-part-arrow">&rarr;</span> ');
+                  const learningContent = `${renderParts(formatted.fromParts)}${formatted.fromParts.length && formatted.toParts.length ? " <strong>to</strong> " : ""}${renderParts(formatted.toParts)}`;
 
                   return `
 
@@ -987,6 +967,10 @@ export function createStudentReportHtml(
             overflow-wrap: anywhere;
 
           }
+
+          .learning-label { color: #374151; font-weight: 600; }
+          .learning-value { color: #6b7280; font-weight: 400; }
+          .learning-part-arrow { color: #9ca3af; }
 
           .muted {
 
