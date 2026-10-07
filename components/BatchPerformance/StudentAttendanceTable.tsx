@@ -85,14 +85,12 @@ export default function StudentAttendanceTable({
   } | null>(null);
 
   /*
-   * Measure available container width.
+   * Measure available width.
    */
   React.useEffect(() => {
     const element = scrollContainerRef.current;
 
-    if (!element) {
-      return;
-    }
+    if (!element) return;
 
     const updateWidth = () => {
       setContainerWidth(element.clientWidth);
@@ -101,16 +99,13 @@ export default function StudentAttendanceTable({
     updateWidth();
 
     const observer = new ResizeObserver(updateWidth);
-
     observer.observe(element);
 
-    return () => {
-      observer.disconnect();
-    };
+    return () => observer.disconnect();
   }, []);
 
   /*
-   * Case-insensitive regex search.
+   * Regex search.
    */
   const searchPattern = React.useMemo(() => {
     const query = search.trim();
@@ -153,7 +148,7 @@ export default function StudentAttendanceTable({
   }, [students, searchPattern]);
 
   /*
-   * Calculate table dimensions.
+   * Calculate table width.
    */
   const studentCount = filteredStudents.length;
 
@@ -173,16 +168,16 @@ export default function StudentAttendanceTable({
           studentCount
         : STUDENT_MIN_WIDTH;
 
-  const tableWidth = canFit
-    ? containerWidth
-    : minTableWidth;
+  const tableWidth = Math.max(
+    containerWidth,
+    minTableWidth
+  );
 
   /*
-   * Mouse drag scrolling.
+   * Mouse drag only.
    *
-   * Touch is intentionally not handled here.
-   * Touch devices use the browser's native
-   * horizontal scrolling through overflow-x-auto.
+   * Touch is NOT handled here.
+   * Mobile browsers use native finger scrolling.
    */
   function handlePointerDown(
     event: React.PointerEvent<HTMLDivElement>
@@ -196,10 +191,6 @@ export default function StudentAttendanceTable({
 
     const element = event.currentTarget;
 
-    /*
-     * Don't start dragging if there is nothing
-     * to scroll horizontally.
-     */
     if (element.scrollWidth <= element.clientWidth) {
       return;
     }
@@ -295,7 +286,7 @@ export default function StudentAttendanceTable({
         </p>
       )}
 
-      {/* Scroll container */}
+      {/* Horizontal scroll container */}
       <div
         ref={scrollContainerRef}
         onPointerDown={handlePointerDown}
@@ -304,14 +295,18 @@ export default function StudentAttendanceTable({
         onPointerCancel={stopDragging}
         onLostPointerCapture={stopDragging}
         tabIndex={0}
-        aria-label="Student attendance table. Use horizontal scrolling or hold the left mouse button and drag."
+        aria-label="Student attendance table"
         className={`w-full min-w-0 overflow-x-auto overscroll-x-contain ${
           isDragging
             ? "cursor-grabbing select-none"
             : "cursor-grab"
         }`}
         style={{
-          userSelect: isDragging ? "none" : "auto",
+          touchAction: "pan-x",
+          userSelect: isDragging
+            ? "none"
+            : "auto",
+          WebkitOverflowScrolling: "touch",
         }}
       >
         <table
@@ -404,4 +399,4 @@ export default function StudentAttendanceTable({
       </div>
     </section>
   );
-}
+} 
