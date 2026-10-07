@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -25,6 +24,7 @@ export function BatchNav({ basePath, className }: BatchNavProps) {
   const activeTab =
     tabs.find((tab) => {
       const path = `${basePath}/${tab.value}`;
+
       return pathname === path || pathname.startsWith(`${path}/`);
     })?.value ?? "progress";
 
@@ -33,8 +33,11 @@ export function BatchNav({ basePath, className }: BatchNavProps) {
       <div
         role="tablist"
         aria-label="Batch navigation"
-        className="flex w-full gap-1 overflow-x-auto rounded-lg bg-muted p-1
-          [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        data-horizontal-scroll="true"
+        className={cn(
+          "flex w-full min-w-0 gap-1 overflow-x-auto rounded-lg bg-muted p-1",
+          "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        )}
       >
         {tabs.map((tab) => {
           const href = `${basePath}/${tab.value}`;
