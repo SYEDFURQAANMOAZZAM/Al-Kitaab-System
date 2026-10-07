@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -60,7 +59,9 @@ function StatusCell({
   }
 
   return (
-    <span className="text-muted-foreground">—</span>
+    <span className="text-muted-foreground">
+      —
+    </span>
   );
 }
 
@@ -69,10 +70,13 @@ export default function StudentAttendanceTable({
   days,
 }: Props) {
   const [search, setSearch] = React.useState("");
-  const [containerWidth, setContainerWidth] = React.useState(0);
-  const [isDragging, setIsDragging] = React.useState(false);
+  const [containerWidth, setContainerWidth] =
+    React.useState(0);
+  const [isDragging, setIsDragging] =
+    React.useState(false);
 
-  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const scrollContainerRef =
+    React.useRef<HTMLDivElement>(null);
 
   const dragRef = React.useRef<{
     pointerId: number;
@@ -80,10 +84,15 @@ export default function StudentAttendanceTable({
     scrollLeft: number;
   } | null>(null);
 
-  // Measure available table width.
+  /*
+   * Measure available container width.
+   */
   React.useEffect(() => {
     const element = scrollContainerRef.current;
-    if (!element) return;
+
+    if (!element) {
+      return;
+    }
 
     const updateWidth = () => {
       setContainerWidth(element.clientWidth);
@@ -92,17 +101,25 @@ export default function StudentAttendanceTable({
     updateWidth();
 
     const observer = new ResizeObserver(updateWidth);
+
     observer.observe(element);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
-  // Case-insensitive regex search.
+  /*
+   * Case-insensitive regex search.
+   */
   const searchPattern = React.useMemo(() => {
     const query = search.trim();
 
     if (!query) {
-      return { regex: null, error: false };
+      return {
+        regex: null,
+        error: false,
+      };
     }
 
     try {
@@ -118,21 +135,31 @@ export default function StudentAttendanceTable({
     }
   }, [search]);
 
-  // Show only matching student names.
+  /*
+   * Filter students.
+   */
   const filteredStudents = React.useMemo(() => {
-    if (searchPattern.error) return [];
-    if (!searchPattern.regex) return students;
+    if (searchPattern.error) {
+      return [];
+    }
+
+    if (!searchPattern.regex) {
+      return students;
+    }
 
     return students.filter((student) =>
       searchPattern.regex!.test(student.name)
     );
   }, [students, searchPattern]);
 
-  // Responsive column widths.
+  /*
+   * Calculate table dimensions.
+   */
   const studentCount = filteredStudents.length;
 
   const minTableWidth =
-    DATE_COLUMN_WIDTH + studentCount * STUDENT_MIN_WIDTH;
+    DATE_COLUMN_WIDTH +
+    studentCount * STUDENT_MIN_WIDTH;
 
   const canFit =
     containerWidth > 0 &&
@@ -142,18 +169,24 @@ export default function StudentAttendanceTable({
     studentCount === 0
       ? 0
       : canFit
-        ? (containerWidth - DATE_COLUMN_WIDTH) / studentCount
+        ? (containerWidth - DATE_COLUMN_WIDTH) /
+          studentCount
         : STUDENT_MIN_WIDTH;
 
   const tableWidth = canFit
-    ? "100%"
-    : `${minTableWidth}px`;
+    ? containerWidth
+    : minTableWidth;
 
-  // Start mouse dragging.
+  /*
+   * Mouse drag scrolling.
+   *
+   * Touch is intentionally not handled here.
+   * Touch devices use the browser's native
+   * horizontal scrolling through overflow-x-auto.
+   */
   function handlePointerDown(
     event: React.PointerEvent<HTMLDivElement>
   ) {
-    // Only use left-click dragging with a mouse.
     if (
       event.pointerType !== "mouse" ||
       event.button !== 0
@@ -163,6 +196,14 @@ export default function StudentAttendanceTable({
 
     const element = event.currentTarget;
 
+    /*
+     * Don't start dragging if there is nothing
+     * to scroll horizontally.
+     */
+    if (element.scrollWidth <= element.clientWidth) {
+      return;
+    }
+
     dragRef.current = {
       pointerId: event.pointerId,
       startX: event.clientX,
@@ -170,13 +211,12 @@ export default function StudentAttendanceTable({
     };
 
     element.setPointerCapture(event.pointerId);
+
     setIsDragging(true);
 
-    // Prevent text selection while dragging.
     event.preventDefault();
   }
 
-  // Move table horizontally while dragging.
   function handlePointerMove(
     event: React.PointerEvent<HTMLDivElement>
   ) {
@@ -190,14 +230,27 @@ export default function StudentAttendanceTable({
     }
 
     const element = event.currentTarget;
-    const distance = event.clientX - drag.startX;
 
-    element.scrollLeft = drag.scrollLeft - distance;
+    const distance =
+      event.clientX - drag.startX;
+
+    element.scrollLeft =
+      drag.scrollLeft - distance;
+
     event.preventDefault();
   }
 
-  // Stop dragging.
-  function stopDragging() {
+  function stopDragging(
+    event?: React.PointerEvent<HTMLDivElement>
+  ) {
+    if (
+      event &&
+      dragRef.current &&
+      dragRef.current.pointerId !== event.pointerId
+    ) {
+      return;
+    }
+
     dragRef.current = null;
     setIsDragging(false);
   }
@@ -242,7 +295,7 @@ export default function StudentAttendanceTable({
         </p>
       )}
 
-      {/* Drag-to-scroll table */}
+      {/* Scroll container */}
       <div
         ref={scrollContainerRef}
         onPointerDown={handlePointerDown}
@@ -251,7 +304,7 @@ export default function StudentAttendanceTable({
         onPointerCancel={stopDragging}
         onLostPointerCapture={stopDragging}
         tabIndex={0}
-        aria-label="Student attendance table. Hold the left mouse button and drag horizontally to scroll."
+        aria-label="Student attendance table. Use horizontal scrolling or hold the left mouse button and drag."
         className={`w-full min-w-0 overflow-x-auto overscroll-x-contain ${
           isDragging
             ? "cursor-grabbing select-none"
@@ -264,7 +317,8 @@ export default function StudentAttendanceTable({
         <table
           className="border-separate border-spacing-0 text-sm"
           style={{
-            width: tableWidth,
+            width: `${tableWidth}px`,
+            minWidth: `${tableWidth}px`,
             tableLayout: "fixed",
           }}
         >
@@ -336,7 +390,9 @@ export default function StudentAttendanceTable({
                       className="border-b border-border px-3 py-3 text-center"
                     >
                       <StatusCell
-                        status={student.attendance[day] ?? null}
+                        status={
+                          student.attendance[day] ?? null
+                        }
                       />
                     </td>
                   ))}
