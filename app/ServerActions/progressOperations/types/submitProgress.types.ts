@@ -8,6 +8,8 @@ export type ProgressLearning = {
 
   status: string;
 
+  remark?: string;
+
   parts: {
     id: string;
     name: string;
@@ -47,6 +49,8 @@ export type StoredProgressLearning = {
   } | null;
 
   status: string;
+
+  remark?: string;
 
   parts: {
     subjectPart: {

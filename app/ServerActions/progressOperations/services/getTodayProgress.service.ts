@@ -343,6 +343,8 @@ export async function getTodayProgressService(
           status:
             learning.status ?? "",
 
+          ...(learning.remark ? { remark: learning.remark } : {}),
+
           parts,
         };
       });

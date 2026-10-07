@@ -45,6 +45,8 @@ export type StoredLearning = {
 
   status?: string;
 
+  remark?: string;
+
   parts?: StoredLearningPart[];
 };
 
@@ -69,4 +71,11 @@ export type TrackingTerm = {
 };
 
 export type GetTodayProgressInput = string;
+
+export type UpdateProgressLearningRemarkInput = {
+  studentId: string;
+  batchId: string;
+  learningId: string;
+  remark: string;
+};
 

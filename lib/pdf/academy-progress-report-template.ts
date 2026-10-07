@@ -58,16 +58,17 @@ function renderProgress(
                 .map((learning) => {
                   const formatted = formatLearning(learning);
 
-                  if (!formatted) return "";
-
-                  const renderParts = (parts: typeof formatted.fromParts) =>
+                  const fromParts = formatted ? formatted.fromParts : [];
+                  const toParts = formatted ? formatted.toParts : [];
+                  const renderParts = (parts: typeof fromParts) =>
                     parts.map((part) => `<span class="learning-label">${escapeHtml(part.label)}</span>:<span class="learning-value">${escapeHtml(part.value)}</span>`).join(' <span class="learning-part-arrow">&rarr;</span> ');
-                  const content = `${renderParts(formatted.fromParts)}${formatted.fromParts.length && formatted.toParts.length ? " <strong>to</strong> " : ""}${renderParts(formatted.toParts)}`;
+                  const content = `${renderParts(fromParts)}${fromParts.length && toParts.length ? "&nbsp;<strong>to</strong>&nbsp;" : ""}${renderParts(toParts)}`;
 
                   return `
                     <li>
                       <strong>${escapeHtml(group.status)}:</strong>
                       ${content}
+                      <div class="learning-remark"><strong>Remark:</strong> <span class="learning-remark-value">${escapeHtml(learning.remark || "None")}</span></div>
                     </li>
                   `;
                 })
@@ -420,6 +421,9 @@ export function createAcademyProgressReportHtml(
           .learning-label { color: #374151; font-weight: 600; }
           .learning-value { color: #6b7280; font-weight: 400; }
           .learning-part-arrow { color: #9ca3af; }
+          .learning-remark { margin-top: 0.5mm; color: #6b7280; font-size: 8pt; }
+          .learning-remark strong { color: #374151; font-weight: 600; }
+          .learning-remark-value { color: #6b7280; font-weight: 400; }
 
           .remarks {
             margin-top: 1.5mm;

@@ -102,6 +102,8 @@ async function prepareLearningsForStorage(
 
     status: learning.status,
 
+    ...(learning.remark ? { remark: learning.remark } : {}),
+
     parts: learning.parts.map((part) => {
       const subjectPart =
         subjectPartMap.get(part.id);

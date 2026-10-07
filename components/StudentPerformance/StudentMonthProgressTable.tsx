@@ -79,8 +79,6 @@ function LearningContent({
             {group.learnings.map((learning, index) => {
               const formatted = formatLearning(learning);
 
-              if (!formatted) return null;
-
               return (
                 <div
                   key={
@@ -89,39 +87,40 @@ function LearningContent({
                   }
                   className="break-words text-sm leading-6 text-muted-foreground [overflow-wrap:anywhere]"
                 >
-                  <span className="font-medium text-foreground">
-                    {group.status}:
-                  </span>{" "}
-
-                  {formatted.fromParts.map((part, partIndex) => (
-                    <React.Fragment key={`from-${partIndex}`}>
-                      {partIndex > 0 && (
+                  {formatted && (
+                    <div>
+                      <span className="font-medium text-foreground">
+                        {group.status}:
+                      </span>{" "}
+                      {formatted.fromParts.map((part, partIndex) => (
+                        <React.Fragment key={`from-${partIndex}`}>
+                          {partIndex > 0 && <><span> </span><ArrowRight className="inline size-3 text-muted-foreground" aria-hidden="true" /><span> </span></>}
+                          <span className="font-medium text-foreground">{part.label}</span>:
+                          <span>{part.value}</span>
+                        </React.Fragment>
+                      ))}
+                      {formatted.fromParts.length > 0 && formatted.toParts.length > 0 && (
                         <>
                           {" "}
-                          <ArrowRight className="inline size-3 text-muted-foreground" aria-hidden="true" />
+                          <span className="font-semibold text-foreground">to</span>
                           {" "}
                         </>
                       )}
-                      <span className="font-medium text-foreground">{part.label}</span>:
-                      <span>{part.value}</span>
-                    </React.Fragment>
-                  ))}
-                  {formatted.fromParts.length > 0 && formatted.toParts.length > 0 && (
-                    <span className="font-semibold text-foreground">to{" "}</span>
+                      {formatted.toParts.map((part, partIndex) => (
+                        <React.Fragment key={`to-${partIndex}`}>
+                          {partIndex > 0 && <><span> </span><ArrowRight className="inline size-3 text-muted-foreground" aria-hidden="true" /><span> </span></>}
+                          <span className="font-medium text-foreground">{part.label}</span>:
+                          <span>{part.value}</span>
+                        </React.Fragment>
+                      ))}
+                    </div>
                   )}
-                  {formatted.toParts.map((part, partIndex) => (
-                    <React.Fragment key={`to-${partIndex}`}>
-                      {partIndex > 0 && (
-                        <>
-                          {" "}
-                          <ArrowRight className="inline size-3 text-muted-foreground" aria-hidden="true" />
-                          {" "}
-                        </>
-                      )}
-                      <span className="font-medium text-foreground">{part.label}</span>:
-                      <span>{part.value}</span>
-                    </React.Fragment>
-                  ))}
+                  <div className="text-xs leading-5 text-muted-foreground">
+                    <span className="font-medium text-foreground">Remark:</span>{" "}
+                    <span className="text-muted-foreground">
+                      {learning.remark || "None"}
+                    </span>
+                  </div>
                 </div>
               );
             })}

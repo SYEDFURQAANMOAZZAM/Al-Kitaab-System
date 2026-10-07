@@ -24,6 +24,7 @@ export type LearningPart = {
 export type Learning = {
   parts?: LearningPart[];
   status?: string;
+  remark?: string;
   subject?: {
     id?: string;
     name?: string;

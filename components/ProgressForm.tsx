@@ -1,7 +1,7 @@
 "use client";
 
 import { Collapsible } from "@base-ui/react/collapsible";
-import { useEffect, useState, type FormEvent } from "react";
+import { Fragment, useEffect, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 import {
+  ArrowRight,
   ChevronDown,
   ChevronUp,
   Search,
@@ -34,10 +35,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 import {
   submitProgress,
 } from "@/app/ServerActions/progressOperations/actions/submitProgress";
+import { updateProgressLearningRemark } from "@/app/ServerActions/progressOperations/actions/updateProgressLearningRemark";
 import {ProgressLearning} from "@/app/ServerActions/progressOperations/types/submitProgress.types"
 import { saveGlobalLearnings } from "@/app/ServerActions/progressOperations/actions/saveGlobalLearnings";
 
@@ -49,6 +52,7 @@ import {
   SubjectTocRangeFields,
   type TocRange,
 } from "@/components/SubjectTocRangeFields";
+import { formatLearning } from "@/app/ServerActions/getProgress/parser";
 
 /* ============================================================
 TYPES
@@ -93,8 +97,43 @@ type Learning = {
   subject: Subject | null;
   status: string;
   values: Record<string, string | TocRange>;
+  remark?: string;
   saved: boolean;
 };
+
+type LearningTarget = {
+  studentId: string;
+  learningId: string;
+};
+
+function formatFormLearning(learning: Learning) {
+  if (!learning.subject) return "";
+
+  const getTocName = (id: string) =>
+    learning.subject?.tocItems?.find((item) => item.id === id)?.name ?? id;
+
+  return formatLearning({
+    status: learning.status,
+    remark: learning.remark,
+    parts: learning.subject.parts.map((part) => {
+      const value = learning.values[part.id] ?? "";
+
+      return {
+        position: part.position,
+        subjectPart: { name: part.name },
+        value:
+          typeof value === "string"
+            ? getTocName(value)
+            : {
+                from: { name: getTocName(value.from) },
+                ...(value.to
+                  ? { to: { name: getTocName(value.to) } }
+                  : {}),
+              },
+      };
+    }),
+  });
+}
 
 type StudentProgress = {
   learnings: Learning[];
@@ -197,21 +236,14 @@ export function ProgressForm({
   ========================================================== */
 
   const [
-    expandedStudentLearnings,
-    setExpandedStudentLearnings,
-  ] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(
-      students.map((student) => [
-        student.id,
-        false,
-      ]),
-    ),
-  );
-
-  const [
     expandedLearnings,
     setExpandedLearnings,
   ] = useState<Record<string, boolean>>({});
+
+  const [remarkDialog, setRemarkDialog] = useState<LearningTarget | null>(null);
+  const [remarkDraft, setRemarkDraft] = useState("");
+  const [savingRemark, setSavingRemark] = useState(false);
+  const [viewDialog, setViewDialog] = useState<string | null>(null);
 
   const [
     subjectDialog,
@@ -273,17 +305,6 @@ export function ProgressForm({
   /* ==========================================================
      STUDENT HELPERS
   ========================================================== */
-
-  const toggleStudentLearnings = (
-    studentId: string,
-  ) => {
-    setExpandedStudentLearnings((current) => ({
-      ...current,
-
-      [studentId]:
-        !current[studentId],
-    }));
-  };
 
   const toggleLearning = (
     studentId: string,
@@ -394,11 +415,6 @@ export function ProgressForm({
           newLearning,
         ],
       },
-    }));
-
-    setExpandedStudentLearnings((current) => ({
-      ...current,
-      [studentId]: true,
     }));
 
     setExpandedLearnings((current) => ({
@@ -552,6 +568,66 @@ export function ProgressForm({
           ),
       },
     }));
+  };
+
+  const saveLearningRemark = async () => {
+    if (!remarkDialog || savingRemark) return;
+
+    const targetLearning = progress[remarkDialog.studentId]?.learnings.find(
+      (learning) => learning.id === remarkDialog.learningId,
+    );
+
+    if (!targetLearning) {
+      alert("This learning is no longer available.");
+      return;
+    }
+
+    const normalizedRemark = remarkDraft.trim() || undefined;
+    setSavingRemark(true);
+
+    try {
+      if (targetLearning.saved) {
+        const result = await updateProgressLearningRemark({
+          studentId: remarkDialog.studentId,
+          batchId,
+          learningId: remarkDialog.learningId,
+          remark: remarkDraft,
+        });
+
+        if (!result.success) {
+          throw new Error("Failed to save the learning remark.");
+        }
+      }
+
+      setProgress((current) => ({
+        ...current,
+        [remarkDialog.studentId]: {
+          ...current[remarkDialog.studentId],
+          learnings: current[remarkDialog.studentId].learnings.map((learning) => {
+            if (learning.id !== remarkDialog.learningId) return learning;
+
+            const updated = { ...learning };
+            if (normalizedRemark !== undefined) {
+              updated.remark = normalizedRemark;
+            } else {
+              delete updated.remark;
+            }
+            return updated;
+          }),
+        },
+      }));
+
+      setRemarkDialog(null);
+    } catch (error) {
+      console.error("Failed to save learning remark:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to save learning remark.",
+      );
+    } finally {
+      setSavingRemark(false);
+    }
   };
 
   /* ==========================================================
@@ -739,6 +815,8 @@ export function ProgressForm({
 
       status: learning.status,
 
+      ...(learning.remark ? { remark: learning.remark } : {}),
+
       parts: learning.subject
         ? learning.subject.parts.map(
             (part) => ({
@@ -898,6 +976,10 @@ export function ProgressForm({
                         learning.status ??
                         "",
 
+                      ...(typeof learning.remark === "string"
+                        ? { remark: learning.remark }
+                        : {}),
+
                       values:
                         Object.fromEntries(
                           (
@@ -950,6 +1032,13 @@ export function ProgressForm({
   const filteredStudents = students.filter((student) =>
     student.name.toLowerCase().includes(appliedStudentSearch),
   );
+
+  const viewStudent = viewDialog
+    ? students.find((student) => student.id === viewDialog) ?? null
+    : null;
+  const viewLearnings = viewDialog
+    ? progress[viewDialog]?.learnings ?? []
+    : [];
 
   /* ==========================================================
      RENDER
@@ -1669,11 +1758,6 @@ export function ProgressForm({
                         student.id
                       ];
 
-                    const isLearningsExpanded =
-                      expandedStudentLearnings[
-                        student.id
-                      ] ?? true;
-
                     return (
                       <div
                         key={student.id}
@@ -1697,9 +1781,21 @@ export function ProgressForm({
                           <div className="flex items-start justify-between gap-2">
 
                             <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
                               <p className="truncate text-sm font-medium">
                                 {student.name}
                               </p>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 shrink-0 px-2 text-xs"
+                                  onClick={() => setViewDialog(student.id)}
+                                  disabled={progressLoading}
+                                >
+                                  View
+                                </Button>
+                              </div>
 
                               <p className="text-[11px] text-muted-foreground">
                                 {
@@ -1746,66 +1842,8 @@ export function ProgressForm({
                           {data.learnings
                             .length > 0 && (
                             <div
-                              className="
-                                mt-2
-                                rounded-lg
-                                border border-border/50
-                                bg-muted/20
-                                px-1.5 py-1.5
-                                sm:px-2 sm:py-2
-                              "
+                              className="mt-2 space-y-1.5"
                             >
-
-                              <button
-                                type="button"
-                                className="
-                                  group flex w-full
-                                  items-center
-                                  justify-between
-                                  gap-2
-                                  border-b
-                                  px-0 py-1.5
-                                  text-left
-                                  hover:bg-muted/50
-                                "
-                                onClick={() =>
-                                  toggleStudentLearnings(
-                                    student.id,
-                                  )
-                                }
-                              >
-                                <div>
-                                  <p className="text-sm font-medium">
-                                    Learnings
-                                  </p>
-
-                                  <p className="text-[11px] text-muted-foreground">
-                                    {
-                                      data
-                                        .learnings
-                                        .length
-                                    }{" "}
-                                    learning
-                                    {data
-                                      .learnings
-                                      .length !==
-                                    1
-                                      ? "s"
-                                      : ""}
-                                  </p>
-                                </div>
-
-                                {isLearningsExpanded ? (
-                                  <ChevronUp className="size-4" />
-                                ) : (
-                                  <ChevronDown className="size-4" />
-                                )}
-                              </button>
-
-
-                              {isLearningsExpanded && (
-                                <div className="space-y-1.5 py-1.5">
-
                                   {data.learnings.map(
                                     (
                                       learning,
@@ -1835,25 +1873,17 @@ export function ProgressForm({
 
                                           {/* LEARNING HEADER */}
 
-                                          <button
-                                            type="button"
-                                            className="
-                                              group flex w-full
-                                              items-center
-                                              justify-between
-                                              gap-2
-                                              bg-muted/30
-                                              px-2.5 py-2
-                                              text-left
-                                              hover:bg-muted/50
-                                            "
-                                            onClick={() =>
-                                              toggleLearning(
-                                                student.id,
-                                                learning.id,
-                                              )
-                                            }
-                                          >
+                                          <div className="flex items-center gap-1.5 bg-muted/30 px-2.5 py-2">
+                                            <button
+                                              type="button"
+                                              className="group flex min-w-0 flex-1 items-center justify-between gap-2 text-left hover:bg-muted/50"
+                                              onClick={() =>
+                                                toggleLearning(
+                                                  student.id,
+                                                  learning.id,
+                                                )
+                                              }
+                                            >
 
                                             <div className="min-w-0">
 
@@ -1895,8 +1925,31 @@ export function ProgressForm({
                                               <ChevronDown className="size-4 shrink-0" />
                                             )}
 
-                                          </button>
+                                            </button>
 
+                                            <div className="flex shrink-0 items-center gap-1">
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-7 px-2 text-[11px]"
+                                                onClick={() => {
+                                                  setRemarkDraft(learning.remark ?? "");
+                                                  setRemarkDialog({
+                                                    studentId: student.id,
+                                                    learningId: learning.id,
+                                                  });
+                                                }}
+                                              >
+                                                {learning.remark ? "Edit Remark" : "Add Remark"}
+                                              </Button>
+                                            </div>
+                                          </div>
+
+                                          <div className="break-words px-2.5 py-1 text-xs text-muted-foreground [overflow-wrap:anywhere]">
+                                            <span className="font-medium text-foreground">Remark:</span>{" "}
+                                            {learning.remark || "None"}
+                                          </div>
 
                                           {isExpanded && (
                                             <div className="space-y-1.5 px-1.5 py-1 sm:px-2 sm:py-1.5">
@@ -2148,9 +2201,6 @@ export function ProgressForm({
                                     },
                                   )}
 
-                                </div>
-                              )}
-
                             </div>
                           )}
 
@@ -2189,6 +2239,129 @@ export function ProgressForm({
             </CardContent>
           </Card>
 
+
+        <Dialog
+          open={remarkDialog !== null}
+          onOpenChange={(open) => {
+            if (!open && !savingRemark) setRemarkDialog(null);
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {remarkDialog && progress[remarkDialog.studentId]?.learnings.find((learning) => learning.id === remarkDialog.learningId)?.remark
+                  ? "Edit Remark"
+                  : "Add Remark"}
+              </DialogTitle>
+              <DialogDescription>
+                Add an optional remark for this learning.
+              </DialogDescription>
+            </DialogHeader>
+            <Textarea
+              value={remarkDraft}
+              onChange={(event) => setRemarkDraft(event.target.value)}
+              rows={4}
+              aria-label="Learning remark"
+            />
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setRemarkDialog(null)} disabled={savingRemark}>
+                Cancel
+              </Button>
+              <Button type="button" onClick={saveLearningRemark} disabled={savingRemark}>
+                {savingRemark ? "Saving..." : "Save Remark"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={viewDialog !== null}
+          onOpenChange={(open) => {
+            if (!open) setViewDialog(null);
+          }}
+        >
+          <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                {viewStudent?.name ?? "Student"} — Progress
+              </DialogTitle>
+              <DialogDescription>
+                Today&apos;s learnings
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-5">
+              {viewLearnings.length ? (
+                viewLearnings.map((learning, learningIndex) => {
+                  const formatted = formatFormLearning(learning);
+
+                  return (
+                    <section
+                      key={learning.id || learningIndex}
+                      className="space-y-2 border-b pb-4 last:border-0 last:pb-0"
+                    >
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                        <h3 className="text-sm font-semibold text-foreground">
+                          {learning.subject?.name ?? "Learning"}
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          Status: {learning.status || "None"}
+                        </p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-foreground">Learning</p>
+                        {formatted ? (
+                          <div className="break-words text-sm leading-6 text-muted-foreground [overflow-wrap:anywhere]">
+                            {formatted.fromParts.map((part, index) => (
+                              <Fragment key={`view-${learning.id}-from-${index}`}>
+                                {index > 0 && (
+                                  <>
+                                    {" "}
+                                    <ArrowRight className="inline size-3 text-muted-foreground" aria-hidden="true" />
+                                    {" "}
+                                  </>
+                                )}
+                                <span className="font-medium text-foreground">{part.label}</span>:
+                                <span>{part.value}</span>
+                              </Fragment>
+                            ))}
+                            {formatted.fromParts.length > 0 && formatted.toParts.length > 0 && (
+                              <span className="font-semibold text-foreground">to{" "}</span>
+                            )}
+                            {formatted.toParts.map((part, index) => (
+                              <Fragment key={`view-${learning.id}-to-${index}`}>
+                                {index > 0 && (
+                                  <>
+                                    {" "}
+                                    <ArrowRight className="inline size-3 text-muted-foreground" aria-hidden="true" />
+                                    {" "}
+                                  </>
+                                )}
+                                <span className="font-medium text-foreground">{part.label}</span>:
+                                <span>{part.value}</span>
+                              </Fragment>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No learning values recorded.</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-foreground">Remark:</p>
+                        <p className="whitespace-pre-wrap break-words text-sm text-muted-foreground [overflow-wrap:anywhere]">
+                          {learning.remark || "None"}
+                        </p>
+                      </div>
+                    </section>
+                  );
+                })
+              ) : (
+                <p className="text-sm text-muted-foreground">No learnings recorded.</p>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* ========================================================
             GLOBAL SUBJECT DIALOG
