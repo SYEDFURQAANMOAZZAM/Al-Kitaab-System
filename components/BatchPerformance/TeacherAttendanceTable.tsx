@@ -80,7 +80,6 @@ export default function TeacherAttendanceTable({
     React.useRef<HTMLDivElement>(null);
 
   const dragRef = React.useRef<{
-    pointerId: number;
     startX: number;
     scrollLeft: number;
   } | null>(null);
@@ -89,7 +88,44 @@ export default function TeacherAttendanceTable({
     React.useState(false);
 
   /*
-   * Total required table width.
+   * Mouse dragging is only enabled on devices
+   * that have a fine pointer and hover support.
+   *
+   * Touch devices are left completely to the
+   * browser's native scrolling behavior.
+   */
+  const [canUseMouseDrag, setCanUseMouseDrag] =
+    React.useState(false);
+
+  /*
+   * Detect desktop/laptop pointer capability.
+   */
+  React.useEffect(() => {
+    const mediaQuery = window.matchMedia(
+      "(hover: hover) and (pointer: fine)"
+    );
+
+    const update = () => {
+      setCanUseMouseDrag(mediaQuery.matches);
+    };
+
+    update();
+
+    mediaQuery.addEventListener(
+      "change",
+      update
+    );
+
+    return () => {
+      mediaQuery.removeEventListener(
+        "change",
+        update
+      );
+    };
+  }, []);
+
+  /*
+   * Calculate required table width.
    */
   const tableWidth =
     TEACHER_WIDTH +
@@ -97,49 +133,54 @@ export default function TeacherAttendanceTable({
     days.length * DAY_WIDTH;
 
   /*
-   * Mouse drag scrolling only.
+   * Start mouse drag.
    *
-   * Touch is intentionally ignored.
-   * Mobile uses native finger scrolling.
+   * This is deliberately a MouseEvent instead
+   * of PointerEvent so touch is never involved.
    */
-  function handlePointerDown(
-    event: React.PointerEvent<HTMLDivElement>
+  function handleMouseDown(
+    event: React.MouseEvent<HTMLDivElement>
   ) {
-    if (
-      event.pointerType !== "mouse" ||
-      event.button !== 0
-    ) {
+    if (!canUseMouseDrag) {
+      return;
+    }
+
+    if (event.button !== 0) {
       return;
     }
 
     const element = event.currentTarget;
 
+    /*
+     * Nothing to scroll.
+     */
     if (element.scrollWidth <= element.clientWidth) {
       return;
     }
 
     dragRef.current = {
-      pointerId: event.pointerId,
       startX: event.clientX,
       scrollLeft: element.scrollLeft,
     };
-
-    element.setPointerCapture(event.pointerId);
 
     setIsDragging(true);
 
     event.preventDefault();
   }
 
-  function handlePointerMove(
-    event: React.PointerEvent<HTMLDivElement>
+  /*
+   * Move table horizontally while dragging.
+   */
+  function handleMouseMove(
+    event: React.MouseEvent<HTMLDivElement>
   ) {
+    if (!canUseMouseDrag) {
+      return;
+    }
+
     const drag = dragRef.current;
 
-    if (
-      !drag ||
-      drag.pointerId !== event.pointerId
-    ) {
+    if (!drag) {
       return;
     }
 
@@ -154,14 +195,11 @@ export default function TeacherAttendanceTable({
     event.preventDefault();
   }
 
-  function stopDragging(
-    event?: React.PointerEvent<HTMLDivElement>
-  ) {
-    if (
-      event &&
-      dragRef.current &&
-      dragRef.current.pointerId !== event.pointerId
-    ) {
+  /*
+   * Stop dragging.
+   */
+  function stopMouseDragging() {
+    if (!dragRef.current) {
       return;
     }
 
@@ -185,24 +223,28 @@ export default function TeacherAttendanceTable({
       {/* Horizontal scroll container */}
       <div
         ref={scrollRef}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={stopDragging}
-        onPointerCancel={stopDragging}
-        onLostPointerCapture={stopDragging}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={stopMouseDragging}
+        onMouseLeave={stopMouseDragging}
+        onDragStart={(event) => {
+          if (canUseMouseDrag) {
+            event.preventDefault();
+          }
+        }}
         tabIndex={0}
         aria-label="Teacher attendance table"
         className={`w-full min-w-0 overflow-x-auto overscroll-x-contain ${
-          isDragging
-            ? "cursor-grabbing select-none"
-            : "cursor-grab"
+          canUseMouseDrag
+            ? isDragging
+              ? "cursor-grabbing select-none"
+              : "cursor-grab"
+            : ""
         }`}
         style={{
-          touchAction: "pan-x",
           userSelect: isDragging
             ? "none"
             : "auto",
-          WebkitOverflowScrolling: "touch",
         }}
       >
         <table
@@ -344,4 +386,4 @@ export default function TeacherAttendanceTable({
       </div>
     </section>
   );
-}
+} 
