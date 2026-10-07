@@ -75,14 +75,50 @@ export default function StudentAttendanceTable({
   const [isDragging, setIsDragging] =
     React.useState(false);
 
+  /*
+   * Mouse dragging is only enabled on devices
+   * with a fine pointer and hover support.
+   *
+   * Mobile/tablet touch devices stay completely
+   * native.
+   */
+  const [canUseMouseDrag, setCanUseMouseDrag] =
+    React.useState(false);
+
   const scrollContainerRef =
     React.useRef<HTMLDivElement>(null);
 
   const dragRef = React.useRef<{
-    pointerId: number;
     startX: number;
     scrollLeft: number;
   } | null>(null);
+
+  /*
+   * Detect desktop-style pointer.
+   */
+  React.useEffect(() => {
+    const mediaQuery = window.matchMedia(
+      "(hover: hover) and (pointer: fine)"
+    );
+
+    const update = () => {
+      setCanUseMouseDrag(mediaQuery.matches);
+    };
+
+    update();
+
+    mediaQuery.addEventListener(
+      "change",
+      update
+    );
+
+    return () => {
+      mediaQuery.removeEventListener(
+        "change",
+        update
+      );
+    };
+  }, []);
 
   /*
    * Measure available width.
@@ -90,7 +126,9 @@ export default function StudentAttendanceTable({
   React.useEffect(() => {
     const element = scrollContainerRef.current;
 
-    if (!element) return;
+    if (!element) {
+      return;
+    }
 
     const updateWidth = () => {
       setContainerWidth(element.clientWidth);
@@ -99,9 +137,12 @@ export default function StudentAttendanceTable({
     updateWidth();
 
     const observer = new ResizeObserver(updateWidth);
+
     observer.observe(element);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
   /*
@@ -148,13 +189,18 @@ export default function StudentAttendanceTable({
   }, [students, searchPattern]);
 
   /*
-   * Calculate table width.
+   * Calculate table dimensions.
    */
   const studentCount = filteredStudents.length;
 
   const minTableWidth =
     DATE_COLUMN_WIDTH +
     studentCount * STUDENT_MIN_WIDTH;
+
+  const tableWidth = Math.max(
+    containerWidth,
+    minTableWidth
+  );
 
   const canFit =
     containerWidth > 0 &&
@@ -168,24 +214,20 @@ export default function StudentAttendanceTable({
           studentCount
         : STUDENT_MIN_WIDTH;
 
-  const tableWidth = Math.max(
-    containerWidth,
-    minTableWidth
-  );
-
   /*
-   * Mouse drag only.
+   * Start desktop mouse dragging.
    *
-   * Touch is NOT handled here.
-   * Mobile browsers use native finger scrolling.
+   * This function is never used for touch because
+   * canUseMouseDrag is checked first.
    */
-  function handlePointerDown(
-    event: React.PointerEvent<HTMLDivElement>
+  function handleMouseDown(
+    event: React.MouseEvent<HTMLDivElement>
   ) {
-    if (
-      event.pointerType !== "mouse" ||
-      event.button !== 0
-    ) {
+    if (!canUseMouseDrag) {
+      return;
+    }
+
+    if (event.button !== 0) {
       return;
     }
 
@@ -196,27 +238,28 @@ export default function StudentAttendanceTable({
     }
 
     dragRef.current = {
-      pointerId: event.pointerId,
       startX: event.clientX,
       scrollLeft: element.scrollLeft,
     };
-
-    element.setPointerCapture(event.pointerId);
 
     setIsDragging(true);
 
     event.preventDefault();
   }
 
-  function handlePointerMove(
-    event: React.PointerEvent<HTMLDivElement>
+  /*
+   * Move horizontally while holding mouse button.
+   */
+  function handleMouseMove(
+    event: React.MouseEvent<HTMLDivElement>
   ) {
+    if (!canUseMouseDrag) {
+      return;
+    }
+
     const drag = dragRef.current;
 
-    if (
-      !drag ||
-      drag.pointerId !== event.pointerId
-    ) {
+    if (!drag) {
       return;
     }
 
@@ -231,14 +274,11 @@ export default function StudentAttendanceTable({
     event.preventDefault();
   }
 
-  function stopDragging(
-    event?: React.PointerEvent<HTMLDivElement>
-  ) {
-    if (
-      event &&
-      dragRef.current &&
-      dragRef.current.pointerId !== event.pointerId
-    ) {
+  /*
+   * Stop mouse dragging.
+   */
+  function stopMouseDragging() {
+    if (!dragRef.current) {
       return;
     }
 
@@ -286,27 +326,37 @@ export default function StudentAttendanceTable({
         </p>
       )}
 
-      {/* Horizontal scroll container */}
+      {/* 
+       * Scroll container
+       *
+       * Mobile:
+       *   Native horizontal finger scrolling.
+       *
+       * Desktop:
+       *   Native wheel/trackpad scrolling +
+       *   left mouse button drag scrolling.
+       */}
       <div
         ref={scrollContainerRef}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={stopDragging}
-        onPointerCancel={stopDragging}
-        onLostPointerCapture={stopDragging}
-        tabIndex={0}
-        aria-label="Student attendance table"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={stopMouseDragging}
+        onMouseLeave={stopMouseDragging}
+        onDragStart={(event) => {
+          if (canUseMouseDrag) {
+            event.preventDefault();
+          }
+        }}
         className={`w-full min-w-0 overflow-x-auto overscroll-x-contain ${
-          isDragging
-            ? "cursor-grabbing select-none"
-            : "cursor-grab"
+          canUseMouseDrag
+            ? isDragging
+              ? "cursor-grabbing select-none"
+              : "cursor-grab"
+            : ""
         }`}
         style={{
-          touchAction: "pan-x",
-          userSelect: isDragging
-            ? "none"
-            : "auto",
-          WebkitOverflowScrolling: "touch",
+          userSelect:
+            isDragging ? "none" : "auto",
         }}
       >
         <table
@@ -399,4 +449,4 @@ export default function StudentAttendanceTable({
       </div>
     </section>
   );
-} 
+}
