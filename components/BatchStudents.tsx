@@ -170,6 +170,8 @@ export default function BatchStudents({ batchId }: Props) {
 
   const [subjectResults, setSubjectResults] = useState<SubjectSearchItem[]>([]);
 
+  const [batchSubjectCount, setBatchSubjectCount] = useState<number | null>(null);
+
   const [selectedSubject, setSelectedSubject] =
 
     useState<SubjectSearchItem | null>(null);
@@ -374,7 +376,7 @@ export default function BatchStudents({ batchId }: Props) {
 
   }, [addOpen, batchId, studentSearch]);
 
-  // Debounced subject search
+  // Debounced filter within this batch's available subjects
 
   useEffect(() => {
 
@@ -382,25 +384,17 @@ export default function BatchStudents({ batchId }: Props) {
 
     const term = subjectSearch.trim();
 
-    if (term.length < 3) {
-
-      setSubjectResults([]);
-
-      setIsSearchingSubjects(false);
-
-      return;
-
-    }
-
     let active = true;
 
-    setIsSearchingSubjects(true);
-
     const timer = setTimeout(async () => {
+
+      setIsSearchingSubjects(true);
 
       try {
 
         const result = await getSubjectsForSearch(
+
+          batchId,
 
           subjectStudent.studentId,
 
@@ -412,7 +406,9 @@ export default function BatchStudents({ batchId }: Props) {
 
         if (result.success) {
 
-          setSubjectResults(result.data ?? []);
+          setSubjectResults(result.data?.subjects ?? []);
+
+          setBatchSubjectCount(result.data?.batchSubjectCount ?? null);
 
         } else {
 
@@ -454,7 +450,7 @@ export default function BatchStudents({ batchId }: Props) {
 
     };
 
-  }, [subjectStudent, subjectSearch]);
+  }, [batchId, subjectStudent, subjectSearch]);
 
   const notify = (type: Feedback["type"], message: string) => {
 
@@ -518,6 +514,10 @@ export default function BatchStudents({ batchId }: Props) {
 
     setSubjectResults([]);
 
+    setBatchSubjectCount(null);
+
+    setIsSearchingSubjects(true);
+
     setSelectedSubject(null);
 
   };
@@ -533,6 +533,8 @@ export default function BatchStudents({ batchId }: Props) {
       const result = await addSubjectToStudent(
 
         subjectStudent.studentId,
+
+        batchId,
 
         selectedSubject.id
 
@@ -552,7 +554,11 @@ export default function BatchStudents({ batchId }: Props) {
 
       setSubjectResults([]);
 
+      setBatchSubjectCount(null);
+
       setSelectedSubject(null);
+
+      setIsSearchingSubjects(false);
 
       notify("success", result.message ?? "Subject added successfully");
 
@@ -664,6 +670,8 @@ export default function BatchStudents({ batchId }: Props) {
 
               action.studentId,
 
+              batchId,
+
               action.subjectId
 
             );
@@ -732,7 +740,11 @@ export default function BatchStudents({ batchId }: Props) {
 
       setSubjectResults([]);
 
+      setBatchSubjectCount(null);
+
       setSelectedSubject(null);
+
+      setIsSearchingSubjects(false);
 
     }
 
@@ -1454,7 +1466,7 @@ export default function BatchStudents({ batchId }: Props) {
 
               </span>
 
-              . Subject assignments are student-wide, not batch-specific.
+              . Only subjects belonging to this batch are available.
 
             </DialogDescription>
 
@@ -1474,7 +1486,11 @@ export default function BatchStudents({ batchId }: Props) {
 
                   setSubjectSearch(event.target.value);
 
+                  setSubjectResults([]);
+
                   setSelectedSubject(null);
+
+                  setIsSearchingSubjects(true);
 
                 }}
 
@@ -1486,15 +1502,7 @@ export default function BatchStudents({ batchId }: Props) {
 
             </div>
 
-            {subjectSearch.trim().length < 3 ? (
-
-              <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-
-                Type at least 3 characters to search for subjects.
-
-              </div>
-
-            ) : isSearchingSubjects ? (
+            {isSearchingSubjects ? (
 
               <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
 
@@ -1508,7 +1516,11 @@ export default function BatchStudents({ batchId }: Props) {
 
               <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
 
-                No unassigned subjects found.
+                {batchSubjectCount === 0
+                  ? "No subjects are available in this batch."
+                  : subjectSearch.trim()
+                    ? "No matching subjects found."
+                    : "All batch subjects are already assigned to this student."}
 
               </div>
 

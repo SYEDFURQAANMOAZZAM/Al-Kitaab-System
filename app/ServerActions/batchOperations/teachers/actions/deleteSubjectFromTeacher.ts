@@ -8,23 +8,26 @@ import type { ActionResult } from "../types";
 
 const Schema = z.object({
   teacherId: z.string().min(1),
+  batchId: z.string().min(1),
   subjectId: z.string().min(1),
 });
 
 export async function deleteSubjectFromTeacher(
   teacherId: string,
+  batchId: string,
   subjectId: string,
 ): Promise<ActionResult<{ teacherId: string; subjectId: string }>> {
   try {
     await requireRoleForAction(["ADMIN"]);
 
-    const parsed = Schema.safeParse({ teacherId, subjectId });
+    const parsed = Schema.safeParse({ teacherId, batchId, subjectId });
     if (!parsed.success) {
-      return { success: false, error: "Invalid teacher or subject ID." };
+      return { success: false, error: "Invalid teacher, batch, or subject ID." };
     }
 
     const data = await deleteSubjectFromTeacherService(
       parsed.data.teacherId,
+      parsed.data.batchId,
       parsed.data.subjectId,
     );
 

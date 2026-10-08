@@ -7,23 +7,26 @@ import { getSubjectsForSearchService } from "../services/teacherSearchService";
 import type { ActionResult, SubjectSearchItem } from "../types";
 
 const Schema = z.object({
+  batchId: z.string().min(1),
   teacherId: z.string().min(1),
-  search: z.string().trim().min(2).max(100),
+  search: z.string().trim().max(100),
 });
 
 export async function getSubjectsForSearch(
+  batchId: string,
   teacherId: string,
   search: string,
-): Promise<ActionResult<SubjectSearchItem[]>> {
+): Promise<ActionResult<{ subjects: SubjectSearchItem[]; batchSubjectCount: number }>> {
   try {
     await requireRole("ADMIN", "TEACHER");
 
-    const parsed = Schema.safeParse({ teacherId, search });
+    const parsed = Schema.safeParse({ batchId, teacherId, search });
     if (!parsed.success) {
-      return { success: false, error: "Enter at least 2 search characters." };
+      return { success: false, error: "Invalid batch, teacher, or search term." };
     }
 
     const data = await getSubjectsForSearchService(
+      parsed.data.batchId,
       parsed.data.teacherId,
       parsed.data.search,
     );

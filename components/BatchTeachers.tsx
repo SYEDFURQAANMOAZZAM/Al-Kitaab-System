@@ -176,6 +176,8 @@ export default function BatchTeachers({ batchId, isAdmin }: Props) {
 
   const [subjectResults, setSubjectResults] = useState<SubjectSearchItem[]>([]);
 
+  const [batchSubjectCount, setBatchSubjectCount] = useState<number | null>(null);
+
   const [selectedSubject, setSelectedSubject] =
 
     useState<SubjectSearchItem | null>(null);
@@ -456,15 +458,13 @@ export default function BatchTeachers({ batchId, isAdmin }: Props) {
 
   }, [addOpen, batchId, teacherSearch, canManage]);
 
-  // Debounced subject search
+  // Debounced filter within this batch's available subjects
 
   useEffect(() => {
 
     if (!subjectTeacher || !canManage) return;
 
     const term = subjectSearch.trim();
-
-    if (term.length < 3) return;
 
     let active = true;
 
@@ -476,6 +476,8 @@ export default function BatchTeachers({ batchId, isAdmin }: Props) {
 
         const result = await getSubjectsForSearch(
 
+          batchId,
+
           subjectTeacher.teacherId,
 
           term,
@@ -486,7 +488,9 @@ export default function BatchTeachers({ batchId, isAdmin }: Props) {
 
         if (result.success) {
 
-          setSubjectResults(result.data);
+          setSubjectResults(result.data.subjects);
+
+          setBatchSubjectCount(result.data.batchSubjectCount);
 
         } else {
 
@@ -528,7 +532,7 @@ export default function BatchTeachers({ batchId, isAdmin }: Props) {
 
     };
 
-  }, [subjectTeacher, subjectSearch, canManage]);
+  }, [batchId, subjectTeacher, subjectSearch, canManage]);
 
   const handleAddTeacher = async () => {
 
@@ -580,6 +584,8 @@ export default function BatchTeachers({ batchId, isAdmin }: Props) {
 
     setSubjectResults([]);
 
+    setBatchSubjectCount(null);
+
     setSelectedSubject(null);
 
   };
@@ -595,6 +601,8 @@ export default function BatchTeachers({ batchId, isAdmin }: Props) {
       const result = await addSubjectToTeacher(
 
         subjectTeacher.teacherId,
+
+        batchId,
 
         selectedSubject.id,
 
@@ -613,6 +621,8 @@ export default function BatchTeachers({ batchId, isAdmin }: Props) {
       setSubjectSearch("");
 
       setSubjectResults([]);
+
+      setBatchSubjectCount(null);
 
       setSelectedSubject(null);
 
@@ -728,6 +738,8 @@ export default function BatchTeachers({ batchId, isAdmin }: Props) {
 
               action.teacherId,
 
+              batchId,
+
               action.subjectId,
 
             );
@@ -793,6 +805,8 @@ export default function BatchTeachers({ batchId, isAdmin }: Props) {
       setSubjectSearch("");
 
       setSubjectResults([]);
+
+      setBatchSubjectCount(null);
 
       setSelectedSubject(null);
 
@@ -1533,7 +1547,7 @@ export default function BatchTeachers({ batchId, isAdmin }: Props) {
 
                   </span>
 
-                  . Subject assignments are teacher-wide, not batch-specific.
+                  . Choose from subjects assigned to the current batch.
 
                 </DialogDescription>
 
@@ -1559,7 +1573,7 @@ export default function BatchTeachers({ batchId, isAdmin }: Props) {
 
                     }}
 
-                    placeholder="Enter at least 3 characters..."
+                    placeholder="Filter batch subjects..."
 
                     className="pl-9"
 
@@ -1567,15 +1581,7 @@ export default function BatchTeachers({ batchId, isAdmin }: Props) {
 
                 </div>
 
-                {subjectSearch.trim().length < 3 ? (
-
-                  <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-
-                    Type at least 3 characters to search for subjects.
-
-                  </div>
-
-                ) : isSearchingSubjects ? (
+                {isSearchingSubjects ? (
 
                   <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
 
@@ -1589,7 +1595,11 @@ export default function BatchTeachers({ batchId, isAdmin }: Props) {
 
                   <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
 
-                    No unassigned subjects found.
+                    {batchSubjectCount === 0
+                      ? "No subjects are available in this batch."
+                      : subjectSearch.trim()
+                        ? "No matching subjects found."
+                        : "All batch subjects are already assigned to this teacher."}
 
                   </div>
 

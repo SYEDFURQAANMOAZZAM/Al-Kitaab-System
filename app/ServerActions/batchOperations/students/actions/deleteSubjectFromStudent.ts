@@ -9,17 +9,19 @@ import type { ActionResult } from "../types";
 
 const Schema = z.object({
   studentId: z.string().trim().min(1),
+  batchId: z.string().trim().min(1),
   subjectId: z.string().trim().min(1),
 });
 
 export async function deleteSubjectFromStudent(
   studentId: string,
+  batchId: string,
   subjectId: string
 ): Promise<ActionResult> {
   try {
     await requireRoleForAction(["ADMIN", "TEACHER"]);
 
-    const parsed = Schema.safeParse({ studentId, subjectId });
+    const parsed = Schema.safeParse({ studentId, batchId, subjectId });
 
     if (!parsed.success) {
       return {
@@ -30,6 +32,7 @@ export async function deleteSubjectFromStudent(
 
     await deleteSubjectFromStudentService(
       parsed.data.studentId,
+      parsed.data.batchId,
       parsed.data.subjectId
     );
 

@@ -147,10 +147,24 @@ export default async function SubjectViewPage({
           </Link>
 
           <Link
-            href={`/admin/subjects/${subject.id}/bulktoc`}
+            href={`/admin/subjects/${subject.id}/view-toc`}
             className="inline-flex h-10 items-center justify-center rounded-lg border bg-card px-4 text-sm font-medium shadow-sm transition-colors hover:bg-muted"
           >
-            Bulk TOC
+            View TOC
+          </Link>
+
+          <Link
+            href={`/admin/subjects/${subject.id}/students`}
+            className="inline-flex h-10 items-center justify-center rounded-lg border bg-card px-4 text-sm font-medium shadow-sm transition-colors hover:bg-muted"
+          >
+            Students
+          </Link>
+
+          <Link
+            href={`/admin/subjects/${subject.id}/teachers`}
+            className="inline-flex h-10 items-center justify-center rounded-lg border bg-card px-4 text-sm font-medium shadow-sm transition-colors hover:bg-muted"
+          >
+            Teachers
           </Link>
 
           <Link

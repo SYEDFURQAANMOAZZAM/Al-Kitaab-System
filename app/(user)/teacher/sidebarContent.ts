@@ -47,6 +47,11 @@ export function getSidebarItems(batches: Batch[]): SidebarItem[] {
           href: `/teacher/batches/${batch.id}/teachers`,
           icon: "teacher" as const,
         },
+        {
+          title: "Subjects",
+          href: `/teacher/batches/${batch.id}/subjects`,
+          icon: "pattern" as const,
+        },
       ],
     })),
 

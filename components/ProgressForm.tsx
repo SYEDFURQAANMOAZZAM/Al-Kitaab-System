@@ -2326,7 +2326,7 @@ export function ProgressForm({
                               </Fragment>
                             ))}
                             {formatted.fromParts.length > 0 && formatted.toParts.length > 0 && (
-                              <span className="font-semibold text-foreground">to{" "}</span>
+                              <span className="font-semibold text-foreground">{" "}to{" "}</span>
                             )}
                             {formatted.toParts.map((part, index) => (
                               <Fragment key={`view-${learning.id}-to-${index}`}>

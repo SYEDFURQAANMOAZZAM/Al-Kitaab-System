@@ -16,6 +16,7 @@ const tabs = [
   { value: "performance", label: "Performance" },
   { value: "students", label: "Students" },
   { value: "teachers", label: "Teachers" },
+  { value: "subjects", label: "Subjects" },
 ] as const;
 
 export function BatchNav({ basePath, className }: BatchNavProps) {

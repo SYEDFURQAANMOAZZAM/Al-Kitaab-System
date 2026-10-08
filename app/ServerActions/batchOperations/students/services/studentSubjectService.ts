@@ -6,10 +6,12 @@ import {
 
 export async function addSubjectToStudentService(
   studentId: string,
+  batchId: string,
   subjectId: string
 ) {
   const added = await addSubjectToStudentQuery(
     studentId,
+    batchId,
     subjectId
   );
 
@@ -20,10 +22,12 @@ export async function addSubjectToStudentService(
 
 export async function deleteSubjectFromStudentService(
   studentId: string,
+  batchId: string,
   subjectId: string
 ) {
   const deleted = await deleteSubjectFromStudentQuery(
     studentId,
+    batchId,
     subjectId
   );
 

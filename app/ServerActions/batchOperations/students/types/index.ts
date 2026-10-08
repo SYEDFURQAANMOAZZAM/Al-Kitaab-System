@@ -53,6 +53,7 @@ export type StudentSearchInput = {
 };
 
 export type SubjectSearchInput = {
+  batchId: string;
   studentId: string;
   searchTerm: string;
 };
@@ -75,5 +76,6 @@ export type ReplaceStudentBatchInput = {
 
 export type StudentSubjectInput = {
   studentId: string;
+  batchId: string;
   subjectId: string;
 };

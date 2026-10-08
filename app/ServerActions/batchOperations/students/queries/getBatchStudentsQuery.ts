@@ -28,6 +28,11 @@ export async function getBatchStudentsQuery(
             },
           },
           studentSubjects: {
+            where: {
+              subject: {
+                batches: { some: { batchId } },
+              },
+            },
             orderBy: {
               subject: {
                 name: "asc",

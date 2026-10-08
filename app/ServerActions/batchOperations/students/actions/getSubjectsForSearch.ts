@@ -8,18 +8,20 @@ import { getActionError } from "./actionUtils";
 import type { ActionResult, SubjectSearchItem } from "../types";
 
 const Schema = z.object({
+  batchId: z.string().trim().min(1),
   studentId: z.string().trim().min(1),
-  searchTerm: z.string().trim().min(3, "Enter at least 3 characters").max(100),
+  searchTerm: z.string().trim().max(100),
 });
 
 export async function getSubjectsForSearch(
+  batchId: string,
   studentId: string,
   searchTerm: string
-): Promise<ActionResult<SubjectSearchItem[]>> {
+): Promise<ActionResult<{ subjects: SubjectSearchItem[]; batchSubjectCount: number }>> {
   try {
     await requireRole("ADMIN", "TEACHER");
 
-    const parsed = Schema.safeParse({ studentId, searchTerm });
+    const parsed = Schema.safeParse({ batchId, studentId, searchTerm });
 
     if (!parsed.success) {
       return {
@@ -29,6 +31,7 @@ export async function getSubjectsForSearch(
     }
 
     const data = await getSubjectsForSearchService(
+      parsed.data.batchId,
       parsed.data.studentId,
       parsed.data.searchTerm
     );

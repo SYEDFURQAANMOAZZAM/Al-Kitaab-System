@@ -5,11 +5,13 @@ import {
   RadialBar,
   RadialBarChart,
 } from "recharts";
+import Link from "next/link";
 
 import {
   Card,
   CardContent,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 import {
   ChartContainer,
@@ -103,6 +105,16 @@ export function BatchAttendanceCard({
             {batch.branch.name}
           </p>
         </div>
+
+        <Button
+          nativeButton={false}
+          render={<Link href={`/teacher/batches/${batch.id}/performance`} />}
+          variant="outline"
+          size="sm"
+          className="mt-4 w-full"
+        >
+          View performance
+        </Button>
       </CardContent>
     </Card>
   );

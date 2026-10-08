@@ -58,5 +58,6 @@ export type ReplaceTeacherBatchAssignmentInput = {
 
 export type TeacherSubjectInput = {
   teacherId: string;
+  batchId: string;
   subjectId: string;
 };

@@ -15,8 +15,9 @@ export async function getStudentsForSearchService(
 }
 
 export async function getSubjectsForSearchService(
+  batchId: string,
   studentId: string,
   searchTerm: string
 ) {
-  return getSubjectsForSearchQuery(studentId, searchTerm);
+  return getSubjectsForSearchQuery(batchId, studentId, searchTerm);
 }

@@ -7,8 +7,9 @@ export async function getBranchesWithBatchesService() {
 }
 
 export async function getSubjectsForSearchService(
+  batchId: string,
   teacherId: string,
   search: string,
 ) {
-  return getSubjectsForSearchQuery(teacherId, search);
+  return getSubjectsForSearchQuery(batchId, teacherId, search);
 }

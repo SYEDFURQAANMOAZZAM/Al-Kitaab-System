@@ -3,28 +3,23 @@ import { prisma } from "@/lib/prisma";
 import type { SubjectSearchItem } from "../types";
 
 export async function getSubjectsForSearchQuery(
+  batchId: string,
   teacherId: string,
   search: string,
-): Promise<SubjectSearchItem[]> {
+): Promise<{ subjects: SubjectSearchItem[]; batchSubjectCount: number }> {
   const term = search.trim();
-
-  if (term.length < 2) return [];
-
-  return prisma.subject.findMany({
-    where: {
-      name: {
-        contains: term,
-        mode: "insensitive",
+  const [batchSubjectCount, subjects] = await Promise.all([
+    prisma.batchSubject.count({ where: { batchId } }),
+    prisma.subject.findMany({
+      where: {
+        batches: { some: { batchId } },
+        teacherSubjects: { none: { teacherId } },
+        ...(term ? { name: { contains: term, mode: "insensitive" as const } } : {}),
       },
-      teacherSubjects: {
-        none: { teacherId },
-      },
-    },
-    orderBy: { name: "asc" },
-    take: 20,
-    select: {
-      id: true,
-      name: true,
-    },
-  });
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+  ]);
+
+  return { subjects, batchSubjectCount };
 }

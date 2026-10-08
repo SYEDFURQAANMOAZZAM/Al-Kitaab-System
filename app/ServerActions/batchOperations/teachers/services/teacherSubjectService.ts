@@ -6,26 +6,26 @@ import {
 
 export async function addSubjectToTeacherService(
   teacherId: string,
+  batchId: string,
   subjectId: string,
 ) {
-  const result = await addSubjectToTeacherQuery(
+  await addSubjectToTeacherQuery(
     teacherId,
+    batchId,
     subjectId,
   );
-
-  if (result.count === 0) {
-    throw new Error("Teacher is already assigned to this subject.");
-  }
 
   return { teacherId, subjectId };
 }
 
 export async function deleteSubjectFromTeacherService(
   teacherId: string,
+  batchId: string,
   subjectId: string,
 ) {
   const result = await deleteSubjectFromTeacherQuery(
     teacherId,
+    batchId,
     subjectId,
   );
 

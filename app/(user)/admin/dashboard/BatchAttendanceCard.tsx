@@ -5,6 +5,8 @@ import {
   RadialBar,
   RadialBarChart,
 } from "recharts";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -16,6 +18,8 @@ import type { AdminDashboardBatch } from "@/app/ServerActions/AdminDashboard/typ
 
 type BatchAttendanceCardProps = {
   batch: AdminDashboardBatch;
+  branchId: string;
+  batchId: string;
 };
 
 const chartConfig = {
@@ -27,6 +31,8 @@ const chartConfig = {
 
 export function BatchAttendanceCard({
   batch,
+  branchId,
+  batchId,
 }: BatchAttendanceCardProps) {
   const percentage = batch.attendancePercentage;
 
@@ -101,6 +107,20 @@ export function BatchAttendanceCard({
               : "No attendance data"}
           </p>
         </div>
+
+        <Button
+          nativeButton={false}
+          render={
+            <Link
+              href={`/admin/branches/${branchId}/batches/${batchId}/performance`}
+            />
+          }
+          variant="outline"
+          size="sm"
+          className="mt-4 w-full"
+        >
+          View performance
+        </Button>
       </CardContent>
     </Card>
   );

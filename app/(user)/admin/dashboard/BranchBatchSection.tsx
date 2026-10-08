@@ -48,6 +48,8 @@ export function BranchBatchSection({
             <BatchAttendanceCard
               key={batch.id}
               batch={batch}
+              branchId={branch.id}
+              batchId={batch.id}
             />
           ))}
         </div>
