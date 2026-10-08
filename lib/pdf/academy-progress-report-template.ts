@@ -61,7 +61,7 @@ function renderProgress(
                   const fromParts = formatted ? formatted.fromParts : [];
                   const toParts = formatted ? formatted.toParts : [];
                   const renderParts = (parts: typeof fromParts) =>
-                    parts.map((part) => `<span class="learning-label">${escapeHtml(part.label)}</span>:<span class="learning-value">${escapeHtml(part.value)}</span>`).join(' <span class="learning-part-arrow">→</span> ');
+                    parts.map((part) => `<span class="learning-label">${escapeHtml(part.label)}</span>:<span class="learning-value">${escapeHtml(part.value)}</span>`).join(' <span class="learning-part-arrow">-></span> ');
                   const content = `${renderParts(fromParts)}${fromParts.length && toParts.length ? "&nbsp;<strong>to</strong>&nbsp;" : ""}${renderParts(toParts)}`;
 
                   return `
